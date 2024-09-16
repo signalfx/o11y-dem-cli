@@ -1,0 +1,14 @@
+* @signalfx/o11y-dem-cli-maintainers @signalfx/o11y-dem-cli-admins
+
+CODEOWNERS @signalfx/o11y-dem-cli-maintainers
+
+#####################################################
+#
+# Docs reviewers
+#
+#####################################################
+
+*.md    @signalfx/gdi-docs
+*.rst   @signalfx/gdi-docs
+docs/   @signalfx/gdi-docs
+README* @signalfx/o11y-dem-cli-maintainers @signalfx/o11y-dem-cli-admins @signalfx/gdi-docs @signalfx/gdi-specification-approvers @signalfx/gdi-specification-maintainers
