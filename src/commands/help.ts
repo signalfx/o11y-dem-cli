@@ -1,10 +1,9 @@
 import { Command } from 'commander';
 
 export const helpCommand = new Command('help')
-  .description('Display help information')
+  .description('Display command overview')
   .action(() => {
-    console.log(`O11Y DEM CLI`);
-    console.log(`\nUsage:\n  o11y-dem-cli <command> [options]`);
+    console.log(`\nO11y CLI Usage:\n  o11y-dem-cli <command> [options]`);
     
     console.log(`\nCommands:`);
     console.log(`  ios <command>               Manage iOS mapping files`);
@@ -21,9 +20,5 @@ export const helpCommand = new Command('help')
     console.log(`  sourcefiles <command>       Manage source files`);
     console.log(`    upload --app-name <appName> --app-version <appVersion> --directory <directory>`);
 
-    console.log(`\nGlobal Options:`);
-    console.log(`  -h, --help                  Display help information`);
-    console.log(`  -v, --version               Show the version of the CLI`);
-    
-    console.log(`\nFor more information, please refer to the documentation or visit our website.`);
-  });
+    console.log(`  help                  Display help information`);
+});

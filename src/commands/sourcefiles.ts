@@ -2,7 +2,6 @@ import { Command } from 'commander';
 
 export const sourcefilesCommand = new Command('sourcefiles');
 
-// Define the upload command
 sourcefilesCommand
   .command('upload')
   .requiredOption('--app-name <appName>', 'Application name')
