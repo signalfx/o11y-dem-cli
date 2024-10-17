@@ -5,7 +5,6 @@ import { iosCommand } from './commands/ios';
 import { androidCommand } from './commands/android';
 import { sourcemapsCommand } from './commands/sourcemaps';
 import { sourcefilesCommand } from './commands/sourcefiles';
-import { helpCommand } from './commands/help';
 
 const program = new Command();
 
@@ -17,6 +16,5 @@ program.addCommand(iosCommand);
 program.addCommand(androidCommand);
 program.addCommand(sourcemapsCommand);
 program.addCommand(sourcefilesCommand);
-program.addCommand(helpCommand); 
 
 program.parse(process.argv);
