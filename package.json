@@ -2,20 +2,21 @@
   "name": "o11y-dem-cli",
   "version": "1.0.0",
   "description": "Tools for handling symbol and mapping files for symbolication",
-  "main": "index.js",
+  "main": "./dist/index.js",
   "scripts": {
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "dependencies": {
-    "commander": "^12.1.0",
-    "typescript": "^5.6.2"
+    "commander": "^12.1.0"
   },
   "devDependencies": {
     "@types/commander": "^2.12.0",
-    "@types/node": "^22.7.4"
+    "@types/node": "^22.7.4",
+    "typescript": "^5.6.2"
   },
   "bin": {
     "o11y-dem-cli": "./dist/index.js"
