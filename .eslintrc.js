@@ -1,7 +1,3 @@
-// ESLint v9 work-around: https://github.com/Stuk/eslint-plugin-header/issues/57
-const pluginHeader = require('eslint-plugin-header');
-pluginHeader.rules.header.meta.schema = false;
-
 module.exports = {
   env: {
     node: true

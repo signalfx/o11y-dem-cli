@@ -5,8 +5,8 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint ./src ./test",
-    "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint ./src ./test --fix",
+    "lint": "eslint ./src ./test",
+    "lint:fix": "eslint ./src ./test --fix",
     "test:unit": "glob -c \"TS_NODE_PROJECT=./test/tsconfig.json node --require ts-node/register --test\" \"test/**/*.ts\""
   },
   "keywords": [],
@@ -21,7 +21,7 @@
     "@types/node": "^22.7.4",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
     "@typescript-eslint/parser": "^8.11.0",
-    "eslint": "^9.13.0",
+    "eslint": "^8.57.1",
     "eslint-plugin-header": "^3.1.1",
     "glob": "^11.0.0",
     "ts-node": "^10.9.2",
