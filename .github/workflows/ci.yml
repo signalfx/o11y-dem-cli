@@ -19,7 +19,7 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
-      - name: Lint check
+      - name: Lint
         run: npm run lint
       - name: Unit tests
         run: npm run test:unit
