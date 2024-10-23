@@ -14,9 +14,9 @@
  * limitations under the License.
 */
 
-import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import {androidCommand} from "../../src/commands/android";
+import { describe, it } from 'node:test';
+import { androidCommand } from '../../src/commands/android';
 
 describe('android command', () => {
   it('has multiple sub-commands', () => {

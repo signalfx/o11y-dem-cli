@@ -15,11 +15,17 @@ module.exports = {
     project: true
   },
   plugins: [
+    '@stylistic',
     '@typescript-eslint',
     'header',
   ],
   root: true,
   rules: {
+    '@stylistic/array-bracket-spacing': [ 'error', 'always' ],
+    '@stylistic/indent': [ 'error', 2 ],
+    '@stylistic/object-curly-spacing': [ 'error', 'always' ],
+    '@stylistic/quotes': [ 'error', 'single', { 'avoidEscape': true, 'allowTemplateLiterals': true } ],
+    '@stylistic/semi': 'error',
     'header/header': [2, 'block', [
       '',
       ' * Copyright Splunk Inc.',
@@ -36,6 +42,6 @@ module.exports = {
       ' * See the License for the specific language governing permissions and',
       ' * limitations under the License.',
       ''
-    ], 2]
+    ], 2],
   }
 };
