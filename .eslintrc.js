@@ -3,6 +3,9 @@ const pluginHeader = require('eslint-plugin-header');
 pluginHeader.rules.header.meta.schema = false;
 
 module.exports = {
+  env: {
+    node: true
+  },
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended'
