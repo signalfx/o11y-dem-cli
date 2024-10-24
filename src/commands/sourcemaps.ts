@@ -15,16 +15,39 @@
 */
 
 import { Command } from 'commander';
+import { runSourcemapInject } from '../sourcemaps';
+import { ValidationError } from '../ValidationError';
 
 export const sourcemapsCommand = new Command('sourcemaps');
 
 sourcemapsCommand
   .command('inject')
-  .requiredOption('--directory <directory>', 'Path to the directory for injection')
-  .description('Inject source maps into the specified directory')
-  .action((options) => {
-    console.log(`Injecting source maps into directory: ${options.directory}`);
-  });
+  .usage('--directory path/to/dist')
+  .requiredOption(
+    '--directory <directory>',
+    'Folder containing JavaScript files and their source maps (required)'
+  )
+  .option(
+    '--dry-run',
+    'Use --dry-run to preview the files that will be injected for the given options.  Does not modify any files on the file system. (optional)',
+    false
+  )
+  .description(
+    `Traverses the --directory to locate JavaScript files (.js, .cjs, .mjs) and their source map files (.js.map, .cjs.map, .mjs.map).  This command will inject code into the JavaScript files with information about their corresponding map file.  This injected code is used to perform automatic source mapping for any JavaScript errors that occur in your app.\n\n` +
+    `After running "sourcemaps inject", make sure to run "sourcemaps upload".`)
+  .action(
+    async (options) => {
+      try {
+        await runSourcemapInject(options);
+      } catch (e) {
+        if (e instanceof ValidationError) {
+          sourcemapsCommand.error(`error: ${e.message}`);
+        } else {
+          throw e;
+        }
+      }
+    }
+  );
 
 sourcemapsCommand
   .command('upload')
