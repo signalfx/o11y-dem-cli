@@ -15,10 +15,13 @@
 */
 
 import { createReadStream, createWriteStream, ReadStream } from 'node:fs';
-import { readdir } from 'node:fs/promises';
+import { readdir, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 import readline from 'node:readline';
 import os from 'node:os';
+import { finished } from 'node:stream/promises';
+
+const TEMP_FILE_EXTENSION: string = '.olly.tmp';
 
 /**
  * Returns a list of paths to all files within the given directory.
@@ -54,10 +57,60 @@ export function makeReadStream(filePath: string) {
   return createReadStream(filePath, { encoding: 'utf-8' });
 }
 
-export function overwriteFileContents(filePath: string, lines: string[]) {
-  const outStream = createWriteStream(filePath, { encoding: 'utf-8' });
+/**
+ * Safely overwrite the contents of filePath by writing to a temporary
+ * file and replacing filePath. This avoids destructive edits to filePath
+ * if the process exits before this function has completed.
+ *
+ * If this method is used by a command, the command must always invoke
+ * cleanupTemporaryFiles before exiting successfully.
+ */
+export async function overwriteFileContents(filePath: string, lines: string[]) {
+  const tempFilePath = getTempFilePath(filePath);
+  await writeLinesToFile(tempFilePath, lines);
+  try {
+    await rename(tempFilePath, filePath);
+  } catch (e) {
+    // try to ensure that this method doesn't return/throw until the temp file is removed
+    await rm(tempFilePath);
+
+    throw e;
+  }
+}
+
+/**
+ * Recursively remove any temporary files that may still be present in the directory.
+ */
+export async function cleanupTemporaryFiles(dir: string) {
+  const paths = await readdirRecursive(dir);
+  for (const path of paths) {
+    if (path.endsWith(TEMP_FILE_EXTENSION)) {
+      await rm(path);
+    }
+  }
+}
+
+/**
+ * Return a tempFilePath based on the input filePath:
+ *
+ *  - path/to/file.js -> path/to/.file.js.olly.tmp
+ */
+function getTempFilePath(filePath: string) {
+  const fileName = path.basename(filePath);
+  const tempFileName = `.${fileName}${TEMP_FILE_EXTENSION}`;
+  return path.join(
+    path.dirname(filePath),
+    tempFileName
+  );
+
+}
+
+async function writeLinesToFile(path: string, lines: string[]) {
+  const outStream = createWriteStream(path, { encoding: 'utf-8' });
   for (const line of lines) {
-    outStream.write(line + os.EOL, err => { if (err) throw err; });
+    outStream.write(line, err => { if (err) throw err; });
+    outStream.write(os.EOL, err => { if (err) throw err; });
   }
   outStream.end();
+  return finished(outStream);
 }

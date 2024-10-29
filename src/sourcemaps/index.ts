@@ -14,7 +14,7 @@
  * limitations under the License.
 */
 
-import { readdirRecursive } from '../filesystem';
+import { cleanupTemporaryFiles, readdirRecursive } from '../filesystem';
 import {
   computeSourceMapId,
   discoverJsMapFilePath,
@@ -74,6 +74,11 @@ export async function runSourcemapInject(options: SourceMapInjectOptions) {
     injectedJsFilePaths.push(jsFilePath);
   }
 
+  // If we reach here, the only reason for temporary files to be leftover is if a previous invocation of
+  // sourcemaps inject had terminated unexpectedly in the middle of writing to a temp file.
+  // But we should make sure to clean up those older files, too, before exiting this successful run.
+  await cleanupTemporaryFiles(directory);
+
   /*
    * Print summary of results
    */
@@ -83,6 +88,7 @@ export async function runSourcemapInject(options: SourceMapInjectOptions) {
   } else if (injectedJsFilePaths.length === 0) {
     warn(`No JavaScript files were injected.  Verify that your build is configured to generate source maps for your JavaScript files.`);
   }
+
 }
 
 function throwDirectoryValidationError(err: unknown, directory: string): never {
