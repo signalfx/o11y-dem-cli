@@ -35,4 +35,4 @@ program.addCommand(androidCommand);
 program.addCommand(sourcemapsCommand);
 program.addCommand(sourcefilesCommand);
 
-program.parse(process.argv);
+program.parseAsync(process.argv);

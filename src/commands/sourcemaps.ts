@@ -21,21 +21,44 @@ import { UserFriendlyError } from '../userFriendlyErrors';
 
 export const sourcemapsCommand = new Command('sourcemaps');
 
+const injectDescription =
+`Inject a code snippet into your JavaScript bundles to enable automatic source mapping of your application's JavaScript errors.
+
+Before running this command:
+ - verify your production build tool is configured to generate source maps
+ - run the production build for your project
+ - verify your production JavaScript bundles and source maps were emitted to the same output directory
+
+Pass the path of your build output folder as the --directory.  This command will recursively search the path
+to locate all JavaScript files (.js, .cjs, .mjs) and source map files (.js.map, .cjs.map, .mjs.map)
+from your production build.
+
+When this command detects that a JavaScript file (example: main.min.js) has a source map (example: main.min.js.map),
+a code snippet will be injected into the JavaScript file.  This code snippet contains a "sourceMapId" that
+is needed to successfully perform automatic source mapping.
+
+This is the first of multiple steps for enabling automatic source mapping of your application's JavaScript errors.
+
+After running this command successfully:
+ - run "sourcemaps upload" to send source map files to Splunk Observability Cloud
+ - deploy the injected JavaScript files to your production environment
+`;
+
 sourcemapsCommand
   .command('inject')
+  .showHelpAfterError(true)
   .usage('--directory path/to/dist')
+  .summary(`Inject a code snippet into your JavaScript bundles to allow for automatic source mapping of errors`)
+  .description(injectDescription)
   .requiredOption(
-    '--directory <directory>',
-    'Folder containing JavaScript files and their source maps (required)'
+    '--directory <path>',
+    'Path to the directory containing your both JavaScript files and source map files (required)'
   )
   .option(
     '--dry-run',
-    'Use --dry-run to preview the files that will be injected for the given options.  Does not modify any files on the file system. (optional)',
+    'Use --dry-run to preview the files that will be injected for the given options, without modifying any files on the file system (optional)',
     false
   )
-  .description(
-    `Traverses the --directory to locate JavaScript files (.js, .cjs, .mjs) and their source map files (.js.map, .cjs.map, .mjs.map).  This command will inject code into the JavaScript files with information about their corresponding map file.  This injected code is used to perform automatic source mapping for any JavaScript errors that occur in your app.\n\n` +
-    `After running "sourcemaps inject", make sure to run "sourcemaps upload".`)
   .action(
     async (options) => {
       try {
