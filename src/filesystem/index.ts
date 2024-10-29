@@ -68,14 +68,7 @@ export function makeReadStream(filePath: string) {
 export async function overwriteFileContents(filePath: string, lines: string[]) {
   const tempFilePath = getTempFilePath(filePath);
   await writeLinesToFile(tempFilePath, lines);
-  try {
-    await rename(tempFilePath, filePath);
-  } catch (e) {
-    // try to ensure that this method doesn't return/throw until the temp file is removed
-    await rm(tempFilePath);
-
-    throw e;
-  }
+  await rename(tempFilePath, filePath);
 }
 
 /**
@@ -108,8 +101,8 @@ function getTempFilePath(filePath: string) {
 async function writeLinesToFile(path: string, lines: string[]) {
   const outStream = createWriteStream(path, { encoding: 'utf-8' });
   for (const line of lines) {
-    outStream.write(line, err => { if (err) throw err; });
-    outStream.write(os.EOL, err => { if (err) throw err; });
+    outStream.write(line);
+    outStream.write(os.EOL);
   }
   outStream.end();
   return finished(outStream);

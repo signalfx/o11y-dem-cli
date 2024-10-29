@@ -17,11 +17,12 @@
 import { makeReadStream, overwriteFileContents, readlines } from '../filesystem';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { SourceMapInjectOptions } from './index';
+import { throwAsUserFriendlyErrnoException } from '../userFriendlyErrors';
 
 const SOURCE_MAPPING_URL_COMMENT_PREFIX = '//# sourceMappingURL=';
 const SNIPPET_PREFIX = `;/* olly sourcemaps inject */`;
 const SNIPPET_TEMPLATE = `${SNIPPET_PREFIX}if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '__SOURCE_MAP_ID_PLACEHOLDER__';}};`;
-
 
 /**
  * Determine the corresponding ".map" file for the given jsFilePath.
@@ -34,7 +35,7 @@ const SNIPPET_TEMPLATE = `${SNIPPET_PREFIX}if (typeof window === 'object') { win
  *  2) Fallback to the "//# sourceMappingURL=..." comment in the JS file.
  *  If this comment is present, and we detect it is a relative file path, return this value as the match.
  */
-export async function discoverJsMapFilePath(jsFilePath: string, allJsMapFilePaths: string[]): Promise<string | null> {
+export async function discoverJsMapFilePath(jsFilePath: string, allJsMapFilePaths: string[], options: SourceMapInjectOptions): Promise<string | null> {
   /*
    * Check if we already know about the map file by adding ".map" extension.  This is a common convention.
    */
@@ -51,44 +52,47 @@ export async function discoverJsMapFilePath(jsFilePath: string, allJsMapFilePath
   /*
    * Fallback to reading the JS file and parsing its "//# sourceMappingURL=..." comment
    */
-  const fileStream = makeReadStream(jsFilePath);
-
   let result: string | null = null;
-  for await (const line of readlines(fileStream)) {
-    if (line.startsWith(SOURCE_MAPPING_URL_COMMENT_PREFIX)) {
-      const url = line.slice(SOURCE_MAPPING_URL_COMMENT_PREFIX.length).trim();
+  try {
+    const fileStream = makeReadStream(jsFilePath);
+    for await (const line of readlines(fileStream)) {
+      if (line.startsWith(SOURCE_MAPPING_URL_COMMENT_PREFIX)) {
+        const url = line.slice(SOURCE_MAPPING_URL_COMMENT_PREFIX.length).trim();
 
-      if (path.isAbsolute(url)
+        if (path.isAbsolute(url)
           || url.startsWith('http://')
           || url.startsWith('https://')
           || url.startsWith('data:')) {
-        debug(`skipping source map pair (unsupported sourceMappingURL comment):`);
-        debug(`  - ${jsFilePath}`);
-        debug(`  - ${url}`);
-
-        result = null;
-      } else {
-        const matchingJsMapFilePath = path.join(path.dirname(jsFilePath), url);
-
-        if (!allJsMapFilePaths.includes(matchingJsMapFilePath)) {
-          debug(`skipping source map pair (file not in provided directory):`);
+          debug(`skipping source map pair (unsupported sourceMappingURL comment):`);
           debug(`  - ${jsFilePath}`);
           debug(`  - ${url}`);
 
-          warn(`skipping ${jsFilePath}, which is requesting a source map file outside of the provided --directory`);
-
           result = null;
         } else {
-          debug(`found source map pair (using sourceMappingURL comment):`);
-          debug(`  - ${jsFilePath}`);
-          debug(`  - ${matchingJsMapFilePath}`);
+          const matchingJsMapFilePath = path.join(path.dirname(jsFilePath), url);
 
-          result = matchingJsMapFilePath;
+          if (!allJsMapFilePaths.includes(matchingJsMapFilePath)) {
+            debug(`skipping source map pair (file not in provided directory):`);
+            debug(`  - ${jsFilePath}`);
+            debug(`  - ${url}`);
+
+            warn(`skipping ${jsFilePath}, which is requesting a source map file outside of the provided --directory`);
+
+            result = null;
+          } else {
+            debug(`found source map pair (using sourceMappingURL comment):`);
+            debug(`  - ${jsFilePath}`);
+            debug(`  - ${matchingJsMapFilePath}`);
+
+            result = matchingJsMapFilePath;
+          }
         }
-      }
 
-      break;
+        break;
+      }
     }
+  } catch (e) {
+    throwJsFileReadError(e, jsFilePath, options);
   }
 
   if (result === null) {
@@ -102,12 +106,18 @@ export async function discoverJsMapFilePath(jsFilePath: string, allJsMapFilePath
  * sourceMapId is computed by hashing the contents of the ".map" file, and then
  * formatting the hash to like a GUID.
  */
-export async function computeSourceMapId(sourceMapFilePath: string): Promise<string> {
+export async function computeSourceMapId(sourceMapFilePath: string, options: SourceMapInjectOptions): Promise<string> {
   const hash = createHash('sha256').setEncoding('hex');
-  const fileStream = makeReadStream(sourceMapFilePath);
-  for await (const chunk of fileStream) {
-    hash.update(chunk);
+
+  try {
+    const fileStream = makeReadStream(sourceMapFilePath);
+    for await (const chunk of fileStream) {
+      hash.update(chunk);
+    }
+  } catch (e) {
+    throwJsMapFileReadError(e, sourceMapFilePath, options);
   }
+
   const sha = hash.digest('hex');
   return shaToSourceMapId(sha);
 }
@@ -122,8 +132,8 @@ export async function computeSourceMapId(sourceMapFilePath: string): Promise<str
  *
  * If dryRun is true, this function will not write to the file system.
  */
-export async function injectFile(jsFilePath: string, sourceMapId: string, dryRun: boolean): Promise<void> {
-  if (dryRun) {
+export async function injectFile(jsFilePath: string, sourceMapId: string, options: SourceMapInjectOptions): Promise<void> {
+  if (options.dryRun) {
     info(`sourceMapId ${sourceMapId} would be injected to ${jsFilePath}`);
     return;
   }
@@ -137,18 +147,22 @@ export async function injectFile(jsFilePath: string, sourceMapId: string, dryRun
    * Read the file into memory, and record any significant line indexes
    */
   let readlinesIndex = 0;
-  const fileStream = makeReadStream(jsFilePath);
-  for await (const line of readlines(fileStream)) {
-    if (line.startsWith(SOURCE_MAPPING_URL_COMMENT_PREFIX)) {
-      sourceMappingUrlIndex = readlinesIndex;
-    }
-    if (line.startsWith(SNIPPET_PREFIX)) {
-      existingSnippetIndex = readlinesIndex;
-      existingSnippet = line;
-    }
+  try {
+    const fileStream = makeReadStream(jsFilePath);
+    for await (const line of readlines(fileStream)) {
+      if (line.startsWith(SOURCE_MAPPING_URL_COMMENT_PREFIX)) {
+        sourceMappingUrlIndex = readlinesIndex;
+      }
+      if (line.startsWith(SNIPPET_PREFIX)) {
+        existingSnippetIndex = readlinesIndex;
+        existingSnippet = line;
+      }
 
-    lines.push(line);
-    readlinesIndex++;
+      lines.push(line);
+      readlinesIndex++;
+    }
+  } catch (e) {
+    throwJsFileReadError(e, jsFilePath, options);
   }
 
   const snippet = getCodeSnippet(sourceMapId);
@@ -176,7 +190,11 @@ export async function injectFile(jsFilePath: string, sourceMapId: string, dryRun
    * Write to the file system
    */
   debug(`injecting sourceMapId ${sourceMapId} into ${jsFilePath}`);
-  await overwriteFileContents(jsFilePath, lines);
+  try {
+    await overwriteFileContents(jsFilePath, lines);
+  } catch (e) {
+    throwJsFileOverwriteError(e, jsFilePath, options);
+  }
 }
 
 function getCodeSnippet(sourceMapId: string): string {
@@ -201,17 +219,51 @@ export function isJsMapFilePath(filePath: string) {
   return filePath.match(/\.(js|cjs|mjs)\.map$/);
 }
 
-// TODO extract to a configurable, shared logger with improved styling
-export function debug(str: string) {
-  console.log('[debug] ' + str);
+function throwJsMapFileReadError(err: unknown, sourceMapFilePath: string, options: SourceMapInjectOptions): never {
+  throwAsUserFriendlyErrnoException(
+    err,
+    {
+      ENOENT: `Failed to open the source map file "${sourceMapFilePath}" because the file does not exist.\nMake sure that your source map files are being emitted to "${options.directory}".  Regenerate your source map files, then rerun the inject command.`,
+      EACCES: `Failed to open the source map file "${sourceMapFilePath}" because of missing file permissions.\nMake sure that the CLI tool will have both "read" and "write" access to all files inside "${options.directory}", then rerun the inject command.`
+    }
+  );
+}
+
+function throwJsFileReadError(err: unknown, jsFilePath: string, options: SourceMapInjectOptions): never {
+  throwAsUserFriendlyErrnoException(
+    err,
+    {
+      ENOENT: `Failed to open the JavaScript file "${jsFilePath}" because the file no longer exists.\nMake sure that no other processes are removing files in "${options.directory}" while the CLI tool is running.  Regenerate your JavaScript files, then re-run the inject command.`,
+      EACCES: `Failed to open the JavaScript file "${jsFilePath}" because of missing file permissions.\nMake sure that the CLI tool will have both "read" and "write" access to all files inside "${options.directory}", then rerun the inject command.`,
+    }
+  );
+}
+
+function throwJsFileOverwriteError(err: unknown, jsFilePath: string, options: SourceMapInjectOptions): never {
+  throwAsUserFriendlyErrnoException(
+    err,
+    {
+      EACCES: `Failed to inject "${jsFilePath}" with its sourceMapId because of missing permissions.\nMake sure that the CLI tool will have "read" and "write" access to the "${options.directory}" directory and all files inside it, then rerun the inject command.`,
+    }
+  );
 }
 
 // TODO extract to a configurable, shared logger with improved styling
-export function info(str: string) {
+export function debug(str: unknown) {
+  console.log('[debug]', str);
+}
+
+// TODO extract to a configurable, shared logger with improved styling
+export function info(str: unknown) {
   console.log(str);
 }
 
 // TODO extract to a configurable, shared logger with improved styling
-export function warn(str: string) {
-  console.log('[warn] ' + str);
+export function warn(str: unknown) {
+  console.log('[warn]', str);
+}
+
+// TODO extract to a configurable, shared logger with improved styling
+export function error(str: unknown) {
+  console.log('[error]', str);
 }

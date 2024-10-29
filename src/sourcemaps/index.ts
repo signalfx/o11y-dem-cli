@@ -24,7 +24,7 @@ import {
   isJsMapFilePath,
   warn
 } from './utils';
-import { ValidationError } from '../ValidationError';
+import { throwAsUserFriendlyErrnoException } from '../userFriendlyErrors';
 
 export type SourceMapInjectOptions = {
   directory: string;
@@ -49,7 +49,7 @@ export async function runSourcemapInject(options: SourceMapInjectOptions) {
   try {
     filePaths = await readdirRecursive(directory);
   } catch (err) {
-    throwDirectoryValidationError(err, directory);
+    throwDirectoryReadError(err, directory);
   }
 
   const jsFilePaths = filePaths.filter(isJsFilePath);
@@ -62,14 +62,14 @@ export async function runSourcemapInject(options: SourceMapInjectOptions) {
    */
   const injectedJsFilePaths = [];
   for (const jsFilePath of jsFilePaths) {
-    const matchingSourceMapFilePath = await discoverJsMapFilePath(jsFilePath, jsMapFilePaths);
+    const matchingSourceMapFilePath = await discoverJsMapFilePath(jsFilePath, jsMapFilePaths, options);
     if (!matchingSourceMapFilePath) {
       info(`No source map was detected for ${jsFilePath}.  Skipping injection.`);
       continue;
     }
 
-    const sourceMapId = await computeSourceMapId(matchingSourceMapFilePath);
-    await injectFile(jsFilePath, sourceMapId, options.dryRun);
+    const sourceMapId = await computeSourceMapId(matchingSourceMapFilePath, options);
+    await injectFile(jsFilePath, sourceMapId, options);
 
     injectedJsFilePaths.push(jsFilePath);
   }
@@ -91,12 +91,14 @@ export async function runSourcemapInject(options: SourceMapInjectOptions) {
 
 }
 
-function throwDirectoryValidationError(err: unknown, directory: string): never {
-  if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-    throw new ValidationError(`${directory} does not exist`);
-  } else if ((err as NodeJS.ErrnoException).code === 'ENOTDIR') {
-    throw new ValidationError(`${directory} is not a directory`);
-  } else {
-    throw err;
-  }
+function throwDirectoryReadError(err: unknown, directory: string): never {
+  throwAsUserFriendlyErrnoException(
+    err,
+    {
+      EACCES: `Failed to inject JavaScript files in "${directory} because of missing permissions.\nMake sure that the CLI tool will have "read" and "write" access to the directory and all files inside it, then rerun the inject command.`,
+      ENOENT: `Unable to start the inject command because the directory "${directory}" does not exist.\nMake sure the correct path is being passed to --directory, then rerun the inject command.`,
+      ENOTDIR: `Unable to start the inject command because the path "${directory}" is not a directory.\nMake sure a valid directory path is being passed to --directory, then rerun the inject command.`,
+    }
+  );
 }
+

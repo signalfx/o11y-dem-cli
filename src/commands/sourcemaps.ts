@@ -16,7 +16,8 @@
 
 import { Command } from 'commander';
 import { runSourcemapInject } from '../sourcemaps';
-import { ValidationError } from '../ValidationError';
+import { debug, error } from '../sourcemaps/utils';
+import { UserFriendlyError } from '../sourcemaps/userFriendlyError';
 
 export const sourcemapsCommand = new Command('sourcemaps');
 
@@ -40,11 +41,14 @@ sourcemapsCommand
       try {
         await runSourcemapInject(options);
       } catch (e) {
-        if (e instanceof ValidationError) {
-          sourcemapsCommand.error(`error: ${e.message}`);
+        if (e instanceof UserFriendlyError) {
+          debug(e.originalError);
+          error(e.message);
         } else {
-          throw e;
+          error('Exiting due to an unexpected error:');
+          error(e);
         }
+        sourcemapsCommand.error('');
       }
     }
   );
