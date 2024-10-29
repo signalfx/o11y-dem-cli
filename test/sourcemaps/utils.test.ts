@@ -105,6 +105,10 @@ describe('injectFile', () => {
     mock.method(filesystem, 'makeReadStream', () => Readable.from(lines.join('\n')));
   }
 
+  function mockJsFileContentBeforeInjectionRaw(content: string) {
+    mock.method(filesystem, 'makeReadStream', () => Readable.from(content));
+  }
+
   function mockJsFileOverwrite() {
     return mock.method(filesystem, 'overwriteFileContents', () => { /* noop */ });
   }
@@ -157,6 +161,29 @@ describe('injectFile', () => {
     deepEqual(mockOverwriteFn.mock.calls[0].arguments[1], [
       'line 1',
       'line 2',
+      `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
+      '//# sourceMappingURL=file.js.map'
+    ]);
+  });
+
+  it('will not strip out extra lines or whitespace characters', async () => {
+    mockJsFileContentBeforeInjectionRaw(
+      `\n\n\nline   4\n\n  line6\n  line7  \n\nline9  \n//# sourceMappingURL=file.js.map`
+    );
+    const mockOverwriteFn = mockJsFileOverwrite();
+
+    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', false);
+
+    deepEqual(mockOverwriteFn.mock.calls[0].arguments[1], [
+      '',
+      '',
+      '',
+      'line   4',
+      '',
+      '  line6',
+      '  line7  ',
+      '',
+      'line9  ',
       `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
       '//# sourceMappingURL=file.js.map'
     ]);
