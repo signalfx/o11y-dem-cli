@@ -14,131 +14,13 @@
  * limitations under the License.
 */
 
-import { equal, deepEqual, fail } from 'node:assert/strict';
-import { Readable } from 'node:stream';
-import { afterEach, describe, it, mock } from 'node:test';
-import { computeSourceMapId, discoverJsMapFilePath, injectFile } from '../../src/sourcemaps/utils';
+import { describe, it, mock } from 'node:test';
 import * as filesystem from '../../src/filesystem';
-import { SourceMapInjectOptions } from '../../src/sourcemaps';
+import { Readable } from 'node:stream';
+import { injectFile } from '../../src/sourcemaps/injectFile';
+import { deepEqual, equal, fail } from 'node:assert/strict';
 import { UserFriendlyError } from '../../src/userFriendlyErrors';
-
-describe('discoverJsMapFilePath', () => {
-  function mockJsFileContents(contents: string) {
-    mock.method(filesystem, 'makeReadStream', () => Readable.from(contents));
-  }
-
-  function mockJsFileError() {
-    mock.method(filesystem, 'readlines',
-      () => throwErrnoException('EACCES')
-    );
-  }
-
-  afterEach(() => {
-    mock.restoreAll();
-    mock.reset();
-  });
-
-  const opts = getMockCommandOptions();
-
-  it('should return a match if we already know the file name with ".map" is present in the directory', async () => {
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/file.js.map' ], opts);
-    equal(path, 'path/to/file.js.map');
-  });
-
-  it('should return a match if "//# sourceMappingURL=" comment has a relative path', async () => {
-    mockJsFileContents('//# sourceMappingURL=mappings/file.js.map\n');
-
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/mappings/file.js.map' ], opts);
-
-    equal(path, 'path/to/mappings/file.js.map');
-  });
-
-  it('should return a match if "//# sourceMappingURL=" comment has a relative path with ..', async () => {
-    mockJsFileContents('//# sourceMappingURL=../mappings/file.js.map\n');
-
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/mappings/file.js.map' ], opts);
-
-    equal(path, 'path/mappings/file.js.map');
-  });
-
-  it('should not return a match if "//# sourceMappingURL=" comment points to a file outside of our directory', async () => {
-    mockJsFileContents('//# sourceMappingURL=../../../some/other/folder/file.js.map');
-
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/mappings/file.js.map' ], opts);
-
-    equal(path, null);
-  });
-
-  it('should not return a match if "//# sourceMappingURL=" comment has a data URL', async () => {
-    mockJsFileContents('//# sourceMappingURL=data:application/json;base64,abcd\n');
-
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/data:application/json;base64,abcd' ], opts);
-
-    equal(path, null);
-  });
-
-  it('should not return a match if "//# sourceMappingURL=" comment has an HTTP URL', async () => {
-    mockJsFileContents('//# sourceMappingURL=http://www.splunk.com/dist/file.js.map\n');
-
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/http://www.splunk.com/dist/file.js.map' ], opts);
-
-    equal(path, null);
-  });
-
-  it('should not return a match if "//# sourceMappingURL=" comment has an HTTPS URL', async () => {
-    mockJsFileContents('//# sourceMappingURL=https://www.splunk.com/dist/file.js.map\n');
-
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/https://www.splunk.com/dist/file.js.map' ], opts);
-
-    equal(path, null);
-  });
-
-  it('should not return a match if file is not already known and sourceMappingURL comment is absent', async () => {
-    mockJsFileContents('console.log("hello world!");');
-
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'file.map.js' ], opts);
-
-    equal(path, null);
-  });
-
-  it('should throw UserFriendlyError when file operations fail due to known error code', async () => {
-    mockJsFileContents('console.log("hello world!");');
-
-    mockJsFileError();
-
-    try {
-      await discoverJsMapFilePath('path/to/file.js', [], opts);
-      fail('no error was thrown');
-    } catch (e) {
-      equal(e instanceof UserFriendlyError, true);
-    }
-  });
-});
-
-describe('computeSourceMapId', () => {
-  const opts = getMockCommandOptions();
-
-  it('should return truncated sha256 formatted like a GUID', async () => {
-    mock.method(filesystem, 'makeReadStream', () => Readable.from([
-      'line 1\n',
-      'line 2\n'
-    ]));
-
-    const sourceMapId = await computeSourceMapId('file.js.map', opts);
-    equal(sourceMapId, '90605548-63a6-2b9d-b5f7-26216876654e');
-  });
-
-  it('should throw UserFriendlyError when file operations fail due to known error code', async () => {
-    mock.method(filesystem, 'makeReadStream', () => throwErrnoException('EACCES'));
-
-    try {
-      await computeSourceMapId('file.js.map', opts);
-      fail('no error was thrown');
-    } catch (e) {
-      equal(e instanceof UserFriendlyError, true);
-    }
-  });
-});
+import { SourceMapInjectOptions } from '../../src/sourcemaps';
 
 describe('injectFile', () => {
   function mockJsFileContentBeforeInjection(lines: string[]) {

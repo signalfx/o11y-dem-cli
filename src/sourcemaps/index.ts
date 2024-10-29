@@ -16,15 +16,15 @@
 
 import { cleanupTemporaryFiles, readdirRecursive } from '../filesystem';
 import {
-  computeSourceMapId,
-  discoverJsMapFilePath,
   info,
-  injectFile,
   isJsFilePath,
   isJsMapFilePath,
   warn
 } from './utils';
 import { throwAsUserFriendlyErrnoException } from '../userFriendlyErrors';
+import { discoverJsMapFilePath } from './discoverJsMapFilePath';
+import { computeSourceMapId } from './computeSourceMapId';
+import { injectFile } from './injectFile';
 
 export type SourceMapInjectOptions = {
   directory: string;
