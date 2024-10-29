@@ -176,7 +176,7 @@ export async function injectFile(jsFilePath: string, sourceMapId: string, dryRun
    * Write to the file system
    */
   debug(`injecting sourceMapId ${sourceMapId} into ${jsFilePath}`);
-  overwriteFileContents(jsFilePath, lines);
+  await overwriteFileContents(jsFilePath, lines);
 }
 
 function getCodeSnippet(sourceMapId: string): string {
