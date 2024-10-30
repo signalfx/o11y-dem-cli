@@ -36,7 +36,7 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
 
   formData.append('symbolFile', fs.createReadStream(file)); // Assuming 'file' is the field name for the file upload
 
-  for (const [key, value] of Object.entries(parameters)) {
+  for (const [ key, value ] of Object.entries(parameters)) {
     formData.append(key, value);
   }
 
