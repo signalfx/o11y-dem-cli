@@ -22,9 +22,8 @@ interface UploadOptions {
   url: string;
   file: string;
   parameters: { [key: string]: string | number }; 
-  onProgress: (progress: number) => void;
+  onProgress: (progressInfo: { progress: number; loaded: number; total: number }) => void;
 }
-
 
 // This uploadFile method will be used by all the different commands that want to upload various types of
 // symbolication files to o11y cloud. The url, file, and additional parameters are to be prepared by the
@@ -47,8 +46,10 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
       ...formData.getHeaders(),
     },
     onUploadProgress: (progressEvent) => {
-      const progress = Math.round((progressEvent.loaded * 100) / fileSizeInBytes);
-      onProgress(progress);
+      const loaded = progressEvent.loaded;
+      const total = progressEvent.total || fileSizeInBytes;
+      const progress = (loaded / total) * 100;
+      onProgress({ progress, loaded, total });
     },
   });
 
