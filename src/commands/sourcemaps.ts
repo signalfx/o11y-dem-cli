@@ -17,7 +17,7 @@
 import { Command } from 'commander';
 import { runSourcemapInject } from '../sourcemaps';
 import { debug, error } from '../sourcemaps/utils';
-import { UserFriendlyError } from '../userFriendlyErrors';
+import { UserFriendlyError } from '../utils/userFriendlyErrors';
 
 export const sourcemapsCommand = new Command('sourcemaps');
 

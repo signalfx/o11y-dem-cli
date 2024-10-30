@@ -15,7 +15,7 @@
 */
 
 import { SourceMapInjectOptions } from './index';
-import { throwAsUserFriendlyErrnoException } from '../userFriendlyErrors';
+import { throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
 
 export const SOURCE_MAPPING_URL_COMMENT_PREFIX = '//# sourceMappingURL=';
 export const SNIPPET_PREFIX = `;/* olly sourcemaps inject */`;

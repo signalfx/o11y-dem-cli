@@ -21,7 +21,7 @@ import {
   isJsMapFilePath,
   warn
 } from './utils';
-import { throwAsUserFriendlyErrnoException } from '../userFriendlyErrors';
+import { throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
 import { discoverJsMapFilePath } from './discoverJsMapFilePath';
 import { computeSourceMapId } from './computeSourceMapId';
 import { injectFile } from './injectFile';

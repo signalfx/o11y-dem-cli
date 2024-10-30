@@ -19,7 +19,7 @@ import * as filesystem from '../../src/utils/filesystem';
 import { Readable } from 'node:stream';
 import { computeSourceMapId } from '../../src/sourcemaps/computeSourceMapId';
 import { equal, fail } from 'node:assert/strict';
-import { UserFriendlyError } from '../../src/userFriendlyErrors';
+import { UserFriendlyError } from '../../src/utils/userFriendlyErrors';
 import { SourceMapInjectOptions } from '../../src/sourcemaps';
 
 describe('computeSourceMapId', () => {

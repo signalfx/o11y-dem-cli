@@ -15,7 +15,7 @@
 */
 
 import { describe, it } from 'node:test';
-import { throwAsUserFriendlyErrnoException, UserFriendlyError } from '../src/userFriendlyErrors';
+import { throwAsUserFriendlyErrnoException, UserFriendlyError } from '../src/utils/userFriendlyErrors';
 import { equal, fail } from 'node:assert/strict';
 
 describe('throwAsUserFriendlyErrnoException', () => {

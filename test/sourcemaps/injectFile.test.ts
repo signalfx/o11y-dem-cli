@@ -19,7 +19,7 @@ import * as filesystem from '../../src/utils/filesystem';
 import { Readable } from 'node:stream';
 import { injectFile } from '../../src/sourcemaps/injectFile';
 import { deepEqual, equal, fail } from 'node:assert/strict';
-import { UserFriendlyError } from '../../src/userFriendlyErrors';
+import { UserFriendlyError } from '../../src/utils/userFriendlyErrors';
 import { SourceMapInjectOptions } from '../../src/sourcemaps';
 
 describe('injectFile', () => {
