@@ -20,54 +20,37 @@ import FormData from 'form-data';
 
 interface UploadOptions {
   url: string;
-  file: { [key: string]: string };
+  file: string;
   parameters: { [key: string]: string | number }; 
   onProgress: (progress: number) => void;
 }
 
+
 // This uploadFile method will be used by all the different commands that want to upload various types of
 // symbolication files to o11y cloud. The url, file, and additional parameters are to be prepared by the
-// calling method. Since the API contracts with the backend are not yet determined. This is subject to change
+// calling method. Various errors, Error, axiosErrors and all should be handled by the caller of this method.
+// Since the API contracts with the backend are not yet determined. This is subject to change
 
 export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOptions): Promise<void> => {
-  try {
-    const formData = new FormData();
+  const formData = new FormData();
 
-    for (const [ fieldName, filePath ] of Object.entries(file)) {
-      formData.append(fieldName, fs.createReadStream(filePath));
-    }
+  formData.append('symbolFile', fs.createReadStream(file)); // Assuming 'file' is the field name for the file upload
 
-    for (const [ key, value ] of Object.entries(parameters)) {
-      formData.append(key, value);
-    }
-
-    const fileSizeInBytes = fs.statSync(Object.values(file)[0]).size;
-
-    const response = await axios.post(url, formData, {
-      headers: {
-        ...formData.getHeaders(),
-      },
-      onUploadProgress: (progressEvent) => {
-        const progress = Math.round((progressEvent.loaded * 100) / fileSizeInBytes);
-        onProgress(progress);
-      },
-    });
-
-    console.log('Upload successful:', response.data);
-  } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      console.error('Axios error message:', error.message);
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-        console.error('Response headers:', error.response.headers);
-      } else if (error.request) {
-        console.error('Request data:', error.request);
-      }
-    } else if (error instanceof Error) {
-      console.error('Unexpected error:', error.message);
-    } else {
-      console.error('Unknown error:', error);
-    }
+  for (const [key, value] of Object.entries(parameters)) {
+    formData.append(key, value);
   }
+
+  const fileSizeInBytes = fs.statSync(file).size; 
+
+  const response = await axios.post(url, formData, {
+    headers: {
+      ...formData.getHeaders(),
+    },
+    onUploadProgress: (progressEvent) => {
+      const progress = Math.round((progressEvent.loaded * 100) / fileSizeInBytes);
+      onProgress(progress);
+    },
+  });
+
+  console.log('Upload successful:', response.data);
 };
