@@ -33,12 +33,10 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
   try {
     const formData = new FormData();
 
-    // Append files to FormData
     for (const [fieldName, filePath] of Object.entries(file)) {
       formData.append(fieldName, fs.createReadStream(filePath));
     }
 
-    // Append additional parameters
     for (const [key, value] of Object.entries(parameters)) {
       formData.append(key, value);
     }
