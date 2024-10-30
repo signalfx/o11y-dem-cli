@@ -34,7 +34,7 @@ interface UploadOptions {
 export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOptions): Promise<void> => {
   const formData = new FormData();
 
-  formData.append('symbolFile', fs.createReadStream(file)); // Assuming 'file' is the field name for the file upload
+  formData.append('symbolFile', fs.createReadStream(file));
 
   for (const [ key, value ] of Object.entries(parameters)) {
     formData.append(key, value);
