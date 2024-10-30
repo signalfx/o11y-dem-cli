@@ -14,7 +14,7 @@
  * limitations under the License.
 */
 
-import { cleanupTemporaryFiles, readdirRecursive } from '../filesystem';
+import { cleanupTemporaryFiles, readdirRecursive } from '../utils/filesystem';
 import {
   info,
   isJsFilePath,

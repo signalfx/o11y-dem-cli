@@ -15,7 +15,7 @@
 */
 
 import { describe, it, mock } from 'node:test';
-import * as filesystem from '../../src/filesystem';
+import * as filesystem from '../../src/utils/filesystem';
 import { Readable } from 'node:stream';
 import { injectFile } from '../../src/sourcemaps/injectFile';
 import { deepEqual, equal, fail } from 'node:assert/strict';

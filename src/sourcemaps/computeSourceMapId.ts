@@ -16,7 +16,7 @@
 
 import { SourceMapInjectOptions } from './index';
 import { createHash } from 'node:crypto';
-import { makeReadStream } from '../filesystem';
+import { makeReadStream } from '../utils/filesystem';
 import { throwJsMapFileReadError } from './utils';
 
 /**
