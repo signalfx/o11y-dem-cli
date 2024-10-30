@@ -14,14 +14,14 @@
  * limitations under the License.
 */
 
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import fs from 'fs';
 import FormData from 'form-data';
 
 interface UploadOptions {
   url: string;
   file: { [key: string]: string };
-  parameters: { [key: string]: any }; 
+  parameters: { [key: string]: string | number }; 
   onProgress: (progress: number) => void;
 }
 
@@ -33,11 +33,11 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
   try {
     const formData = new FormData();
 
-    for (const [fieldName, filePath] of Object.entries(file)) {
+    for (const [ fieldName, filePath ] of Object.entries(file)) {
       formData.append(fieldName, fs.createReadStream(filePath));
     }
 
-    for (const [key, value] of Object.entries(parameters)) {
+    for (const [ key, value ] of Object.entries(parameters)) {
       formData.append(key, value);
     }
 
