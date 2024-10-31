@@ -15,7 +15,7 @@
 */
 
 import { SourceMapInjectOptions } from './index';
-import { makeReadStream, overwriteFileContents, readlines } from '../utils/fileSystem';
+import { makeReadStream, overwriteFileContents, readlines } from '../utils/filesystem';
 import {
   debug,
   info,
