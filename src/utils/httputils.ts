@@ -18,14 +18,17 @@ import axios from 'axios';
 import fs from 'fs';
 import FormData from 'form-data';
 
+interface FileUpload {
+  filePath: string;
+  fieldName: string;
+}
+
 interface UploadOptions {
   url: string;
-  file: string;
+  file: FileUpload;
   parameters: { [key: string]: string | number }; 
   onProgress: (progressInfo: { progress: number; loaded: number; total: number }) => void;
 }
-
-const FILE_FIELD_NAME = 'symbolFile';
 
 // This uploadFile method will be used by all the different commands that want to upload various types of
 // symbolication files to o11y cloud. The url, file, and additional parameters are to be prepared by the
@@ -35,13 +38,13 @@ const FILE_FIELD_NAME = 'symbolFile';
 export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOptions): Promise<void> => {
   const formData = new FormData();
 
-  formData.append(FILE_FIELD_NAME, fs.createReadStream(file));
+  formData.append(file.fieldName, fs.createReadStream(file.filePath));
 
   for (const [ key, value ] of Object.entries(parameters)) {
     formData.append(key, value);
   }
 
-  const fileSizeInBytes = fs.statSync(file).size; 
+  const fileSizeInBytes = fs.statSync(file.filePath).size;
 
   const response = await axios.post(url, formData, {
     headers: {
