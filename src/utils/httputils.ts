@@ -25,6 +25,8 @@ interface UploadOptions {
   onProgress: (progressInfo: { progress: number; loaded: number; total: number }) => void;
 }
 
+const FILE_FIELD_NAME = 'symbolFile';
+
 // This uploadFile method will be used by all the different commands that want to upload various types of
 // symbolication files to o11y cloud. The url, file, and additional parameters are to be prepared by the
 // calling method. Various errors, Error, axiosErrors and all should be handled by the caller of this method.
@@ -33,7 +35,7 @@ interface UploadOptions {
 export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOptions): Promise<void> => {
   const formData = new FormData();
 
-  formData.append('symbolFile', fs.createReadStream(file));
+  formData.append(FILE_FIELD_NAME, fs.createReadStream(file));
 
   for (const [ key, value ] of Object.entries(parameters)) {
     formData.append(key, value);
