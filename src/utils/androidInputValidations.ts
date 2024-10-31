@@ -1,0 +1,38 @@
+/*
+ * Copyright Splunk Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
+
+import fs from 'fs';
+import path from 'path';
+
+// Check if a file exists and is of the correct type
+export const isValidFile = (filePath: string, expectedExtension: string): boolean => {
+  const ext = path.extname(filePath);
+  return fs.existsSync(filePath) && ext === expectedExtension;
+};
+
+// Validate applicationID (should be a non-empty string)
+export const isValidAppId = (appId: string): boolean => typeof appId === 'string' && appId.length > 0;
+
+// Validate app versionCode (should be an integer or a string representation of a integer)
+export const isValidVersionCode = (versionCode: string): boolean => {
+  return typeof versionCode === 'number' || 
+           (typeof versionCode === 'string' && !isNaN(Number(versionCode)));
+};
+
+// Validate UUID (should be a string)
+export const isValidUUID = (uuid: string | undefined): boolean => {
+  return uuid !== undefined && typeof uuid === 'string' && uuid.length > 0;
+};

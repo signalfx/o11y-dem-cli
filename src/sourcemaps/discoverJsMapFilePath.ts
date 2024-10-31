@@ -15,7 +15,7 @@
 */
 
 import { SourceMapInjectOptions } from './index';
-import { makeReadStream, readlines } from '../utils/filesystem';
+import { makeReadStream, readlines } from '../utils/fileSystem';
 import path from 'node:path';
 import { debug, SOURCE_MAPPING_URL_COMMENT_PREFIX, throwJsFileReadError, warn } from './utils';
 
