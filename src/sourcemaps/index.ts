@@ -29,6 +29,7 @@ import { injectFile } from './injectFile';
 export type SourceMapInjectOptions = {
   directory: string;
   dryRun: boolean;
+  debug?: boolean;
 };
 
 /**
