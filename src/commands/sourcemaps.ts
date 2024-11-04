@@ -15,9 +15,9 @@
 */
 
 import { Command } from 'commander';
-import { runSourcemapInject } from '../sourcemaps';
-import { debug, error } from '../sourcemaps/utils';
+import { runSourcemapInject, SourceMapInjectOptions } from '../sourcemaps';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
+import { createLogger, LogLevel } from '../utils/logger';
 
 export const sourcemapsCommand = new Command('sourcemaps');
 
@@ -52,24 +52,28 @@ sourcemapsCommand
   .description(injectDescription)
   .requiredOption(
     '--directory <path>',
-    'Path to the directory containing your both JavaScript files and source map files (required)'
+    'Path to the directory containing your production JavaScript bundles and their source maps'
   )
   .option(
     '--dry-run',
-    'Use --dry-run to preview the files that will be injected for the given options, without modifying any files on the file system (optional)',
-    false
+    'Use --dry-run to preview the files that will be injected for the given options, without modifying any files on the file system'
+  )
+  .option(
+    '--debug',
+    'Enable debug logs'
   )
   .action(
-    async (options) => {
+    async (options: SourceMapInjectOptions) => {
+      const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
       try {
         await runSourcemapInject(options);
       } catch (e) {
         if (e instanceof UserFriendlyError) {
-          debug(e.originalError);
-          error(e.message);
+          logger.debug(e.originalError);
+          logger.error(e.message);
         } else {
-          error('Exiting due to an unexpected error:');
-          error(e);
+          logger.error('Exiting due to an unexpected error:');
+          logger.error(e);
         }
         sourcemapsCommand.error('');
       }
