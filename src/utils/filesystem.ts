@@ -20,6 +20,7 @@ import path from 'node:path';
 import readline from 'node:readline';
 import os from 'node:os';
 import { finished } from 'node:stream/promises';
+import { glob } from 'glob';
 
 const TEMP_FILE_EXTENSION: string = '.olly.tmp';
 
@@ -32,18 +33,19 @@ const TEMP_FILE_EXTENSION: string = '.olly.tmp';
  *  - path/to/dist/nested/folder/page1.js
  */
 export async function readdirRecursive(dir: string) {
-  const dirents = await readdir(
-    dir,
-    {
-      encoding: 'utf-8',
-      recursive: true,
-      withFileTypes: true
-    }
-  );
-  const filePaths = dirents
-    .filter(dirent => dirent.isFile())
-    .map(dirent => path.join(dirent.parentPath, dirent.name));
-  return filePaths;
+  // Using 'glob' instead of native 'readdir' due to:
+  //   https://github.com/nodejs/node/issues/48858
+  //   https://github.com/nodejs/node/issues/51773
+
+  // glob does not report some readdir errors (ENOTDIR, EACCES)
+  // that our user should know about, so try reading the dir before running glob
+  await readdir(dir);
+
+  const partialPaths = await glob('**/*', {
+    cwd: dir,
+    nodir: true,
+  });
+  return partialPaths.map(partialPath => path.join(dir, partialPath));
 }
 
 export function readlines(stream: ReadStream): AsyncIterable<string> {
