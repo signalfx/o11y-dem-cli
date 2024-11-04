@@ -19,9 +19,9 @@ import fs from 'fs';
 import { throwAsUserFriendlyErrnoException } from './userFriendlyErrors'; 
 
 interface ManifestData {
-  package: string;
-  versionCode: string;
-  uuid?: string;
+  package: unknown;
+  versionCode: unknown;
+  uuid?: unknown;
 }
 
 export const extractManifestData = async (manifestPath: string): Promise<ManifestData> => {
@@ -29,9 +29,9 @@ export const extractManifestData = async (manifestPath: string): Promise<Manifes
     const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
     const result = await parseStringPromise(manifestContent);
 
-    const packageId = result.manifest.$.package;
-    const versionCode = result.manifest.$['android:versionCode'];
-    const uuid = result.manifest.application[0]['meta-data']?.find((meta: { $: { [key: string]: string } }) => meta.$['android:name'] === 'SPLUNK_O11Y_CUSTOM_UUID')?.$['android:value'];
+    const packageId = extractPackageId(result);
+    const versionCode = extractVersionCode(result);
+    const uuid = extractUuid(result);
 
     return {
       package: packageId,
@@ -47,4 +47,34 @@ export const extractManifestData = async (manifestPath: string): Promise<Manifes
     
     throwAsUserFriendlyErrnoException(error, fileMessages);
   }
+};
+
+/* eslint-disable */
+const extractPackageId = (manifest: any): unknown => {
+  try {
+    return manifest.manifest.$.package;
+  } catch (error) {
+    throw new Error('Failed to extract packageId from the manifest.');
+  }
+};
+
+/* eslint-disable */
+const extractVersionCode = (manifest: any): unknown => {
+  try {
+    return manifest.manifest.$['android:versionCode'];
+  } catch (error) {
+    throw new Error('Failed to extract versionCode from the manifest.');
+  }
+};
+
+/* eslint-disable */
+const extractUuid = (manifest: any): unknown => {
+  const metaData = manifest.manifest.application[0]['meta-data'];
+  if (!metaData) return undefined;
+
+  const uuidMeta = metaData.find((meta: { $: { [key: string]: string } }) =>
+    meta.$['android:name'] === 'SPLUNK_O11Y_CUSTOM_UUID'
+  );
+
+  return uuidMeta ? uuidMeta.$['android:value'] : undefined;
 };

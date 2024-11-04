@@ -18,6 +18,7 @@ import { Command } from 'commander';
 import { extractManifestData } from '../utils/androidManifestUtils';
 import { 
   isValidFile, 
+  hasValidExtension,
   isValidAppId, 
   isValidVersionCode, 
   isValidUUID 
@@ -40,17 +41,29 @@ The application ID, version code, and optional UUID will be extracted from the m
 This command is recommended you want to automate the upload process without manually specifying the application details.
 `;
 
+interface UploadAndroidOptions {
+  'file': string,
+  'appId': string,
+  'versionCode': string,
+  'uuid': string
+}
+
+interface UploadAndroidWithManifestOptions {
+  'file': string,
+  'manifest': string
+}
+
 androidCommand
   .command('upload')
   .showHelpAfterError(true)
-  .usage('--app-id <appId> --version-code <versionCode> --file <file> [--uuid <uuid>]')
+  .usage('--app-id <value> --version-code <int> --file <path> [--uuid <value>]')
   .description(androidUploadDescription)
   .summary(`Uploads the Android mapping.txt file of the given path with provided application ID, version code, and optional UUID`)
-  .requiredOption('--app-id <appId>', 'Application ID')
-  .requiredOption('--version-code <versionCode>', 'Version code')
-  .requiredOption('--file <file>', 'Path to the mapping file')
-  .option('--uuid <uuid>', 'Optional UUID for the upload')
-  .action(async (options) => {
+  .requiredOption('--app-id <value>', 'Application ID')
+  .requiredOption('--version-code <int>', 'Version code')
+  .requiredOption('--file <path>', 'Path to the mapping file')
+  .option('--uuid <value>', 'Optional UUID for the upload')
+  .action(async (options: UploadAndroidOptions) => {
     if (!isValidAppId(options.appId)) {
       throw new UserFriendlyError(null, 'Invalid Application ID. It must be a non-empty string.');
     }
@@ -59,8 +72,12 @@ androidCommand
       throw new UserFriendlyError(null, 'Invalid Version Code. It must be an integer.');
     }
 
-    if (!isValidFile(options.file, '.txt')) {
+    if (!isValidFile(options.file)) {
       throw new UserFriendlyError(null, `Invalid mapping file path: ${options.file}.`);
+    }
+
+    if (!hasValidExtension(options.file, '.txt')) {
+      throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
     }
 
     if (options.uuid && !isValidUUID(options.uuid)) {
@@ -81,18 +98,26 @@ androidCommand
 androidCommand
   .command('upload-with-manifest')
   .showHelpAfterError(true)
-  .usage('--manifest <manifest> --file <file>')
+  .usage('--manifest <path> --file <path>')
   .description(androidUploadWithManifestDescription)
-  .requiredOption('--manifest <manifest>', 'Path to the packaged AndroidManifest.xml file')
-  .requiredOption('--file <file>', 'Path to the mapping.txt file')
-  .action(async (options) => {
+  .requiredOption('--manifest <path>', 'Path to the packaged AndroidManifest.xml file')
+  .requiredOption('--file <path>', 'Path to the mapping.txt file')
+  .action(async (options: UploadAndroidWithManifestOptions) => {
     try {
-      if (!isValidFile(options.file, '.txt')) {
+      if (!isValidFile(options.file)) {
         throw new UserFriendlyError(null, `Invalid mapping file path: ${options.file}.`);
       }
 
-      if (!isValidFile(options.manifest, '.xml')) {
-        throw new UserFriendlyError(null, `Invalid manifest file path: ${options.manifest}.`);
+      if (!hasValidExtension(options.file, '.txt')) {
+        throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
+      }
+
+      if (!isValidFile(options.manifest)) {
+        throw new UserFriendlyError(null, `Invalid manifest file path: ${options.file}.`);
+      }
+
+      if (!hasValidExtension(options.manifest, '.xml')) {
+        throw new UserFriendlyError(null, `Manifest file does not have correct extension: ${options.manifest}.`);
       }
 
       console.log(`Preparing to upload Android mapping file with manifest:

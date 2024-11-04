@@ -17,22 +17,29 @@
 import fs from 'fs';
 import path from 'path';
 
-// Check if a file exists and is of the correct type
-export const isValidFile = (filePath: string, expectedExtension: string): boolean => {
+// Check if a file exists
+export const isValidFile = (filePath: string): boolean => {
+  return fs.existsSync(filePath);
+};
+
+// Check if a file has correct extension type
+export const hasValidExtension = (filePath: string, expectedExtension: string): boolean => {
   const ext = path.extname(filePath);
-  return fs.existsSync(filePath) && ext === expectedExtension;
+  return ext === expectedExtension;
 };
 
 // Validate applicationID (should be a non-empty string)
-export const isValidAppId = (appId: string): boolean => typeof appId === 'string' && appId.length > 0;
+export const isValidAppId = (appId: unknown): appId is string => {
+  return typeof appId ===  'string' && appId.length > 0;
+};
 
 // Validate app versionCode (should be an integer or a string representation of a integer)
-export const isValidVersionCode = (versionCode: string): boolean => {
+export const isValidVersionCode = (versionCode: unknown): boolean => {
   return typeof versionCode === 'number' || 
            (typeof versionCode === 'string' && !isNaN(Number(versionCode)));
 };
 
 // Validate UUID (should be a string)
-export const isValidUUID = (uuid: string | undefined): boolean => {
+export const isValidUUID = (uuid: unknown | undefined): boolean => {
   return uuid !== undefined && typeof uuid === 'string' && uuid.length > 0;
 };
