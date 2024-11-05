@@ -26,21 +26,15 @@ interface Spinner {
   /** Stop sending the spinner animation to stderr */
   stop: () => void;
 
-  /**
-   * Clears the spinner animation's latest frame from stderr.
-   *
-   * If you need to log something else while the spinner is active,
-   * spinner.clear() should be invoked before making any other logging calls.
-   * Otherwise, the output stream will become cluttered with still-frames of the active spinner.
-   */
-  clear: () => void;
+  /** Use this to safely log messages to stdout or stderr while the spinner remains active */
+  interrupt: (writeLogs: () => void) => void;
 }
 
 /**
  * Returns a spinner that can be started, updated, and stopped.
  *
  * Logging to stdout or stderr while the spinner is active can be problematic.
- * If needed, see Spinner.clear()
+ * Use Spinner.interrupt() to handle logging in such cases.
  */
 export function createSpinner(): Spinner {
   const oraSpinner = ora({
@@ -50,8 +44,12 @@ export function createSpinner(): Spinner {
   });
   return {
     start: (text) => oraSpinner.start(text),
-    updateText: (text: string) => oraSpinner.text = text,
+    updateText: (text) => oraSpinner.text = text,
     stop: () => oraSpinner.stop(),
-    clear: () => oraSpinner.clear(),
+    interrupt: (writeLogs) => {
+      oraSpinner.clear();
+      writeLogs();
+      oraSpinner.render();
+    }
   };
 }
