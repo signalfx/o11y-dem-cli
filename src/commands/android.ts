@@ -24,6 +24,7 @@ import {
   isValidUUID 
 } from '../utils/androidInputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
+import { createLogger, LogLevel } from '../utils/logger';
 
 export const androidCommand = new Command('android');
 
@@ -45,12 +46,14 @@ interface UploadAndroidOptions {
   'file': string,
   'appId': string,
   'versionCode': string,
-  'uuid': string
+  'uuid': string,
+  'debug'?: boolean
 }
 
 interface UploadAndroidWithManifestOptions {
   'file': string,
-  'manifest': string
+  'manifest': string,
+  'debug'?: boolean
 }
 
 androidCommand
@@ -63,7 +66,13 @@ androidCommand
   .requiredOption('--version-code <int>', 'Version code')
   .requiredOption('--file <path>', 'Path to the mapping file')
   .option('--uuid <value>', 'Optional UUID for the upload')
+  .option(
+    '--debug',
+    'Enable debug logs'
+  )
   .action(async (options: UploadAndroidOptions) => {
+    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+
     if (!isValidAppId(options.appId)) {
       throw new UserFriendlyError(null, 'Invalid Application ID. It must be a non-empty string.');
     }
@@ -84,7 +93,7 @@ androidCommand
       throw new UserFriendlyError(null, 'Error: Invalid UUID. It must be a non-empty string.');
     }
 
-    console.log(`Preparing to upload Android mapping file:
+    logger.info(`Preparing to upload Android mapping file:
       App ID: ${options.appId}
       Version Code: ${options.versionCode}
       File: ${options.file}
@@ -102,7 +111,13 @@ androidCommand
   .description(androidUploadWithManifestDescription)
   .requiredOption('--manifest <path>', 'Path to the packaged AndroidManifest.xml file')
   .requiredOption('--file <path>', 'Path to the mapping.txt file')
+  .option(
+    '--debug',
+    'Enable debug logs'
+  )
   .action(async (options: UploadAndroidWithManifestOptions) => {
+    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+
     try {
       if (!isValidFile(options.file)) {
         throw new UserFriendlyError(null, `Invalid mapping file path: ${options.file}.`);
@@ -120,7 +135,7 @@ androidCommand
         throw new UserFriendlyError(null, `Manifest file does not have correct extension: ${options.manifest}.`);
       }
 
-      console.log(`Preparing to upload Android mapping file with manifest:
+      logger.info(`Preparing to upload Android mapping file with manifest:
         Manifest: ${options.manifest}
         File: ${options.file}`);
 
@@ -138,7 +153,7 @@ androidCommand
         throw new UserFriendlyError(null, `Invalid UUID extracted from the manifest: ${uuid}.`);
       }
 
-      console.log(`DATA EXTRACTED FROM MANIFEST
+      logger.info(`Mapping file identifier data extracted from Manifest
         UUID: ${uuid || 'Not provided'}
         App ID: ${appId}
         Version Code: ${versionCode}`);
@@ -148,6 +163,8 @@ androidCommand
       console.log(`\nUpload complete!`);
     } catch (err) {
       if (err instanceof UserFriendlyError) {
+        logger.debug(err.originalError);
+        logger.error(err.message);
         throw err; 
       }
     }

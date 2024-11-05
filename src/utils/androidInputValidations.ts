@@ -35,8 +35,8 @@ export const isValidAppId = (appId: unknown): appId is string => {
 
 // Validate app versionCode (should be an integer or a string representation of a integer)
 export const isValidVersionCode = (versionCode: unknown): boolean => {
-  return typeof versionCode === 'number' || 
-           (typeof versionCode === 'string' && !isNaN(Number(versionCode)));
+  return typeof versionCode === 'number' && Number.isInteger(versionCode) || 
+  (typeof versionCode === 'string' && Number.isInteger(Number(versionCode)));
 };
 
 // Validate UUID (should be a string)

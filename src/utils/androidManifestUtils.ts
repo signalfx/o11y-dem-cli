@@ -16,7 +16,7 @@
 
 import { parseStringPromise } from 'xml2js';
 import fs from 'fs';
-import { throwAsUserFriendlyErrnoException } from './userFriendlyErrors'; 
+import { throwAsUserFriendlyErrnoException, UserFriendlyError } from './userFriendlyErrors'; 
 
 interface ManifestData {
   package: unknown;
@@ -54,7 +54,7 @@ const extractPackageId = (manifest: any): unknown => {
   try {
     return manifest.manifest.$.package;
   } catch (error) {
-    throw new Error('Failed to extract packageId from the manifest.');
+    throw new UserFriendlyError(error, "Failed to extract packageId from the manifest.");
   }
 };
 
@@ -62,8 +62,8 @@ const extractPackageId = (manifest: any): unknown => {
 const extractVersionCode = (manifest: any): unknown => {
   try {
     return manifest.manifest.$['android:versionCode'];
-  } catch (error) {
-    throw new Error('Failed to extract versionCode from the manifest.');
+  } catch (error) { 
+    throw new UserFriendlyError(error, 'Failed to extract versionCode from the manifest.');
   }
 };
 
