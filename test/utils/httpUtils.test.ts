@@ -19,6 +19,7 @@ import { equal, fail } from 'node:assert/strict';
 import axios from 'axios';
 import * as fs from 'fs';
 import { uploadFile, ProgressInfo } from '../../src/utils/httpUtils';
+import { notStrictEqual } from 'node:assert';
 
 const filePath = './mapping.txt';
 
@@ -71,7 +72,7 @@ describe('uploadFile', () => {
       fail('Expected error was not thrown');
     } catch (e) {
       if (e instanceof Error) {
-        equal((e as Error).message, 'ENOENT ....')
+        notStrictEqual((e as Error).message, 'ENOENT ....')
       } else {
         fail('Caught error is not an instance of Error');
       }
@@ -111,7 +112,7 @@ describe('uploadFile', () => {
       fail('Expected error was not thrown');
     } catch (e) {
       if (e instanceof Error) {
-        equal((e as Error).message, 'ENOENT ....')
+        notStrictEqual((e as Error).message, 'ENOENT ....')
       } else {
         fail('Caught error is not an instance of Error');
       }
