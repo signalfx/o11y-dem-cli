@@ -15,7 +15,7 @@
 */
 
 import { describe, it, mock } from 'node:test';
-import { equal, fail } from 'node:assert/strict';
+import { equal } from 'node:assert/strict';
 import fs from 'fs';
 import * as utils from '../../src/utils/androidInputValidations';
 
