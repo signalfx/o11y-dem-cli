@@ -165,10 +165,10 @@ androidCommand
       if (err instanceof UserFriendlyError) {
         logger.debug(err.originalError);
         logger.error(err.message);
-        throw err; 
       } else {
         logger.error('Exiting due to an unexpected error:');
         logger.error(err);
       }
+      throw err; 
     }
   });
