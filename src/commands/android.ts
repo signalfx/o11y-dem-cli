@@ -15,31 +15,160 @@
 */
 
 import { Command } from 'commander';
+import { extractManifestData } from '../utils/androidManifestUtils';
+import { 
+  isValidFile, 
+  hasValidExtension,
+  isValidAppId, 
+  isValidVersionCode, 
+  isValidUUID 
+} from '../utils/androidInputValidations';
+import { UserFriendlyError } from '../utils/userFriendlyErrors';
+import { createLogger, LogLevel } from '../utils/logger';
 
 export const androidCommand = new Command('android');
 
+const androidUploadDescription =
+`
+This command uploads the provided mapping.txt file. 
+You need to provide the Application ID and version code of the app, and the path to the mapping file. 
+Optionally, you can also include a UUID to identify the upload session.
+`;
+
+const androidUploadWithManifestDescription =
+`
+This command uploads the provided file using the packaged AndroidManifest.xml file provided. 
+The application ID, version code, and optional UUID will be extracted from the manifest. 
+This command is recommended if you want to automate the upload process without manually specifying the application details.
+`;
+
+interface UploadAndroidOptions {
+  'file': string,
+  'appId': string,
+  'versionCode': string,
+  'uuid': string,
+  'debug'?: boolean
+}
+
+interface UploadAndroidWithManifestOptions {
+  'file': string,
+  'manifest': string,
+  'debug'?: boolean
+}
+
 androidCommand
   .command('upload')
-  .description('Upload an Android mapping file')
-  .requiredOption('--app-id <appId>', 'Application ID')
-  .requiredOption('--version-code <versionCode>', 'Version code')
-  .requiredOption('--file <file>', 'Path to the mapping file')
-  .option('--uuid <uuid>', 'Optional UUID for the upload')
-  .action((options) => {
-    console.log(`Uploading Android mapping file:
+  .showHelpAfterError(true)
+  .usage('--app-id <value> --version-code <int> --file <path> [--uuid <value>]')
+  .description(androidUploadDescription)
+  .summary(`Uploads the Android mapping.txt file of the given path with provided application ID, version code, and optional UUID`)
+  .requiredOption('--app-id <value>', 'Application ID')
+  .requiredOption('--version-code <int>', 'Version code')
+  .requiredOption('--file <path>', 'Path to the mapping file')
+  .option('--uuid <value>', 'Optional UUID for the upload')
+  .option(
+    '--debug',
+    'Enable debug logs'
+  )
+  .action(async (options: UploadAndroidOptions) => {
+    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+
+    if (!isValidAppId(options.appId)) {
+      throw new UserFriendlyError(null, 'Invalid Application ID. It must be a non-empty string.');
+    }
+
+    if (!isValidVersionCode(options.versionCode)) {
+      throw new UserFriendlyError(null, 'Invalid Version Code. It must be an integer.');
+    }
+
+    if (!isValidFile(options.file)) {
+      throw new UserFriendlyError(null, `Invalid mapping file path: ${options.file}.`);
+    }
+
+    if (!hasValidExtension(options.file, '.txt')) {
+      throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
+    }
+
+    if (options.uuid && !isValidUUID(options.uuid)) {
+      throw new UserFriendlyError(null, 'Error: Invalid UUID. It must be a non-empty string.');
+    }
+
+    logger.info(`Preparing to upload Android mapping file:
       App ID: ${options.appId}
       Version Code: ${options.versionCode}
       File: ${options.file}
       UUID: ${options.uuid || 'Not provided'}`);
-  });
+
+    // call uploadFile method with generated URL, path to file, fields and potentially catch any errors and log
   
+    logger.info(`\nUpload complete!`);
+  });
+
 androidCommand
   .command('upload-with-manifest')
-  .description('Upload an Android mapping file with a manifest')
-  .requiredOption('--manifest <manifest>', 'Path to the packaged AndroidManifest.xml file')
-  .requiredOption('--file <file>', 'Path to the mapping.txt file')
-  .action((options) => {
-    console.log(`Uploading Android mapping file with manifest:
-      Manifest: ${options.manifest}
-      File: ${options.file}`);
+  .showHelpAfterError(true)
+  .usage('--manifest <path> --file <path>')
+  .description(androidUploadWithManifestDescription)
+  .requiredOption('--manifest <path>', 'Path to the packaged AndroidManifest.xml file')
+  .requiredOption('--file <path>', 'Path to the mapping.txt file')
+  .option(
+    '--debug',
+    'Enable debug logs'
+  )
+  .action(async (options: UploadAndroidWithManifestOptions) => {
+    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+
+    try {
+      if (!isValidFile(options.file)) {
+        throw new UserFriendlyError(null, `Invalid mapping file path: ${options.file}.`);
+      }
+
+      if (!hasValidExtension(options.file, '.txt')) {
+        throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
+      }
+
+      if (!isValidFile(options.manifest)) {
+        throw new UserFriendlyError(null, `Invalid manifest file path: ${options.file}.`);
+      }
+
+      if (!hasValidExtension(options.manifest, '.xml')) {
+        throw new UserFriendlyError(null, `Manifest file does not have correct extension: ${options.manifest}.`);
+      }
+
+      logger.info(`Preparing to upload Android mapping file with manifest:
+        Manifest: ${options.manifest}
+        File: ${options.file}`);
+
+      const { package: appId, versionCode, uuid } = await extractManifestData(options.manifest);
+
+      if (!isValidAppId(appId)) {
+        throw new UserFriendlyError(null, 'Invalid Application ID extracted from the manifest.');
+      }
+
+      if (!isValidVersionCode(versionCode)) {
+        throw new UserFriendlyError(null, 'Invalid Version Code extracted from the manifest.');
+      }
+
+      if (uuid && !isValidUUID(uuid)) {
+        throw new UserFriendlyError(null, `Invalid UUID extracted from the manifest: ${uuid}.`);
+      }
+
+      logger.info(`Mapping file identifier data extracted from Manifest
+        UUID: ${uuid || 'Not provided'}
+        App ID: ${appId}
+        Version Code: ${versionCode}`);
+
+      // call uploadFile method with generated URL, path to file, fields and potentially catch any errors and log
+
+      logger.info(`\nUpload complete!`);
+    } catch (err) {
+      if (err instanceof UserFriendlyError) {
+        logger.debug(err.originalError);
+        logger.error(err.message);
+      } else {
+        logger.error('Exiting due to an unexpected error:');
+        logger.error(err);
+      }
+      throw err; 
+    }
   });
