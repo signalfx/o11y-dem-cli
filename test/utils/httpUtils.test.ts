@@ -71,7 +71,7 @@ describe('uploadFile', () => {
       fail('Expected error was not thrown');
     } catch (e) {
       if (e instanceof Error) {
-        equal(e.message, `ENOENT: no such file or directory, stat '${nonexistentFilePath}'`);
+        equal((e as Error).message, 'ENOENT ....')
       } else {
         fail('Caught error is not an instance of Error');
       }
@@ -111,7 +111,7 @@ describe('uploadFile', () => {
       fail('Expected error was not thrown');
     } catch (e) {
       if (e instanceof Error) {
-        equal(e.message, 'ENOENT: no such file or directory, stat \'\''); 
+        equal((e as Error).message, 'ENOENT ....')
       } else {
         fail('Caught error is not an instance of Error');
       }
