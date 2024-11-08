@@ -72,7 +72,7 @@ describe('uploadFile', () => {
       fail('Expected error was not thrown');
     } catch (e) {
       if (e instanceof Error) {
-        notStrictEqual((e as Error).message, 'ENOENT ....');
+        equal((e as NodeJS.ErrnoException).code, 'ENOENT');
       } else {
         fail('Caught error is not an instance of Error');
       }
@@ -112,7 +112,7 @@ describe('uploadFile', () => {
       fail('Expected error was not thrown');
     } catch (e) {
       if (e instanceof Error) {
-        notStrictEqual((e as Error).message, 'ENOENT ....');
+        equal((e as NodeJS.ErrnoException).code, 'ENOENT');
       } else {
         fail('Caught error is not an instance of Error');
       }
