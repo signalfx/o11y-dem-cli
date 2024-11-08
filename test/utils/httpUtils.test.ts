@@ -19,7 +19,6 @@ import { equal, fail } from 'node:assert/strict';
 import axios from 'axios';
 import * as fs from 'fs';
 import { uploadFile, ProgressInfo } from '../../src/utils/httpUtils';
-import { notStrictEqual } from 'node:assert';
 
 const filePath = './mapping.txt';
 
