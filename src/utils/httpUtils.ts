@@ -27,7 +27,13 @@ interface UploadOptions {
   url: string;
   file: FileUpload;
   parameters: { [key: string]: string | number }; 
-  onProgress: (progressInfo: { progress: number; loaded: number; total: number }) => void;
+  onProgress?: (progressInfo: { progress: number; loaded: number; total: number }) => void;
+}
+
+export interface ProgressInfo {
+  progress: number;
+  loaded: number;
+  total: number;
 }
 
 // This uploadFile method will be used by all the different commands that want to upload various types of
@@ -54,7 +60,9 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
       const loaded = progressEvent.loaded;
       const total = progressEvent.total || fileSizeInBytes;
       const progress = (loaded / total) * 100;
-      onProgress({ progress, loaded, total });
+      if (onProgress) {
+        onProgress({ progress, loaded, total });
+      }    
     },
   });
 
