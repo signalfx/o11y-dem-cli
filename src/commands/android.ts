@@ -39,7 +39,7 @@ const androidUploadWithManifestDescription =
 `
 This command uploads the provided file using the packaged AndroidManifest.xml file provided. 
 The application ID, version code, and optional UUID will be extracted from the manifest. 
-This command is recommended you want to automate the upload process without manually specifying the application details.
+This command is recommended if you want to automate the upload process without manually specifying the application details.
 `;
 
 interface UploadAndroidOptions {
@@ -101,7 +101,7 @@ androidCommand
 
     // call uploadFile method with generated URL, path to file, fields and potentially catch any errors and log
   
-    console.log(`\nUpload complete!`);
+    logger.info(`\nUpload complete!`);
   });
 
 androidCommand
@@ -160,12 +160,15 @@ androidCommand
 
       // call uploadFile method with generated URL, path to file, fields and potentially catch any errors and log
 
-      console.log(`\nUpload complete!`);
+      logger.info(`\nUpload complete!`);
     } catch (err) {
       if (err instanceof UserFriendlyError) {
         logger.debug(err.originalError);
         logger.error(err.message);
         throw err; 
+      } else {
+        logger.error('Exiting due to an unexpected error:');
+        logger.error(err);
       }
     }
   });
