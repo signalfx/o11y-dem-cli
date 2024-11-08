@@ -52,7 +52,7 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
 
   const fileSizeInBytes = fs.statSync(file.filePath).size;
 
-  const response = await axios.post(url, formData, {
+  await axios.post(url, formData, {
     headers: {
       ...formData.getHeaders(),
     },
@@ -65,6 +65,4 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
       }    
     },
   });
-
-  console.log('Upload successful:', response.data);
 };

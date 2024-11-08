@@ -78,7 +78,7 @@ describe('uploadFile', () => {
     }
   });
 
-  it('should handle axios errors during upload', async () => {
+  it('should throw axios errors during upload', async () => {
     mock.method(axios, 'post', () => {
       return Promise.reject(new Error('Axios error during upload'));
     });
@@ -120,9 +120,7 @@ describe('uploadFile', () => {
       
   it('should upload a file without progress reporting when onProgress is not provided', async () => {
     mock.method(axios, 'post', (url: string, formData: FormData, config: { onUploadProgress: (progress: ProgressInfo) => void }) => {
-      if (config.onUploadProgress) {
-        config.onUploadProgress({ progress: 50, loaded: 500, total: 1000 });
-      }
+      config.onUploadProgress({ progress: 50, loaded: 500, total: 1000 });
       return Promise.resolve({ data: { success: true } });
     });
       
