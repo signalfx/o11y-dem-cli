@@ -15,8 +15,10 @@
   "license": "Apache-2.0",
   "dependencies": {
     "axios": "^1.7.7",
+    "chalk": "^4.1.2",
     "commander": "^12.1.0",
-    "form-data": "^4.0.1"
+    "form-data": "^4.0.1",
+    "ora": "^5.4.1"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^2.9.0",
