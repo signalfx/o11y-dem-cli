@@ -14,26 +14,20 @@
  * limitations under the License.
 */
 
-import { describe, it } from 'node:test';
 import { readdirRecursive } from '../../src/utils/filesystem';
-import { ok } from 'assert';
-import { equal, fail } from 'node:assert/strict';
 
 describe('filesystem.readdirRecursive', () => {
 
-  it('returns relative paths that begin with the input dir', async () => {
+  test('returns relative paths that begin with the input dir', async () => {
     const paths = await readdirRecursive('test');
-    ok(paths.length > 0);
-    ok(paths.every(p => p.startsWith('test')));
+    expect(paths.length).toBeGreaterThan(0);
+    expect(paths.every(p => p.startsWith('test'))).toBe(true);
   });
 
-  it('should throw an error if "dir" is not a directory', async () => {
-    try {
-      await readdirRecursive('package.json');
-      fail('no error thrown');
-    } catch (e) {
-      equal((e as NodeJS.ErrnoException).code, 'ENOTDIR');
-    }
+  test('should throw an error if "dir" is not a directory', async () => {
+    await expect(readdirRecursive('package.json')).rejects.toThrowError(
+      /ENOTDIR/
+    );
   });
 
 });

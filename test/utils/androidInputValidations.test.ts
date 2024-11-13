@@ -14,114 +14,112 @@
  * limitations under the License.
 */
 
-import { describe, it, mock } from 'node:test';
-import { equal } from 'node:assert/strict';
 import fs from 'fs';
 import * as utils from '../../src/utils/androidInputValidations';
 
 describe('Utility functions', () => {
 
   describe('isValidFile', () => {
-    it('should return true if the file exists', () => {
-      mock.method(fs, 'existsSync', () => true);
+    test('should return true if the file exists', () => {
+      jest.spyOn(fs, 'existsSync').mockReturnValue(true);
 
       const result = utils.isValidFile('mapping.txt');
-      equal(result, true);
+      expect(result).toBe(true);
     });
 
-    it('should return false if the file does not exist', () => {
-      mock.method(fs, 'existsSync', () => false);
+    test('should return false if the file does not exist', () => {
+      jest.spyOn(fs, 'existsSync').mockReturnValue(false);
 
       const result = utils.isValidFile('mapping.txt');
-      equal(result, false);
+      expect(result).toBe(false);
     });
   });
 
   describe('hasValidExtension', () => {
-    it('should return true if the file has the correct extension', () => {
+    test('should return true if the file has the correct extension', () => {
       const result = utils.hasValidExtension('mapping.txt', '.txt');
-      equal(result, true);
+      expect(result).toBe(true);
     });
 
-    it('should return false if the file does not have the correct extension', () => {
+    test('should return false if the file does not have the correct extension', () => {
       const result = utils.hasValidExtension('mapping.pdf', '.txt');
-      equal(result, false);
+      expect(result).toBe(false);
     });
 
-    it('should return false if the file has no extension', () => {
+    test('should return false if the file has no extension', () => {
       const result = utils.hasValidExtension('mapping', '.txt');
-      equal(result, false);
+      expect(result).toBe(false);
     });
   });
 
   describe('isValidAppId', () => {
-    it('should return true if the appId is a non-empty string', () => {
+    test('should return true if the appId is a non-empty string', () => {
       const result = utils.isValidAppId('com.example.appId');
-      equal(result, true);
+      expect(result).toBe(true);
     });
 
-    it('should return false if the appId is an empty string', () => {
+    test('should return false if the appId is an empty string', () => {
       const result = utils.isValidAppId('');
-      equal(result, false);
+      expect(result).toBe(false);
     });
 
-    it('should return false if the appId is not a string', () => {
+    test('should return false if the appId is not a string', () => {
       const result = utils.isValidAppId(123);
-      equal(result, false);
+      expect(result).toBe(false);
     });
 
-    it('should return false if the appId is undefined', () => {
+    test('should return false if the appId is undefined', () => {
       const result = utils.isValidAppId(undefined);
-      equal(result, false);
+      expect(result).toBe(false);
     });
   });
 
   describe('isValidVersionCode', () => {
-    it('should return true if the versionCode is an integer', () => {
+    test('should return true if the versionCode is an integer', () => {
       const result = utils.isValidVersionCode(123);
-      equal(result, true);
+      expect(result).toBe(true);
     });
 
-    it('should return true if the versionCode is a string representing an integer', () => {
+    test('should return true if the versionCode is a string representing an integer', () => {
       const result = utils.isValidVersionCode('123');
-      equal(result, true);
+      expect(result).toBe(true);
     });
 
-    it('should return false if the versionCode is a string that does not represent an integer', () => {
+    test('should return false if the versionCode is a string that does not represent an integer', () => {
       const result = utils.isValidVersionCode('abc');
-      equal(result, false);
+      expect(result).toBe(false);
     });
 
-    it('should return false if the versionCode is a floating-point number', () => {
+    test('should return false if the versionCode is a floating-point number', () => {
       const result = utils.isValidVersionCode(12.34);
-      equal(result, false);
+      expect(result).toBe(false);
     });
 
-    it('should return false if the versionCode is a non-numeric string', () => {
+    test('should return false if the versionCode is a non-numeric string', () => {
       const result = utils.isValidVersionCode('12.34');
-      equal(result, false);
+      expect(result).toBe(false);
     });
   });
 
   describe('isValidUUID', () => {
-    it('should return true if the UUID is a non-empty string', () => {
+    test('should return true if the UUID is a non-empty string', () => {
       const result = utils.isValidUUID('mySampleUUID');
-      equal(result, true);
+      expect(result).toBe(true);
     });
 
-    it('should return false if the UUID is an empty string', () => {
+    test('should return false if the UUID is an empty string', () => {
       const result = utils.isValidUUID('');
-      equal(result, false);
+      expect(result).toBe(false);
     });
 
-    it('should return false if the UUID is undefined', () => {
+    test('should return false if the UUID is undefined', () => {
       const result = utils.isValidUUID(undefined);
-      equal(result, false);
+      expect(result).toBe(false);
     });
 
-    it('should return false if the UUID is not a string', () => {
+    test('should return false if the UUID is not a string', () => {
       const result = utils.isValidUUID(123);
-      equal(result, false);
+      expect(result).toBe(false);
     });
   });
 });

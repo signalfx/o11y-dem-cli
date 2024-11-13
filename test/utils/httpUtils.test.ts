@@ -14,11 +14,9 @@
  * limitations under the License.
 */
 
-import { afterEach, beforeEach, describe, it, mock } from 'node:test';
-import { equal, fail } from 'node:assert/strict';
+import { uploadFile } from '../../src/utils/httpUtils'; 
 import axios from 'axios';
 import * as fs from 'fs';
-import { uploadFile, ProgressInfo } from '../../src/utils/httpUtils';
 
 const filePath = './mapping.txt';
 
@@ -35,21 +33,18 @@ afterEach(() => {
 });
 
 describe('uploadFile', () => {
-  
+
   it('should upload a file and report progress', async () => {
-    mock.method(axios, 'post', (url: string, formData: FormData, config: { onUploadProgress: (arg0: { loaded: number; total: number; }) => void; }) => {
-      if (config.onUploadProgress) {
-        config.onUploadProgress({ loaded: 500, total: 1000 });
-      }
-      return Promise.resolve({ data: { success: true } });
+    jest.spyOn(axios, 'post').mockResolvedValue({
+      data: { success: true }
     });
-  
+
     const onProgress = (progressInfo: { progress: unknown; loaded: unknown; total: unknown; }) => {
-      equal(progressInfo.progress, 50);
-      equal(progressInfo.loaded, 500);
-      equal(progressInfo.total, 1000);
+      expect(progressInfo.progress).toBe(50);
+      expect(progressInfo.loaded).toBe(500);
+      expect(progressInfo.total).toBe(1000);
     };
-  
+
     await uploadFile({
       url: 'http://splunko11ycloud.com/upload',
       file: { filePath: 'package.json', fieldName: 'file' },
@@ -57,82 +52,49 @@ describe('uploadFile', () => {
       onProgress
     });
   });
-  
+
   it('should throw error if file reading fails', async () => {
     const nonexistentFilePath = './nonexistentfile.txt';
-    
-    try {
-      await uploadFile({
-        url: 'http://splunko11ycloud.com/upload',
-        file: { filePath: nonexistentFilePath, fieldName: 'file' },
-        parameters: { versionCode: 456 },
-        onProgress: () => {}
-      });
-      fail('Expected error was not thrown');
-    } catch (e) {
-      if (e instanceof Error) {
-        equal((e as NodeJS.ErrnoException).code, 'ENOENT');
-      } else {
-        fail('Caught error is not an instance of Error');
-      }
-    }
+
+    await expect(uploadFile({
+      url: 'http://splunko11ycloud.com/upload',
+      file: { filePath: nonexistentFilePath, fieldName: 'file' },
+      parameters: { versionCode: 456 },
+      onProgress: () => {}
+    })).rejects.toThrowError('ENOENT');
   });
 
   it('should throw axios errors during upload', async () => {
-    mock.method(axios, 'post', () => {
-      return Promise.reject(new Error('Axios error during upload'));
-    });
-      
-    try {
-      await uploadFile({
-        url: 'http://splunko11ycloud.com/upload',
-        file: { filePath: 'mapping.txt', fieldName: 'file' },
-        parameters: { versionCode: '123' },
-        onProgress: () => {}
-      });
-      fail('Expected error was not thrown');
-    } catch (e) {
-      if (e instanceof Error) {
-        equal(e.message, 'Axios error during upload');
-      } else {
-        fail('Caught error is not an instance of Error');
-      }
-    }
+    jest.spyOn(axios, 'post').mockRejectedValue(new Error('Axios error during upload'));
+
+    await expect(uploadFile({
+      url: 'http://splunko11ycloud.com/upload',
+      file: { filePath: 'mapping.txt', fieldName: 'file' },
+      parameters: { versionCode: '123' },
+      onProgress: () => {}
+    })).rejects.toThrowError('Axios error during upload');
   });
 
   it('should throw error if file path is empty', async () => {
-    try {
-      await uploadFile({
-        url: 'http://splunko11ycloud.com/upload',
-        file: { filePath: '', fieldName: 'file' }, 
-        parameters: { versionCode: '123' },
-        onProgress: () => {}
-      });
-      fail('Expected error was not thrown');
-    } catch (e) {
-      if (e instanceof Error) {
-        equal((e as NodeJS.ErrnoException).code, 'ENOENT');
-      } else {
-        fail('Caught error is not an instance of Error');
-      }
-    }
+    await expect(uploadFile({
+      url: 'http://splunko11ycloud.com/upload',
+      file: { filePath: '', fieldName: 'file' },
+      parameters: { versionCode: '123' },
+      onProgress: () => {}
+    })).rejects.toThrowError('ENOENT');
   });
-      
+
   it('should upload a file without progress reporting when onProgress is not provided', async () => {
-    mock.method(axios, 'post', (url: string, formData: FormData, config: { onUploadProgress: (progress: ProgressInfo) => void }) => {
-      config.onUploadProgress({ progress: 50, loaded: 500, total: 1000 });
-      return Promise.resolve({ data: { success: true } });
+    jest.spyOn(axios, 'post').mockResolvedValue({
+      data: { success: true }
     });
-      
-    try {
-      await uploadFile({
-        url: 'http://splunko11ycloud.com/upload',
-        file: { filePath: './mapping.txt', fieldName: 'file' },
-        parameters: { versionCode: '123' },
-        onProgress: undefined,
-      });
-    } catch (e) {
-      fail('Error should not be thrown: ' + e);
-    }
+
+    await expect(uploadFile({
+      url: 'http://splunko11ycloud.com/upload',
+      file: { filePath: './mapping.txt', fieldName: 'file' },
+      parameters: { versionCode: '123' },
+      onProgress: undefined
+    })).resolves.not.toThrow();
   });
 });
+

@@ -14,16 +14,14 @@
  * limitations under the License.
 */
 
-import { describe, it, mock } from 'node:test';
 import { createLogger, LogLevel } from '../../src/utils/logger';
-import { equal, match } from 'node:assert/strict';
 
 describe('createLogger', () => {
 
-  it('should respect log level', () => {
+  test('should respect log level', () => {
     const output: unknown[] = [];
-    mock.method(console, 'log', (arg: unknown) => output.push(arg));
-    mock.method(console, 'error', (arg: unknown) => output.push(arg));
+    const logMock = jest.spyOn(console, 'log').mockImplementation((arg: unknown) => output.push(arg));
+    const errorMock = jest.spyOn(console, 'error').mockImplementation((arg: unknown) => output.push(arg));
 
     const levels = new Map([
       [ LogLevel.ERROR, 'error' ],
@@ -42,45 +40,50 @@ describe('createLogger', () => {
 
     const lines = output.join('\n');
 
-    equal(lines.includes('debug.error'), true);
-    equal(lines.includes('debug.warn'), true);
-    equal(lines.includes('debug.info'), true);
-    equal(lines.includes('debug.debug'), true);
+    expect(lines.includes('debug.error')).toBe(true);
+    expect(lines.includes('debug.warn')).toBe(true);
+    expect(lines.includes('debug.info')).toBe(true);
+    expect(lines.includes('debug.debug')).toBe(true);
 
-    equal(lines.includes('info.error'), true);
-    equal(lines.includes('info.warn'), true);
-    equal(lines.includes('info.info'), true);
-    equal(lines.includes('info.debug'), false);
+    expect(lines.includes('info.error')).toBe(true);
+    expect(lines.includes('info.warn')).toBe(true);
+    expect(lines.includes('info.info')).toBe(true);
+    expect(lines.includes('info.debug')).toBe(false);
 
-    equal(lines.includes('warn.error'), true);
-    equal(lines.includes('warn.warn'), true);
-    equal(lines.includes('warn.info'), false);
-    equal(lines.includes('warn.debug'), false);
+    expect(lines.includes('warn.error')).toBe(true);
+    expect(lines.includes('warn.warn')).toBe(true);
+    expect(lines.includes('warn.info')).toBe(false);
+    expect(lines.includes('warn.debug')).toBe(false);
 
-    equal(lines.includes('error.error'), true);
-    equal(lines.includes('error.warn'), false);
-    equal(lines.includes('error.info'), false);
-    equal(lines.includes('error.debug'), false);
+    expect(lines.includes('error.error')).toBe(true);
+    expect(lines.includes('error.warn')).toBe(false);
+    expect(lines.includes('error.info')).toBe(false);
+    expect(lines.includes('error.debug')).toBe(false);
+
+    logMock.mockRestore();
+    errorMock.mockRestore();
   });
 
   it('should not try to concatenate error objects with the prefix string', () => {
-    const consoleErrorMock = mock.method(console, 'error', () => {});
+    const errorMock = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const logger = createLogger(LogLevel.DEBUG);
     const err = new Error('error');
     logger.error(err);
 
-    equal(consoleErrorMock.mock.calls[0].arguments[1], err);
+    expect(errorMock.mock.calls[0][1]).toBe(err);
+    errorMock.mockRestore();
   });
 
   it('should support format functions like console.log does', () => {
-    const consoleErrorMock = mock.method(console, 'error', () => {});
+    const errorMock = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const logger = createLogger(LogLevel.DEBUG);
     logger.debug('hello %s', 'world');
 
-    match(consoleErrorMock.mock.calls[0].arguments[0], /hello %s/);
-    equal(consoleErrorMock.mock.calls[0].arguments[1], 'world');
+    expect(errorMock.mock.calls[0][0]).toMatch(/hello %s/);
+    expect(errorMock.mock.calls[0][1]).toBe('world');
+    errorMock.mockRestore();
   });
 
-});
+}); 

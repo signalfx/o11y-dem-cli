@@ -17,24 +17,24 @@
 
 import { extractManifestData } from '../../src/utils/androidManifestUtils';
 
-import { describe, it, mock } from 'node:test';
-import { deepEqual } from 'node:assert/strict';
 import fs from 'fs';
 
 describe('extractManifestData', () => {
 
-  it('should extract package, versionCode, and uuid from a valid manifest file', async () => {
+  test('should extract package, versionCode, and uuid from a valid manifest file', async () => {
     
-    mock.method(fs, 'readFileSync', () => `<?xml version="1.0" encoding="utf-8"?>
-    <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app" android:versionCode="1234">
-      <application>
-        <meta-data android:name="SPLUNK_O11Y_CUSTOM_UUID" android:value="unique-uuid-1234"/>
-      </application>
-    </manifest>`);
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(`
+      <?xml version="1.0" encoding="utf-8"?>
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app" android:versionCode="1234">
+        <application>
+          <meta-data android:name="SPLUNK_O11Y_CUSTOM_UUID" android:value="unique-uuid-1234"/>
+        </application>
+      </manifest>
+    `);
 
     const manifestData = await extractManifestData('path/to/manifest.xml');
 
-    deepEqual(manifestData, {
+    expect(manifestData).toEqual({
       package: 'com.example.app',
       versionCode: '1234',
       uuid: 'unique-uuid-1234'

@@ -14,12 +14,11 @@
  * limitations under the License.
 */
 
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
 import { androidCommand } from '../../src/commands/android';
 
 describe('android command', () => {
-  it('has multiple sub-commands', () => {
-    assert.equal(androidCommand.commands.length, 2);
+  test('has multiple sub-commands', () => {
+    expect(androidCommand.commands.length).toBe(2);
   });
 });
+

@@ -14,41 +14,38 @@
  * limitations under the License.
 */
 
-import { describe, it } from 'node:test';
 import { throwAsUserFriendlyErrnoException, UserFriendlyError } from '../src/utils/userFriendlyErrors';
-import { equal, fail } from 'node:assert/strict';
 
 describe('throwAsUserFriendlyErrnoException', () => {
-  it('should throw a UserFriendlyError when it receives a ErrnoException with a matching code in the message lookup table', () => {
+  test('should throw a UserFriendlyError when it receives a ErrnoException with a matching code in the message lookup table', () => {
     const errnoException = getErrnoException('EACCES');
+    expect(() => {
+      throwAsUserFriendlyErrnoException(errnoException, { 'EACCES': 'user-friendly message' });
+    }).toThrowError(UserFriendlyError);
+
     try {
       throwAsUserFriendlyErrnoException(errnoException, { 'EACCES': 'user-friendly message' });
-      fail('no error thrown');
-    } catch (e) {
-      equal(e instanceof UserFriendlyError, true);
-      equal((e as UserFriendlyError).message, 'user-friendly message');
-      equal((e as UserFriendlyError).originalError, errnoException);
+    } catch (e: unknown) {
+      const userFriendlyError = e as UserFriendlyError;
+
+      expect(userFriendlyError).toBeInstanceOf(UserFriendlyError);
+      expect(userFriendlyError.message).toBe('user-friendly message');
+      expect(userFriendlyError.originalError).toBe(errnoException);
     }
   });
 
-  it('should re-throw the given error when it receives an ErrnoException without a matching code in the message lookup table', () => {
+  test('should re-throw the given error when it receives an ErrnoException without a matching code in the message lookup table', () => {
     const errnoException = getErrnoException('OTHER');
-    try {
+    expect(() => {
       throwAsUserFriendlyErrnoException(errnoException, { 'EACCES': 'user-friendly message' });
-      fail('no error thrown');
-    } catch (e) {
-      equal(e, errnoException);
-    }
+    }).toThrowError(errnoException);
   });
 
-  it('should re-throw the given error if it is not an ErrnoException', () => {
+  test('should re-throw the given error if it is not an ErrnoException', () => {
     const error = new Error('a normal JS error');
-    try {
+    expect(() => {
       throwAsUserFriendlyErrnoException(error, { 'EACCES': 'user-friendly message' });
-      fail('no error thrown');
-    } catch (e) {
-      equal(e, error);
-    }
+    }).toThrowError(error);
   });
 });
 
