@@ -173,6 +173,7 @@ describe('injectFile', () => {
       equal(e instanceof UserFriendlyError, true);
     }
   });
+  
 });
 
 function getMockCommandOptions(overrides?: Partial<SourceMapInjectOptions>): SourceMapInjectOptions {
