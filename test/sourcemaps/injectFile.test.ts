@@ -59,7 +59,7 @@ describe('injectFile', () => {
       expect.arrayContaining([
         'line 1',
         'line 2',
-        expect.stringContaining(';/* olly sourcemaps inject */')
+        `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`
       ])
     );
   });
@@ -79,7 +79,7 @@ describe('injectFile', () => {
       expect.arrayContaining([
         'line 1',
         'line 2',
-        expect.stringContaining(';/* olly sourcemaps inject */'),
+        `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
         '//# sourceMappingURL=file.js.map'
       ])
     );
@@ -101,7 +101,7 @@ describe('injectFile', () => {
       expect.arrayContaining([
         'line 1',
         'line 2',
-        expect.stringContaining(';/* olly sourcemaps inject */'),
+        `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
         '//# sourceMappingURL=file.js.map'
       ])
     );
@@ -127,7 +127,7 @@ describe('injectFile', () => {
         '  line7  ',
         '',
         'line9  ',
-        expect.stringContaining(';/* olly sourcemaps inject */'),
+        `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
         '//# sourceMappingURL=file.js.map'
       ])
     );
