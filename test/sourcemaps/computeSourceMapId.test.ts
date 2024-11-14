@@ -14,36 +14,37 @@
  * limitations under the License.
 */
 
-import { describe, it, mock } from 'node:test';
 import * as filesystem from '../../src/utils/filesystem';
 import { Readable } from 'node:stream';
 import { computeSourceMapId } from '../../src/sourcemaps/computeSourceMapId';
-import { equal, fail } from 'node:assert/strict';
 import { UserFriendlyError } from '../../src/utils/userFriendlyErrors';
 import { SourceMapInjectOptions } from '../../src/sourcemaps';
+import * as fs from 'fs';
 
 describe('computeSourceMapId', () => {
   const opts = getMockCommandOptions();
 
-  it('should return truncated sha256 formatted like a GUID', async () => {
-    mock.method(filesystem, 'makeReadStream', () => Readable.from([
-      'line 1\n',
-      'line 2\n'
-    ]));
+  test('should return truncated sha256 formatted like a GUID', async () => {
+    const mockReadStream = new Readable() as unknown as fs.ReadStream;
 
+    mockReadStream.path = 'file.js.map';
+    mockReadStream.bytesRead = 0;
+    mockReadStream.close = jest.fn();
+    
+    mockReadStream._read = jest.fn();
+    mockReadStream.push('line 1\n');
+    mockReadStream.push('line 2\n');
+    mockReadStream.push(null);
+
+    jest.spyOn(filesystem, 'makeReadStream').mockReturnValue(mockReadStream);
     const sourceMapId = await computeSourceMapId('file.js.map', opts);
-    equal(sourceMapId, '90605548-63a6-2b9d-b5f7-26216876654e');
+    expect(sourceMapId).toBe('90605548-63a6-2b9d-b5f7-26216876654e');
   });
 
-  it('should throw UserFriendlyError when file operations fail due to known error code', async () => {
-    mock.method(filesystem, 'makeReadStream', () => throwErrnoException('EACCES'));
+  test('should throw UserFriendlyError when file operations fail due to known error code', async () => {
+    jest.spyOn(filesystem, 'makeReadStream').mockImplementation(() => throwErrnoException('EACCES'));
 
-    try {
-      await computeSourceMapId('file.js.map', opts);
-      fail('no error was thrown');
-    } catch (e) {
-      equal(e instanceof UserFriendlyError, true);
-    }
+    await expect(computeSourceMapId('file.js.map', opts)).rejects.toThrowError(UserFriendlyError);
   });
 });
 
