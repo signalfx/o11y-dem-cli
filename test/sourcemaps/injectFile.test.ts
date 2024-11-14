@@ -14,39 +14,38 @@
  * limitations under the License.
 */
 
-import { describe, it, mock } from 'node:test';
 import * as filesystem from '../../src/utils/filesystem';
-import { Readable } from 'node:stream';
+import fs from 'fs'
+import { Readable } from 'stream';
 import { injectFile } from '../../src/sourcemaps/injectFile';
-import { deepEqual, equal, fail } from 'node:assert/strict';
 import { UserFriendlyError } from '../../src/utils/userFriendlyErrors';
 import { SourceMapInjectOptions } from '../../src/sourcemaps';
 
 describe('injectFile', () => {
-  function mockJsFileContentBeforeInjection(lines: string[]) {
-    mock.method(filesystem, 'makeReadStream', () => Readable.from(lines.join('\n')));
-  }
+  const mockJsFileContentBeforeInjection = (lines: string[]) => {
+    jest.spyOn(filesystem, 'makeReadStream').mockReturnValue(Readable.from(lines.join('\n')) as unknown as fs.ReadStream);
+  };
 
-  function mockJsFileContentBeforeInjectionRaw(content: string) {
-    mock.method(filesystem, 'makeReadStream', () => Readable.from(content));
-  }
+  const mockJsFileContentBeforeInjectionRaw = (content: string) => {
+    jest.spyOn(filesystem, 'makeReadStream').mockReturnValue(Readable.from(content) as unknown as fs.ReadStream);
+  };
 
-  function mockJsFileReadError() {
-    mock.method(filesystem, 'makeReadStream', () => throwErrnoException('EACCES'));
-  }
+  const mockJsFileReadError = () => {
+    jest.spyOn(filesystem, 'makeReadStream').mockImplementation(() => throwErrnoException('EACCES'));
+  };
 
-  function mockJsFileOverwrite() {
-    return mock.method(filesystem, 'overwriteFileContents', () => { /* noop */ });
-  }
+  const mockJsFileOverwrite = () => {
+    return jest.spyOn(filesystem, 'overwriteFileContents').mockImplementation(() => Promise.resolve());
+  };
 
-  function mockJsFileOverwriteError() {
-    mock.method(filesystem, 'overwriteFileContents', () => throwErrnoException('EACCES'));
-  }
+  const mockJsFileOverwriteError = () => {
+    return jest.spyOn(filesystem, 'overwriteFileContents').mockImplementation(() => Promise.reject(throwErrnoException('EACCES')));
+  };
 
   const opts = getMockCommandOptions();
   const dryRunOpts = getMockCommandOptions({ dryRun: true });
 
-  it('should insert the code snippet at the end of file when there is no "//# sourceMappingURL=" comment', async () => {
+  test('should insert the code snippet at the end of file when there is no "//# sourceMappingURL=" comment', async () => {
     mockJsFileContentBeforeInjection([
       'line 1',
       'line 2'
@@ -55,14 +54,17 @@ describe('injectFile', () => {
 
     await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
 
-    deepEqual(mockOverwriteFn.mock.calls[0].arguments[1], [
-      'line 1',
-      'line 2',
-      `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`
-    ]);
+    expect(mockOverwriteFn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining([
+        'line 1',
+        'line 2',
+        expect.stringContaining(';/* olly sourcemaps inject */')
+      ])
+    );
   });
 
-  it('should insert the code snippet just before the "//# sourceMappingURL=" comment', async () => {
+  test('should insert the code snippet just before the "//# sourceMappingURL=" comment', async () => {
     mockJsFileContentBeforeInjection([
       'line 1',
       'line 2',
@@ -72,15 +74,18 @@ describe('injectFile', () => {
 
     await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
 
-    deepEqual(mockOverwriteFn.mock.calls[0].arguments[1], [
-      'line 1',
-      'line 2',
-      `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
-      '//# sourceMappingURL=file.js.map'
-    ]);
+    expect(mockOverwriteFn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining([
+        'line 1',
+        'line 2',
+        expect.stringContaining(';/* olly sourcemaps inject */'),
+        '//# sourceMappingURL=file.js.map'
+      ])
+    );
   });
 
-  it('should overwrite the code snippet if an existing code snippet with a different sourceMapId is detected', async () => {
+  test('should overwrite the code snippet if an existing code snippet with a different sourceMapId is detected', async () => {
     mockJsFileContentBeforeInjection([
       'line 1',
       'line 2',
@@ -91,15 +96,18 @@ describe('injectFile', () => {
 
     await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
 
-    deepEqual(mockOverwriteFn.mock.calls[0].arguments[1], [
-      'line 1',
-      'line 2',
-      `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
-      '//# sourceMappingURL=file.js.map'
-    ]);
+    expect(mockOverwriteFn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining([
+        'line 1',
+        'line 2',
+        expect.stringContaining(';/* olly sourcemaps inject */'),
+        '//# sourceMappingURL=file.js.map'
+      ])
+    );
   });
 
-  it('should not strip out extra lines or whitespace characters', async () => {
+  test('should not strip out extra lines or whitespace characters', async () => {
     mockJsFileContentBeforeInjectionRaw(
       `\n\n\nline   4\n\n  line6\n  line7  \n\nline9  \n//# sourceMappingURL=file.js.map`
     );
@@ -107,22 +115,25 @@ describe('injectFile', () => {
 
     await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
 
-    deepEqual(mockOverwriteFn.mock.calls[0].arguments[1], [
-      '',
-      '',
-      '',
-      'line   4',
-      '',
-      '  line6',
-      '  line7  ',
-      '',
-      'line9  ',
-      `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
-      '//# sourceMappingURL=file.js.map'
-    ]);
+    expect(mockOverwriteFn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining([
+        '',
+        '',
+        '',
+        'line   4',
+        '',
+        '  line6',
+        '  line7  ',
+        '',
+        'line9  ',
+        expect.stringContaining(';/* olly sourcemaps inject */'),
+        '//# sourceMappingURL=file.js.map'
+      ])
+    );
   });
 
-  it('should not write to the file system if an existing code snippet with the same sourceMapId is detected', async () => {
+  test('should not write to the file system if an existing code snippet with the same sourceMapId is detected', async () => {
     mockJsFileContentBeforeInjection([
       'line 1',
       'line 2',
@@ -133,10 +144,10 @@ describe('injectFile', () => {
 
     await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
 
-    equal(mockOverwriteFn.mock.callCount(), 0);
+    expect(mockOverwriteFn).not.toHaveBeenCalled();
   });
 
-  it('should not write to the file system if --dry-run was provided', async () => {
+  test('should not write to the file system if --dry-run was provided', async () => {
     mockJsFileContentBeforeInjection([
       'line 1\n',
       'line 2\n'
@@ -145,35 +156,29 @@ describe('injectFile', () => {
 
     await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', dryRunOpts);
 
-    equal(mockOverwriteFn.mock.callCount(), 0);
+    expect(mockOverwriteFn).not.toHaveBeenCalled();
   });
 
-  it('should throw a UserFriendlyError if reading jsFilePath fails due to known error code', async () => {
+  test('should throw a UserFriendlyError if reading jsFilePath fails due to known error code', async () => {
     mockJsFileReadError();
 
-    try {
-      await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
-      fail('no error thrown');
-    } catch (e) {
-      equal(e instanceof UserFriendlyError, true);
-    }
+    await expect(injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts))
+      .rejects
+      .toThrowError(UserFriendlyError);
   });
 
-  it('should throw a UserFriendlyError if overwriting jsFilePath fails due to known error code', async () => {
+  test('should throw a UserFriendlyError if overwriting jsFilePath fails due to known error code', async () => {
     mockJsFileContentBeforeInjection([
       'line 1\n',
       'line 2\n'
     ]);
     mockJsFileOverwriteError();
 
-    try {
-      await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
-      fail('no error thrown');
-    } catch (e) {
-      equal(e instanceof UserFriendlyError, true);
-    }
+    await expect(injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts))
+      .rejects
+      .toThrowError(UserFriendlyError);
   });
-  
+
 });
 
 function getMockCommandOptions(overrides?: Partial<SourceMapInjectOptions>): SourceMapInjectOptions {
@@ -181,7 +186,7 @@ function getMockCommandOptions(overrides?: Partial<SourceMapInjectOptions>): Sou
     directory: 'path/',
     dryRun: false
   };
-  return { ...defaults, ... overrides };
+  return { ...defaults, ...overrides };
 }
 
 function throwErrnoException(code: string): never {

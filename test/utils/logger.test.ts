@@ -64,7 +64,7 @@ describe('createLogger', () => {
     errorMock.mockRestore();
   });
 
-  it('should not try to concatenate error objects with the prefix string', () => {
+  test('should not try to concatenate error objects with the prefix string', () => {
     const errorMock = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const logger = createLogger(LogLevel.DEBUG);
@@ -75,7 +75,7 @@ describe('createLogger', () => {
     errorMock.mockRestore();
   });
 
-  it('should support format functions like console.log does', () => {
+  test('should support format functions like console.log does', () => {
     const errorMock = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const logger = createLogger(LogLevel.DEBUG);

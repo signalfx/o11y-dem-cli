@@ -34,7 +34,7 @@ afterEach(() => {
 
 describe('uploadFile', () => {
 
-  it('should upload a file and report progress', async () => {
+  test('should upload a file and report progress', async () => {
     jest.spyOn(axios, 'post').mockResolvedValue({
       data: { success: true }
     });
@@ -53,7 +53,7 @@ describe('uploadFile', () => {
     });
   });
 
-  it('should throw error if file reading fails', async () => {
+  test('should throw error if file reading fails', async () => {
     const nonexistentFilePath = './nonexistentfile.txt';
 
     await expect(uploadFile({
@@ -64,7 +64,7 @@ describe('uploadFile', () => {
     })).rejects.toThrowError('ENOENT');
   });
 
-  it('should throw axios errors during upload', async () => {
+  test('should throw axios errors during upload', async () => {
     jest.spyOn(axios, 'post').mockRejectedValue(new Error('Axios error during upload'));
 
     await expect(uploadFile({
