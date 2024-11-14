@@ -15,7 +15,7 @@
 */
 
 import * as filesystem from '../../src/utils/filesystem';
-import fs from 'fs'
+import fs from 'fs';
 import { Readable } from 'stream';
 import { injectFile } from '../../src/sourcemaps/injectFile';
 import { UserFriendlyError } from '../../src/utils/userFriendlyErrors';
