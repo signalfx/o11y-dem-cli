@@ -62,7 +62,7 @@ androidCommand
   .showHelpAfterError(true)
   .usage('--app-id <value> --version-code <int> --file <path> [--uuid <value>]')
   .description(androidUploadDescription)
-  .summary(`Uploads the Android mapping.txt file with theprovided application ID, version code, and optional UUID`)
+  .summary(`Uploads the Android mapping.txt file with the provided application ID, version code, and optional UUID`)
   .requiredOption('--app-id <value>', 'Application ID')
   .requiredOption('--version-code <int>', 'Version code')
   .requiredOption('--file <path>', 'Path to the mapping file')
