@@ -108,6 +108,7 @@ androidCommand
   .command('upload-with-manifest')
   .showHelpAfterError(true)
   .usage('--manifest <path> --file <path>')
+  .summary(`Uploads the Android mapping.txt file of the given path with metadata extracted from the AndroidManifest.xml file of the given path`)
   .description(androidUploadWithManifestDescription)
   .requiredOption('--manifest <path>', 'Path to the packaged AndroidManifest.xml file')
   .requiredOption('--file <path>', 'Path to the mapping.txt file')
