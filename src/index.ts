@@ -35,7 +35,7 @@ For each respective command listed below, please run 'o11y-dem-cli <command>' fo
 program
   .version('1.0.0')
   .description(helpDescription)
-  .usage('[ios|android|sourcemaps] [sub-command] [options]')
+  .usage('[ios|android|sourcemaps] [sub-command] [options]');
   
 program.addCommand(iosCommand);
 program.addCommand(androidCommand);
