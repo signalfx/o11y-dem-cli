@@ -37,8 +37,9 @@ Optionally, you can also include a UUID to identify the upload session.
 
 const androidUploadWithManifestDescription =
 `
-This command uploads the provided file using the packaged AndroidManifest.xml file provided. 
-The application ID, version code, and optional UUID will be extracted from the manifest. 
+This command uploads the provided file using the packaged AndroidManifest.xml provided. 
+You need to provide the path to the mapping file, and the path to the AndroidManifest.xml file.
+The application ID, version code, and optional UUID will be extracted from the manifest file. 
 This command is recommended if you want to automate the upload process without manually specifying the application details.
 `;
 
@@ -61,7 +62,7 @@ androidCommand
   .showHelpAfterError(true)
   .usage('--app-id <value> --version-code <int> --file <path> [--uuid <value>]')
   .description(androidUploadDescription)
-  .summary(`Uploads the Android mapping.txt file of the given path with provided application ID, version code, and optional UUID`)
+  .summary(`Uploads the Android mapping.txt file with theprovided application ID, version code, and optional UUID`)
   .requiredOption('--app-id <value>', 'Application ID')
   .requiredOption('--version-code <int>', 'Version code')
   .requiredOption('--file <path>', 'Path to the mapping file')
@@ -108,7 +109,7 @@ androidCommand
   .command('upload-with-manifest')
   .showHelpAfterError(true)
   .usage('--manifest <path> --file <path>')
-  .summary(`Uploads the Android mapping.txt file of the given path with metadata extracted from the AndroidManifest.xml file of the given path`)
+  .summary(`Uploads the Android mapping.txt file with metadata extracted from the AndroidManifest.xml file`)
   .description(androidUploadWithManifestDescription)
   .requiredOption('--manifest <path>', 'Path to the packaged AndroidManifest.xml file')
   .requiredOption('--file <path>', 'Path to the mapping.txt file')
