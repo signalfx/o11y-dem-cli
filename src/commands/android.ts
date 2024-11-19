@@ -25,6 +25,7 @@ import {
 } from '../utils/androidInputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
+import { getData } from '../utils/httpUtils';
 
 export const androidCommand = new Command('android');
 
@@ -41,6 +42,11 @@ This command uploads the provided file using the packaged AndroidManifest.xml pr
 You need to provide the path to the mapping file, and the path to the AndroidManifest.xml file.
 The application ID, version code, and optional UUID will be extracted from the manifest file. 
 This command is recommended if you want to automate the upload process without manually specifying the application details.
+`;
+
+const listProguardDescription = `
+This command retrieves and lists the metadata of the uploaded ProGuard mapping files.
+By default, it will return the last 100 ProGuard mapping files uploaded, sorted in reverse chronological order based on the upload timestamp.
 `;
 
 interface UploadAndroidOptions {
@@ -172,5 +178,35 @@ androidCommand
         logger.error(err);
       }
       throw err; 
+    }
+  });
+
+  androidCommand
+  .command('list')
+  .description('List uploaded Android mapping files metadata')
+  .option('--debug', 'Enable debug logs')
+  .action(async (options) => {
+    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+
+    const url = 'https://whateverTheEndpointURLis/v1/proguard'; // Replace with the actual endpoint for fetching metadata
+
+    try {
+      const data = await getData({ 
+        url, 
+        logger,  
+        logLevel: options.debug ? 'debug' : 'info',  
+      });
+
+      if (data && data.length > 0) { // not sure how this will look yet, so subject to change
+        logger.info('List of uploaded Android mapping files:');
+        data.forEach((fileMetadata: any) => {
+          logger.info(`- App ID: ${fileMetadata.appId}, Version Code: ${fileMetadata.versionCode}, Uploaded At: ${fileMetadata.uploadedAt}`);
+        });
+      } else {
+        logger.info('No mapping files found.');
+      }
+    } catch (error) {
+      logger.error('Failed to fetch the list of uploaded files.');
+      logger.debug(error);
     }
   });
