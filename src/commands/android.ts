@@ -25,7 +25,7 @@ import {
 } from '../utils/androidInputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
-import { getData } from '../utils/httpUtils';
+import axios from 'axios';
 
 export const androidCommand = new Command('android');
 
@@ -194,23 +194,16 @@ androidCommand
     const url = 'https://whateverTheEndpointURLis/v1/proguard'; // Replace with the actual endpoint for fetching metadata
 
     try {
-      const data = await getData({ 
-        url, 
-        logger,  
-        logLevel: options.debug ? 'debug' : 'info',  
-      });
-
-      if (data && data.length > 0) { // not sure how this will look yet, so subject to change
-        logger.info('List of uploaded Android mapping files:');
-        // eslint-disable-next-line
-        data.forEach((fileMetadata: any) => {
-          logger.info(`- App ID: ${fileMetadata.appId}, Version Code: ${fileMetadata.versionCode}, Uploaded At: ${fileMetadata.uploadedAt}`);
-        });
-      } else {
-        logger.info('No mapping files found.');
+      if (logger) {
+        logger.info(`Fetching mapping file data`);
       }
+
+      const response = await axios.get(url); // May need to add headers/authentication, query parameters etc once integrating with backend
+
+      // Logging raw data, slight formatting with json stringify, but can format down the line once we know how it will look returned from the backend
+      logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2)); 
     } catch (error) {
-      logger.error('Failed to fetch the list of uploaded files.');
+      logger.error('Failed to fetch the list of uploaded files:');
       logger.debug(error);
     }
   });

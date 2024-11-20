@@ -14,9 +14,9 @@
  * limitations under the License.
 */
 
+import axios from 'axios';
 import fs from 'fs';
 import FormData from 'form-data';
-import axios from 'axios';
 
 interface FileUpload {
   filePath: string;
@@ -28,16 +28,6 @@ interface UploadOptions {
   file: FileUpload;
   parameters: { [key: string]: string | number }; 
   onProgress?: (progressInfo: { progress: number; loaded: number; total: number }) => void;
-}
-
-interface GetOptions { // exact format of get tbd, and unsure if all these will apply to all methods that call getData
-  url: string;
-  // eslint-disable-next-line
-  params?: { [key: string]: any }; 
-  headers?: { [key: string]: string }; 
-  // eslint-disable-next-line
-  logger?: any; 
-  logLevel?: string; 
 }
 
 export interface ProgressInfo {
@@ -75,30 +65,4 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
       }    
     },
   });
-};
-
-// eslint-disable-next-line
-export const getData = async ({ url, params, headers, logger, logLevel = 'info' }: GetOptions): Promise<any> => {
-  try {
-    if (logger) {
-      logger[logLevel](`Fetching mapping file data`);
-    }
-
-    const response = await axios.get(url, { // unsure of format or if we need this
-      params,   
-      headers,  
-    });
-
-    if (logger) {
-      logger[logLevel](`Received response: ${JSON.stringify(response.data)}`);
-    }
-
-    return response.data;  // Return the response data (the list of uploaded files)
-  } catch (error) {
-    if (logger) {
-      const e = error as Error;  
-      logger.error(`Error fetching data: ${e.message}`);
-    }
-    throw new Error('Failed to fetch data from the server.');
-  }
 };
