@@ -181,9 +181,9 @@ androidCommand
     }
   });
 
-  androidCommand
+androidCommand
   .command('list')
-  .description('List uploaded Android mapping files metadata')
+  .description(listProguardDescription)
   .option('--debug', 'Enable debug logs')
   .action(async (options) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
@@ -199,6 +199,7 @@ androidCommand
 
       if (data && data.length > 0) { // not sure how this will look yet, so subject to change
         logger.info('List of uploaded Android mapping files:');
+        // eslint-disable-next-line
         data.forEach((fileMetadata: any) => {
           logger.info(`- App ID: ${fileMetadata.appId}, Version Code: ${fileMetadata.versionCode}, Uploaded At: ${fileMetadata.uploadedAt}`);
         });

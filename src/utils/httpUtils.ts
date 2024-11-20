@@ -14,10 +14,9 @@
  * limitations under the License.
 */
 
-import axios, { AxiosError } from 'axios';
 import fs from 'fs';
 import FormData from 'form-data';
-import { createLogger, LogLevel } from '../utils/logger';
+import axios from 'axios';
 
 interface FileUpload {
   filePath: string;
@@ -33,8 +32,10 @@ interface UploadOptions {
 
 interface GetOptions { // exact format of get tbd, and unsure if all these will apply to all methods that call getData
   url: string;
+  // eslint-disable-next-line
   params?: { [key: string]: any }; 
   headers?: { [key: string]: string }; 
+  // eslint-disable-next-line
   logger?: any; 
   logLevel?: string; 
 }
@@ -76,6 +77,7 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
   });
 };
 
+// eslint-disable-next-line
 export const getData = async ({ url, params, headers, logger, logLevel = 'info' }: GetOptions): Promise<any> => {
   try {
     if (logger) {
