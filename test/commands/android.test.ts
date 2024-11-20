@@ -18,7 +18,7 @@ import { androidCommand } from '../../src/commands/android';
 
 describe('android command', () => {
   test('has multiple sub-commands', () => {
-    expect(androidCommand.commands.length).toBe(2);
+    expect(androidCommand.commands.length).toBe(3);
   });
 });
 

@@ -183,8 +183,11 @@ androidCommand
 
 androidCommand
   .command('list')
+  .summary(`Retrieves list of metadata of all uploaded Proguard/R8 mapping files`)
+  .showHelpAfterError(true)
   .description(listProguardDescription)
-  .option('--debug', 'Enable debug logs')
+  .option('--debug', 
+    'Enable debug logs')
   .action(async (options) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
