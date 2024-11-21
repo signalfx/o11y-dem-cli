@@ -195,7 +195,7 @@ androidCommand
 
     try {
       logger.info(`Fetching mapping file data`);
-      
+
       const response = await axios.get(url); // May need to add headers/authentication, query parameters etc once integrating with backend
 
       // Logging raw data, slight formatting with json stringify, but can format down the line once we know how it will look returned from the backend
@@ -203,5 +203,6 @@ androidCommand
     } catch (error) {
       logger.error('Failed to fetch the list of uploaded files:');
       logger.debug(error);
+      throw error;
     }
   });
