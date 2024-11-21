@@ -14,10 +14,11 @@
  * limitations under the License.
 */
 
-import { Command } from 'commander';
-import { runSourcemapInject, SourceMapInjectOptions } from '../sourcemaps';
+import { Command, InvalidArgumentError } from 'commander';
+import { runSourcemapInject, runSourcemapUpload, SourceMapInjectOptions } from '../sourcemaps';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
+import { createSpinner } from '../utils/spinner';
 
 export const sourcemapsCommand = new Command('sourcemaps');
 
@@ -44,10 +45,21 @@ After running this command successfully:
  - deploy the injected JavaScript files to your production environment
 `;
 
+const uploadDescription =
+`Uploads source maps to the o11y server.
+
+This command will recursively search the provided path for source map files (.js.map, .cjs.map, .mjs.map)
+and upload them.  You can specify optional metadata (application name, version) as well.
+
+This command should be run after "sourcemaps inject".  Once the injected JavaScript files have been deployed
+to your environment, any reported stack traces will be automatically symbolicated using these
+uploaded source maps.
+`;
+
 sourcemapsCommand
   .command('inject')
   .showHelpAfterError(true)
-  .usage('--directory path/to/dist')
+  .usage('--directory <path>')
   .summary(`Inject a code snippet into your JavaScript bundles to allow for automatic source mapping of errors`)
   .description(injectDescription)
   .requiredOption(
@@ -82,13 +94,69 @@ sourcemapsCommand
 
 sourcemapsCommand
   .command('upload')
-  .requiredOption('--app-name <appName>', 'Application name')
-  .requiredOption('--app-version <appVersion>', 'Application version')
-  .requiredOption('--directory <directory>', 'Path to the directory containing source maps')
-  .description('Upload source maps')
-  .action((options) => {
-    console.log(`Uploading source maps:
-      App Name: ${options.appName}
-      App Version: ${options.appVersion}
-      Directory: ${options.directory}`);
-  });
+  .showHelpAfterError(true)
+  .usage('--directory <path>')
+  .summary(`Upload source maps to o11y servers`)
+  .description(uploadDescription)
+  .requiredOption(
+    '--directory <path>',
+    'Path to the directory containing source maps for your production JavaScript bundles'
+  )
+  .option(
+    '--app-name <value>',
+    'Application name'
+  )
+  .option(
+    '--app-version <value>',
+    'Application version'
+  )
+  .option(
+    '--dry-run',
+    'Use --dry-run to preview the files that will be uploaded'
+  )
+  .option(
+    '--debug',
+    'Enable debug logs'
+  )
+  .action(
+    async (options: SourcemapsUploadCliOptions) => {
+      if (!process.env.OLLY_TOKEN || process.env.OLLY_TOKEN.length === 0) {
+        sourcemapsCommand.error(`error: required environment variable 'OLLY_TOKEN' not specified`);
+      }
+      if (!process.env.OLLY_REALM || process.env.OLLY_REALM.length === 0) {
+        sourcemapsCommand.error(`error: required environment variable 'OLLY_REALM' not specified`);
+      }
+      if (!process.env.OLLY_RUM_PREFIX || process.env.OLLY_RUM_PREFIX.length === 0) {
+        sourcemapsCommand.error(`error: required environment variable 'OLLY_RUM_PREFIX' not specified`);
+      }
+
+      const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+      const spinner = createSpinner();
+      try {
+        const optionsWithEnvVariables = {
+          ...options,
+          ollyToken: process.env.OLLY_TOKEN!,
+          ollyRealm: process.env.OLLY_REALM!,
+          ollyRumPrefix: process.env.OLLY_RUM_PREFIX!,
+        };
+        await runSourcemapUpload(optionsWithEnvVariables, { logger, spinner });
+      } catch (e) {
+        if (e instanceof UserFriendlyError) {
+          logger.debug(e.originalError);
+          logger.error(e.message);
+        } else {
+          logger.error('Exiting due to an unexpected error:');
+          logger.error(e);
+        }
+        sourcemapsCommand.error('');
+      }
+    }
+  );
+
+interface SourcemapsUploadCliOptions {
+  directory: string;
+  appName?: string;
+  appVersion?: string;
+  dryRun?: boolean;
+  debug?: boolean;
+}

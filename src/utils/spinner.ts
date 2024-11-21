@@ -16,7 +16,7 @@
 
 import ora from 'ora';
 
-interface Spinner {
+export interface Spinner {
   /** Start sending the spinner animation to stderr */
   start: (text: string) => void;
 

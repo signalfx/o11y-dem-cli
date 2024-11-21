@@ -26,6 +26,7 @@ interface FileUpload {
 interface UploadOptions {
   url: string;
   file: FileUpload;
+  method?: 'PUT' | 'POST';
   parameters: { [key: string]: string | number }; 
   onProgress?: (progressInfo: { progress: number; loaded: number; total: number }) => void;
 }
@@ -41,7 +42,7 @@ export interface ProgressInfo {
 // calling method. Various errors, Error, axiosErrors and all should be handled by the caller of this method.
 // Since the API contracts with the backend are not yet determined. This is subject to change
 
-export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOptions): Promise<void> => {
+export const uploadFile = async ({ url, method = 'POST', file, parameters, onProgress }: UploadOptions): Promise<void> => {
   const formData = new FormData();
 
   formData.append(file.fieldName, fs.createReadStream(file.filePath));
@@ -64,5 +65,34 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
         onProgress({ progress, loaded, total });
       }    
     },
+  });
+};
+
+// temporary function
+// mockUploadFile can be used when the endpoint for the real uploadFile call is not ready
+
+export const mockUploadFile = async ({ file, onProgress }: UploadOptions): Promise<void> => {
+  const fileSizeInBytes = fs.statSync(file.filePath).size;
+
+  return new Promise((resolve) => {
+    const mbps = 25;
+    const bytes_to_megabits = (bytes: number) => bytes * 8 / 1000 / 1000;
+
+    // simulate axios progress events
+    const tick = 50;
+    let msElapsed = 0;
+    const intervalId = setInterval(() => {
+      msElapsed += tick;
+      const loaded = Math.floor((msElapsed / 1000) * mbps / 8 * 1024 * 1024);
+      const total = fileSizeInBytes;
+      const progress = (loaded / total) * 100;
+      onProgress?.({ loaded, total, progress });
+    }, tick);
+
+    // simulate axios completion
+    setTimeout(() => {
+      clearInterval(intervalId);
+      resolve();
+    }, bytes_to_megabits(fileSizeInBytes) / mbps * 1000);
   });
 };

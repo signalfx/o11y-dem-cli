@@ -17,7 +17,6 @@ module.exports = {
   ],
   root: true,
   rules: {
-    '@stylistic/array-bracket-spacing': [ 'error', 'always' ],
     '@stylistic/indent': [ 'error', 2 ],
     '@stylistic/object-curly-spacing': [ 'error', 'always' ],
     '@stylistic/quotes': [ 'error', 'single', { 'avoidEscape': true, 'allowTemplateLiterals': true } ],

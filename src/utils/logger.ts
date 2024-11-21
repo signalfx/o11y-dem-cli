@@ -36,7 +36,7 @@ export function createLogger(logLevel: LogLevel): Logger {
   return {
     error: (msg, ...params) => LogLevel.ERROR >= logLevel && prefixedConsoleError(chalk.stderr.red('ERROR '), msg, ...params),
     warn: (msg, ...params) => LogLevel.WARN >= logLevel && prefixedConsoleError(chalk.stderr.yellow('WARN '), msg, ...params),
-    info: (msg, ...params) => LogLevel.INFO >= logLevel && console.log(msg, params),
+    info: (msg, ...params) => LogLevel.INFO >= logLevel && console.log(msg, ...params),
     debug: (msg, ...params) => LogLevel.DEBUG >= logLevel && prefixedConsoleError(chalk.stderr.gray('DEBUG '), msg, ...params),
   } as Logger;
 }

@@ -33,8 +33,8 @@ export function throwJsMapFileReadError(err: unknown, sourceMapFilePath: string,
   throwAsUserFriendlyErrnoException(
     err,
     {
-      ENOENT: `Failed to open the source map file "${sourceMapFilePath}" because the file does not exist.\nMake sure that your source map files are being emitted to "${options.directory}".  Regenerate your source map files, then rerun the inject command.`,
-      EACCES: `Failed to open the source map file "${sourceMapFilePath}" because of missing file permissions.\nMake sure that the CLI tool will have both "read" and "write" access to all files inside "${options.directory}", then rerun the inject command.`
+      ENOENT: `Failed to open the source map file "${sourceMapFilePath}" because the file does not exist.\nMake sure that your source map files are being emitted to "${options.directory}".  Regenerate your source map files, then rerun the command.`,
+      EACCES: `Failed to open the source map file "${sourceMapFilePath}" because of missing file permissions.\nMake sure that the CLI tool will have both "read" and "write" access to all files inside "${options.directory}", then rerun the command.`
     }
   );
 }
