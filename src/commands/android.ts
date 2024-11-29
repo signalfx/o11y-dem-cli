@@ -26,6 +26,7 @@ import {
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import axios from 'axios';
+import { uploadFile } from '../utils/httpUtils';
 
 export const androidCommand = new Command('android');
 
@@ -48,6 +49,12 @@ const listProguardDescription = `
 This command retrieves and lists the metadata of the uploaded ProGuard mapping files.
 By default, it will return the last 100 ProGuard mapping files uploaded, sorted in reverse chronological order based on the upload timestamp.
 `;
+
+const generateUrl = (appName: string, buildId: string): string => {
+  // Default to 'us0' if no realm is set according to https://dev.splunk.com/observability/docs/realms_in_endpoints/
+  const realm = process.env.O11Y_REALM || 'us0';
+  return `https://api.${realm}.signalfx.com/v1/proguard/${appName}/${buildId}`;
+};
 
 interface UploadAndroidOptions {
   'file': string,
@@ -105,9 +112,29 @@ androidCommand
       Version Code: ${options.versionCode}
       File: ${options.file}
       UUID: ${options.uuid || 'Not provided'}`);
+    
+    const parameters: { [key: string]: string | number } = {
+      appId: options.appId,
+      versionCode: options.versionCode,
+    };
+    
+    if (options.uuid) {
+      parameters.uuid = options.uuid;
+    }
+    
+    const fileData = {
+      filePath: options.file,
+      fieldName: 'mappingFile',  // Do we need this? If so, what does the backend expect?
+    };
 
-    // call uploadFile method with generated URL, path to file, fields and potentially catch any errors and log
-  
+    const url = generateUrl(options.appId, options.versionCode); // add build id if exists
+
+    await uploadFile({
+      url,
+      file: fileData,
+      parameters,
+    });
+
     logger.info(`\nUpload complete!`);
   });
 
@@ -166,7 +193,27 @@ androidCommand
         App ID: ${appId}
         Version Code: ${versionCode}`);
 
-      // call uploadFile method with generated URL, path to file, fields and potentially catch any errors and log
+      const parameters: { [key: string]: string | number } = {
+        appId: appId,
+        versionCode: versionCode as string,
+      };
+      
+      if (uuid) {
+        parameters.uuid = uuid as string;
+      } 
+      
+      const fileData = {
+        filePath: options.file,
+        fieldName: 'mappingFile',  // Do we need this? If so, what does the backend expect?
+      };
+  
+      const url = generateUrl(appId, versionCode as string); // add build id if exists
+  
+      await uploadFile({
+        url,
+        file: fileData,
+        parameters,
+      });
 
       logger.info(`\nUpload complete!`);
     } catch (err) {

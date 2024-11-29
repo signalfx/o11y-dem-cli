@@ -55,6 +55,7 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
   await axios.post(url, formData, {
     headers: {
       ...formData.getHeaders(),
+      'Authorization': `Bearer ${process.env.OLL_TOKEN}`,
     },
     onUploadProgress: (progressEvent) => {
       const loaded = progressEvent.loaded;
