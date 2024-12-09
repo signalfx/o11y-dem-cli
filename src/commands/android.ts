@@ -106,12 +106,6 @@ androidCommand
     if (options.uuid && !isValidUUID(options.uuid)) {
       throw new UserFriendlyError(null, 'Error: Invalid UUID. It must be a non-empty string.');
     }
-
-    logger.info(`Preparing to upload Android mapping file:
-      App ID: ${options.appId}
-      Version Code: ${options.versionCode}
-      File: ${options.file}
-      UUID: ${options.uuid || 'Not provided'}`);
     
     const parameters: { [key: string]: string | number } = {
       appId: options.appId,
@@ -127,7 +121,14 @@ androidCommand
       fieldName: 'mappingFile',  // Do we need this? If so, what does the backend expect?
     };
 
-    const url = generateUrl(options.appId, options.versionCode); // add build id if exists
+    var url = generateUrl(options.appId, options.versionCode); // add build id if exists
+
+    logger.info(`Preparing to upload Android mapping file:
+      MYURL: ${url}
+      App ID: ${options.appId}
+      Version Code: ${options.versionCode}
+      File: ${options.file}
+      UUID: ${options.uuid || 'Not provided'}`);
 
     await uploadFile({
       url,
