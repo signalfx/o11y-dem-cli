@@ -124,7 +124,6 @@ androidCommand
     var url = generateUrl(options.appId, options.versionCode); // add build id if exists
 
     logger.info(`Preparing to upload Android mapping file:
-      MYURL: ${url}
       App ID: ${options.appId}
       Version Code: ${options.versionCode}
       File: ${options.file}

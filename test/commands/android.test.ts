@@ -15,50 +15,9 @@
 */
 
 import { androidCommand } from '../../src/commands/android';
-import { exec } from 'child_process';
-import nock from 'nock';
-import path from 'path';
-
-nock.disableNetConnect();
 
 describe('android command', () => {
   test('has multiple sub-commands', () => {
     expect(androidCommand.commands.length).toBe(3);
-  });
-});
-
-describe('Android Command Integration Tests', () => {
-  // const backendUrl = 'https://api.us0.signalfx.com/v1/proguard/appId123/123';
-  // const backendUrl = 'https://api.us0.signalfx.com';  //  base URL
-  const dummyUrl = 'http://dummy-url.com';  // Use HTTP for testing
-
-  beforeAll(() => {
-    nock(dummyUrl)
-      .post('/v1/test/upload')  
-      .reply(200, { message: 'File uploaded successfully' });
-  });
-
-  it('should upload the Android mapping file successfully', async () => {
-
-    const filePath = path.join(__dirname, '../mapping.txt'); 
-
-    const command = `node dist/index.js android upload --app-id appId123 --version-code 123 --file ${filePath}`;
-
-    await new Promise((resolve, reject) => {
-      exec(command, (error, stdout, stderr) => {
-        if (error) {
-          reject(`exec error: ${error}`);
-        }
-
-        expect(stdout).toContain('Preparing to upload Android mapping file');
-        resolve(stdout);
-      });
-    });
-
-    const scope = nock(dummyUrl)
-    .post('/v1/test/upload') 
-    .reply(200, { message: 'File uploaded successfully' });
-
-    expect(scope.isDone()).toBeTruthy(); 
   });
 });

@@ -51,13 +51,11 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
   }
 
   const fileSizeInBytes = fs.statSync(file.filePath).size;
-  url = 'http://dummy-url.com/v1/test/upload';  // Use HTTP for testing
-  console.log('Generated URL:', url);
 
   await axios.post(url, formData, {
     headers: {
       ...formData.getHeaders(),
-      // 'Authorization': `Bearer ${process.env.O11Y_TOKEN}`,
+      'Authorization': `Bearer ${process.env.O11Y_TOKEN}`,
     },
     onUploadProgress: (progressEvent) => {
       const loaded = progressEvent.loaded;
