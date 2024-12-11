@@ -121,7 +121,7 @@ androidCommand
       fieldName: 'mappingFile',  // Do we need this? If so, what does the backend expect?
     };
 
-    var url = generateUrl(options.appId, options.versionCode); // add build id if exists
+    const url = generateUrl(options.appId, options.versionCode); // add build id if exists
 
     logger.info(`Preparing to upload Android mapping file:
       App ID: ${options.appId}
