@@ -42,7 +42,7 @@ export interface ProgressInfo {
 // calling method. Various errors, Error, axiosErrors and all should be handled by the caller of this method.
 // Since the API contracts with the backend are not yet determined. This is subject to change
 
-export const uploadFile = async ({ url, method = 'POST', file, parameters, onProgress }: UploadOptions): Promise<void> => {
+export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOptions): Promise<void> => {
   const formData = new FormData();
 
   formData.append(file.fieldName, fs.createReadStream(file.filePath));

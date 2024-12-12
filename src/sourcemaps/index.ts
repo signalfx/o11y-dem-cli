@@ -174,6 +174,7 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: C
         parameters
       });
       success++;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       logger.error('Upload failed for %s', path);
       failed++;

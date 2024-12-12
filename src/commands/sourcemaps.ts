@@ -14,7 +14,7 @@
  * limitations under the License.
 */
 
-import { Command, InvalidArgumentError } from 'commander';
+import { Command } from 'commander';
 import { runSourcemapInject, runSourcemapUpload, SourceMapInjectOptions } from '../sourcemaps';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
@@ -49,7 +49,13 @@ const uploadDescription =
 `Uploads source maps to the o11y server.
 
 This command will recursively search the provided path for source map files (.js.map, .cjs.map, .mjs.map)
-and upload them.  You can specify optional metadata (application name, version) as well.
+and upload them.  You can specify optional metadata (application name, version) that will be attached to
+each uploaded source map.
+
+The following environment variables must be set:
+  OLLY_REALM         your organization's realm on Splunk Observability Cloud (example: eu0)
+  OLLY_TOKEN         API access token
+  OLLY_RUM_PREFIX    
 
 This command should be run after "sourcemaps inject".  Once the injected JavaScript files have been deployed
 to your environment, any reported stack traces will be automatically symbolicated using these
@@ -109,10 +115,6 @@ sourcemapsCommand
   .option(
     '--app-version <value>',
     'Application version'
-  )
-  .option(
-    '--dry-run',
-    'Use --dry-run to preview the files that will be uploaded'
   )
   .option(
     '--debug',
