@@ -52,11 +52,6 @@ This command will recursively search the provided path for source map files (.js
 and upload them.  You can specify optional metadata (application name, version) that will be attached to
 each uploaded source map.
 
-The following environment variables must be set:
-  OLLY_REALM         your organization's realm on Splunk Observability Cloud (example: eu0)
-  OLLY_TOKEN         API access token
-  OLLY_RUM_PREFIX    
-
 This command should be run after "sourcemaps inject".  Once the injected JavaScript files have been deployed
 to your environment, any reported stack traces will be automatically symbolicated using these
 uploaded source maps.
@@ -108,6 +103,21 @@ sourcemapsCommand
     '--directory <path>',
     'Path to the directory containing source maps for your production JavaScript bundles'
   )
+  .requiredOption(
+    '--realm <value>',
+    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
+    process.env.O11Y_REALM
+  )
+  .requiredOption(
+    '--token <value>',
+    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
+    process.env.O11Y_TOKEN
+  )
+  .requiredOption(
+    '--rum-prefix <value>',
+    'Can also be set using the environment variable O11Y_RUM_PREFIX',
+    process.env.O11Y_RUM_PREFIX
+  )
   .option(
     '--app-name <value>',
     'Application name'
@@ -122,26 +132,10 @@ sourcemapsCommand
   )
   .action(
     async (options: SourcemapsUploadCliOptions) => {
-      if (!process.env.OLLY_TOKEN || process.env.OLLY_TOKEN.length === 0) {
-        sourcemapsCommand.error(`error: required environment variable 'OLLY_TOKEN' not specified`);
-      }
-      if (!process.env.OLLY_REALM || process.env.OLLY_REALM.length === 0) {
-        sourcemapsCommand.error(`error: required environment variable 'OLLY_REALM' not specified`);
-      }
-      if (!process.env.OLLY_RUM_PREFIX || process.env.OLLY_RUM_PREFIX.length === 0) {
-        sourcemapsCommand.error(`error: required environment variable 'OLLY_RUM_PREFIX' not specified`);
-      }
-
       const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
       const spinner = createSpinner();
       try {
-        const optionsWithEnvVariables = {
-          ...options,
-          ollyToken: process.env.OLLY_TOKEN!,
-          ollyRealm: process.env.OLLY_REALM!,
-          ollyRumPrefix: process.env.OLLY_RUM_PREFIX!,
-        };
-        await runSourcemapUpload(optionsWithEnvVariables, { logger, spinner });
+        await runSourcemapUpload(options, { logger, spinner });
       } catch (e) {
         if (e instanceof UserFriendlyError) {
           logger.debug(e.originalError);
@@ -157,6 +151,9 @@ sourcemapsCommand
 
 interface SourcemapsUploadCliOptions {
   directory: string;
+  realm: string;
+  token: string;
+  rumPrefix: string;
   appName?: string;
   appVersion?: string;
   dryRun?: boolean;
