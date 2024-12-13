@@ -96,7 +96,7 @@ sourcemapsCommand
 sourcemapsCommand
   .command('upload')
   .showHelpAfterError(true)
-  .usage('--directory <path>')
+  .usage('--directory <path> --realm <value> --token <value>')
   .summary(`Upload source maps to Splunk Observability Cloud`)
   .description(uploadDescription)
   .requiredOption(
@@ -115,11 +115,11 @@ sourcemapsCommand
   )
   .option(
     '--app-name <value>',
-    'Application name'
+    'The application name used in your agent configuration'
   )
   .option(
     '--app-version <value>',
-    'Application version'
+    'The application version used in your agent configuration'
   )
   .option(
     '--debug',
