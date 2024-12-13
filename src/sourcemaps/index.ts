@@ -38,7 +38,6 @@ export type SourceMapInjectOptions = {
 export type SourceMapUploadOptions = {
   token: string;
   realm: string;
-  rumPrefix: string;
   directory: string;
   appName?: string;
   appVersion?: string;
@@ -120,7 +119,7 @@ export async function runSourcemapInject(options: SourceMapInjectOptions) {
  */
 export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: Context) {
   const { logger, spinner } = ctx;
-  const { directory, realm, rumPrefix, appName, appVersion } = options;
+  const { directory, realm, appName, appVersion } = options;
 
   /*
    * Read the provided directory to collect a list of all possible files the script will be working with.
@@ -139,14 +138,14 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: C
   let success = 0;
   let failed = 0;
 
-  logger.info('Upload URL: %s', `https://api.${realm}.signalfx.com/v2/${rumPrefix}/sourcemaps/v1/id/{id}`);
+  logger.info('Upload URL: %s', `https://api.${realm}.signalfx.com/v1/sourcemap/id/{id}`);
   logger.info('Found %s source maps to upload', jsMapFilePaths.length);
   spinner.start('');
   for (let i = 0; i < jsMapFilePaths.length; i++) {
     const filesRemaining = jsMapFilePaths.length - i;
     const path = jsMapFilePaths[i];
     const sourceMapId = await computeSourceMapId(path, { directory });
-    const url = `https://api.${realm}.signalfx.com/v2/${rumPrefix}/sourcemaps/v1/id/${sourceMapId}`;
+    const url = `https://api.${realm}.signalfx.com/v1/sourcemap/id/${sourceMapId}`;
     const file = {
       filePath: path,
       fieldName: 'file'

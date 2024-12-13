@@ -46,7 +46,7 @@ After running this command successfully:
 `;
 
 const uploadDescription =
-`Uploads source maps to the o11y server.
+`Uploads source maps to Splunk Observability Cloud.
 
 This command will recursively search the provided path for source map files (.js.map, .cjs.map, .mjs.map)
 and upload them.  You can specify optional metadata (application name, version) that will be attached to
@@ -97,7 +97,7 @@ sourcemapsCommand
   .command('upload')
   .showHelpAfterError(true)
   .usage('--directory <path>')
-  .summary(`Upload source maps to o11y servers`)
+  .summary(`Upload source maps to Splunk Observability Cloud`)
   .description(uploadDescription)
   .requiredOption(
     '--directory <path>',
@@ -112,11 +112,6 @@ sourcemapsCommand
     '--token <value>',
     'API access token.  Can also be set using the environment variable O11Y_TOKEN',
     process.env.O11Y_TOKEN
-  )
-  .requiredOption(
-    '--rum-prefix <value>',
-    'Can also be set using the environment variable O11Y_RUM_PREFIX',
-    process.env.O11Y_RUM_PREFIX
   )
   .option(
     '--app-name <value>',
@@ -153,7 +148,6 @@ interface SourcemapsUploadCliOptions {
   directory: string;
   realm: string;
   token: string;
-  rumPrefix: string;
   appName?: string;
   appVersion?: string;
   dryRun?: boolean;
