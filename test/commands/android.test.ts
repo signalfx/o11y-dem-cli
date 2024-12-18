@@ -21,4 +21,3 @@ describe('android command', () => {
     expect(androidCommand.commands.length).toBe(3);
   });
 });
-
