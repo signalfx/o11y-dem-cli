@@ -30,7 +30,7 @@ import { uploadFile } from '../utils/httpUtils';
 // Constants
 const DEFAULT_REALM = 'us0';
 const DSYM_FIELD_NAME = 'dSYM';
-const API_BASE_URL = process.env.API_BASE_URL || 'https://api.splunk.com';
+const API_BASE_URL = process.env.SPLUNK_API_BASE_URL || 'https://api.splunk.com';
 const API_VERSION_STRING = "v1";
 const API_PATH = "dsyms";
 
