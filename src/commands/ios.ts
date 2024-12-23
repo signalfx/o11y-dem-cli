@@ -35,11 +35,6 @@ export const iOSCommand = new Command('iOS');
 const iOSUploadDescription = `This subcommand uploads the specified zipped dSYMs file.
 `;
 
-interface UploadiOSOptions {
-  'file': string,
-  'debug'?: boolean
-}
-
 const generateUrl = (): string => {
   const realm = process.env.O11Y_REALM || DEFAULT_REALM;
   return `${API_BASE_URL}/${realm}/${API_VERSION_STRING}/${API_PATH}`;
@@ -49,6 +44,15 @@ iOSCommand
   .name('ios')
   .description('Upload and list zipped iOS symbolication files (dSYMs)');
 
+const listdSYMsDescription = `This command retrieves and shows a list of the uploaded dSYM files.
+By default, returns the last 100 dSYM files uploaded, sorted in reverse chronological order based on the upload timestamp.
+`;
+
+interface UploadiOSOptions {
+  file: string;
+  debug?: boolean;
+}
+
 iOSCommand
   .command('upload')
   .showHelpAfterError(true)
@@ -56,7 +60,7 @@ iOSCommand
   .description(iOSUploadDescription)
   .summary('Upload a dSYMs .zip file to the symbolication service')
   .requiredOption('--file <path>', 'Path to the dSYMs .zip file')
-  .option('--debug', 'Enable debug logs')
+
   .action(async (options: UploadiOSOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
@@ -75,9 +79,7 @@ iOSCommand
       };
 
       const url = generateUrl();
-
       logger.info(`url: ${url}`);
-
       logger.info(`Preparing to upload dSYMs file: ${options.file}`);
 
       await uploadFile({
