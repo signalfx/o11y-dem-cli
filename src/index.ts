@@ -19,7 +19,7 @@
  */
 
 import { Command } from 'commander';
-import { iosCommand } from './commands/ios';
+import { iOSCommand } from './commands/ios';
 import { androidCommand } from './commands/android';
 import { sourcemapsCommand } from './commands/sourcemaps';
 
