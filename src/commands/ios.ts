@@ -100,3 +100,26 @@ iOSCommand
       }
     }
   });
+
+
+iOSCommand
+  .command('list')
+  .summary('Retrieves list of metadata of all uploaded dSYM files')
+  .showHelpAfterError(true)
+  .description(listdSYMsDescription)
+  .option('--debug', 'Enable debug logs')
+  .action(async (options) => {
+    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+    const url = `${API_BASE_URL}/${API_VERSION_STRING}/${API_PATH}`;
+
+    try {
+      logger.info('Fetching dSYM file data');
+      const response = await axios.get(url);
+      logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2));
+    } catch (error) {
+      logger.error('Failed to fetch the list of uploaded files')
+      throw error;
+    }
+  });
+
+iOSCommand.parse(process.argv);
