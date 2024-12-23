@@ -15,7 +15,6 @@
 */
 
 import { Command } from 'commander';
-import axios from 'axios';
 import {
   isValidFile,
   hasValidExtension,
@@ -31,8 +30,8 @@ import { uploadFile } from '../utils/httpUtils';
 const DEFAULT_REALM = 'us0';
 const DSYM_FIELD_NAME = 'dSYM';
 const API_BASE_URL = process.env.SPLUNK_API_BASE_URL || 'https://api.splunk.com';
-const API_VERSION_STRING = "v1";
-const API_PATH = "dsyms";
+const API_VERSION_STRING = 'v1';
+const API_PATH = 'dsyms';
 
 export const iOSCommand = new Command('iOS');
 
@@ -42,14 +41,9 @@ You need to provide the Application ID and version code of the app, and the path
 Optionally, you can also include a UUID to identify the upload session.
 `;
 
-const listdSYMsDescription = `
-This command retrieves and shows a list of the uploaded dSYM files.
-By default, it will return the last 100 dSYM files uploaded, sorted in reverse chronological order based on the upload timestamp.
-`;
-
 const generateUrl = (appId: string, versionCode: string): string => {
   const realm = process.env.O11Y_REALM || DEFAULT_REALM;
-  return `${API_BASE_URL}/${realm}/v1/${API_PATH}/${appId}/${versionCode}`;
+  return `${API_BASE_URL}/${realm}/${API_VERSION_STRING}/${API_PATH}/${appId}/${versionCode}`;
 };
 
 interface UploadiOSOptions {
@@ -116,7 +110,7 @@ iOSCommand
 
       const url = generateUrl(options.appId, options.versionCode);
 
-      logger.info(`url: ${url}`)
+      logger.info(`url: ${url}`);
 
       logger.info(`Preparing to upload dSYM file:
         App ID: ${options.appId}
@@ -138,8 +132,8 @@ iOSCommand
         throw error;
       } else {
         const errorMessage = `Unexpected error type: ${JSON.stringify(error)}`;
-	logger.error('Failed to upload the dSYM file:', errorMessage);
-	throw new Error(errorMessage);
+        logger.error('Failed to upload the dSYM file:', errorMessage);
+        throw new Error(errorMessage);
       }
     }
   });
