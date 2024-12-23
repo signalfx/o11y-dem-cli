@@ -35,6 +35,10 @@ export const iOSCommand = new Command('iOS');
 const iOSUploadDescription = `This subcommand uploads the specified zipped dSYMs file.
 `;
 
+const listdSYMsDescription = `This command retrieves and shows a list of the uploaded dSYM files.
+By default, it returns the last 100 dSYM files uploaded, sorted in reverse chronological order based on the upload timestamp.
+`;
+
 const generateUrl = (): string => {
   const realm = process.env.O11Y_REALM || DEFAULT_REALM;
   return `${API_BASE_URL}/${realm}/${API_VERSION_STRING}/${API_PATH}`;
@@ -43,10 +47,6 @@ const generateUrl = (): string => {
 iOSCommand
   .name('ios')
   .description('Upload and list zipped iOS symbolication files (dSYMs)');
-
-const listdSYMsDescription = `This command retrieves and shows a list of the uploaded dSYM files.
-By default, returns the last 100 dSYM files uploaded, sorted in reverse chronological order based on the upload timestamp.
-`;
 
 interface UploadiOSOptions {
   file: string;
