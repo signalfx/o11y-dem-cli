@@ -36,7 +36,7 @@ program
   .description(helpDescription)
   .usage('[ios|android|sourcemaps] [sub-command] [options]');
   
-program.addCommand(iosCommand);
+program.addCommand(iOSCommand);
 program.addCommand(androidCommand);
 program.addCommand(sourcemapsCommand);
 
