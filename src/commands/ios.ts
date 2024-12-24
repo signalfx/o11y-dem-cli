@@ -88,7 +88,7 @@ iOSCommand
       await uploadFile({
         url,
         file: fileData,
-        parameters: {},
+        parameters: {}
       });
 
       logger.info('\nUpload complete!');
