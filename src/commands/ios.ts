@@ -117,7 +117,7 @@ iOSCommand
       const response = await axios.get(url);
       logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2));
     } catch (error) {
-      logger.error('Failed to fetch the list of uploaded files')
+      logger.error('Failed to fetch the list of uploaded files');
       throw error;
     }
   });
