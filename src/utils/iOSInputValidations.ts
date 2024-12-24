@@ -28,18 +28,3 @@ export const hasValidExtension = (filePath: string, expectedExtension: string): 
   return ext === expectedExtension;
 };
 
-// Validate applicationID (should be a non-empty string)
-export const isValidAppId = (appId: unknown): appId is string => {
-  return typeof appId ===  'string' && appId.length > 0;
-};
-
-// Validate app versionCode (should be an integer or a string representation of a integer)
-export const isValidVersionCode = (versionCode: unknown): boolean => {
-  return typeof versionCode === 'number' && Number.isInteger(versionCode) || 
-  (typeof versionCode === 'string' && Number.isInteger(Number(versionCode)));
-};
-
-// Validate UUID (should be a string)
-export const isValidUUID = (uuid: unknown | undefined): boolean => {
-  return uuid !== undefined && typeof uuid === 'string' && uuid.length > 0;
-};
