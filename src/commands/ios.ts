@@ -18,9 +18,6 @@ import { Command } from 'commander';
 import {
   isValidFile,
   hasValidExtension,
-  isValidAppId,
-  isValidVersionCode,
-  isValidUUID
 } from '../utils/iOSInputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
@@ -37,20 +34,16 @@ export const iOSCommand = new Command('iOS');
 
 const iOSUploadDescription = `
 This command uploads the provided dSYMs file.
-You need to provide the Application ID and version code of the app, and the path to the zipped dSYMs file.
-Optionally, you can also include a UUID to identify the upload session.
+You need to provide the path to the zipped dSYMs file.
 `;
 
-const generateUrl = (appId: string, versionCode: string): string => {
+const generateUrl = (): string => {
   const realm = process.env.O11Y_REALM || DEFAULT_REALM;
-  return `${API_BASE_URL}/${realm}/${API_VERSION_STRING}/${API_PATH}/${appId}/${versionCode}`;
+  return `${API_BASE_URL}/${realm}/${API_VERSION_STRING}/${API_PATH}`;
 };
 
 interface UploadiOSOptions {
   file: string;
-  appId: string;
-  versionCode: string;
-  uuid?: string;
   debug?: boolean;
 }
 
@@ -62,45 +55,21 @@ iOSCommand
 iOSCommand
   .command('upload')
   .showHelpAfterError(true)
-  .usage('--app-id <value> --version-code <int> --file <path> [--uuid <value>]')
+  .usage('--file <path>')
   .description(iOSUploadDescription)
-  .summary('Uploads the dSYM file with the provided application ID, version code, and optional UUID')
-  .requiredOption('--app-id <value>', 'Application ID')
-  .requiredOption('--version-code <int>', 'Version code')
+  .summary('Uploads the dSYMs .zip file to the symbolication service')
   .requiredOption('--file <path>', 'Path to the dSYMs zip file')
-  .option('--uuid <value>', 'Optional UUID for the upload')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadiOSOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
     try {
-      if (!isValidAppId(options.appId)) {
-        throw new UserFriendlyError(null, 'Invalid Application ID. It must be a non-empty string.');
-      }
-
-      if (!isValidVersionCode(options.versionCode)) {
-        throw new UserFriendlyError(null, 'Invalid Version Code. It must be an integer.');
-      }
-
       if (!isValidFile(options.file)) {
-        throw new UserFriendlyError(null, `Invalid dSYM file path: ${options.file}.`);
+        throw new UserFriendlyError(null, `Invalid dSYMs file path: ${options.file}.`);
       }
 
       if (!hasValidExtension(options.file, '.zip')) {
-        throw new UserFriendlyError(null, `dSYM file does not have correct extension: ${options.file}.`);
-      }
-
-      if (options.uuid && !isValidUUID(options.uuid)) {
-        throw new UserFriendlyError(null, 'Error: Invalid UUID. It must be a non-empty string.');
-      }
-
-      const parameters: { [key: string]: string | number } = {
-        appId: options.appId,
-        versionCode: options.versionCode,
-      };
-
-      if (options.uuid) {
-        parameters.uuid = options.uuid;
+        throw new UserFriendlyError(null, `dSYMs file does not have correct extension: ${options.file}.`);
       }
 
       const fileData = {
@@ -108,31 +77,28 @@ iOSCommand
         fieldName: DSYM_FIELD_NAME,
       };
 
-      const url = generateUrl(options.appId, options.versionCode);
+      const url = generateUrl();
 
       logger.info(`url: ${url}`);
 
-      logger.info(`Preparing to upload dSYM file:
-        App ID: ${options.appId}
-        Version Code: ${options.versionCode}
+      logger.info(`Preparing to upload dSYMs file:
         File: ${options.file}
-        UUID: ${options.uuid || 'Not provided'}`
       );
 
       await uploadFile({
         url,
         file: fileData,
-        parameters,
+        parameters: {},
       });
 
       logger.info('\nUpload complete!');
     } catch (error) {
       if (error instanceof Error) {
-        logger.error('Failed to upload the dSYM file:', error.message);
+        logger.error('Failed to upload the dSYMs file:', error.message);
         throw error;
       } else {
         const errorMessage = `Unexpected error type: ${JSON.stringify(error)}`;
-        logger.error('Failed to upload the dSYM file:', errorMessage);
+        logger.error('Failed to upload the dSYMs file:', errorMessage);
         throw new Error(errorMessage);
       }
     }
