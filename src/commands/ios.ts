@@ -81,9 +81,7 @@ iOSCommand
 
       logger.info(`url: ${url}`);
 
-      logger.info(`Preparing to upload dSYMs file:
-        File: ${options.file}
-      );
+      logger.info(`Preparing to upload dSYMs file: ${options.file}`);
 
       await uploadFile({
         url,
