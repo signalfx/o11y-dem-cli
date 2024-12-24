@@ -21,6 +21,7 @@ import {
 } from '../utils/inputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
+import axios from 'axios';
 import { uploadFile } from '../utils/httpUtils';
 
 // Constants
