@@ -20,6 +20,7 @@ import { discoverJsMapFilePath } from '../../src/sourcemaps/discoverJsMapFilePat
 import { UserFriendlyError } from '../../src/utils/userFriendlyErrors';
 import { SourceMapInjectOptions } from '../../src/sourcemaps';
 import * as filesystem from '../../src/utils/filesystem';
+import { Logger } from '../../src/utils/logger';
 
 describe('discoverJsMapFilePath', () => {
   const opts = getMockCommandOptions();
@@ -54,61 +55,68 @@ describe('discoverJsMapFilePath', () => {
     jest.spyOn(filesystem, 'readlines').mockImplementation(() => throwErrnoException('EACCES'));
   }
 
+  const mockLogger: Logger = {
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn()
+  };
+
   afterEach(() => {
     jest.restoreAllMocks(); 
   });
 
   test('should return a match if we already know the file name with ".map" is present in the directory', async () => {
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/file.js.map' ], opts);
+    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/file.js.map' ], opts, mockLogger);
     expect(path).toBe('path/to/file.js.map');
   });
 
   test('should return a match if "//# sourceMappingURL=" comment has a relative path', async () => {
     mockJsFileContents('//# sourceMappingURL=mappings/file.js.map\n');
 
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/mappings/file.js.map' ], opts);
+    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/mappings/file.js.map' ], opts, mockLogger);
     expect(path).toBe('path/to/mappings/file.js.map');
   });
 
   test('should return a match if "//# sourceMappingURL=" comment has a relative path with ..', async () => {
     mockJsFileContents('//# sourceMappingURL=../mappings/file.js.map\n');
 
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/mappings/file.js.map' ], opts);
+    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/mappings/file.js.map' ], opts, mockLogger);
     expect(path).toBe('path/mappings/file.js.map');
   });
 
   test('should not return a match if "//# sourceMappingURL=" comment points to a file outside of our directory', async () => {
     mockJsFileContents('//# sourceMappingURL=../../../some/other/folder/file.js.map');
 
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/mappings/file.js.map' ], opts);
+    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/mappings/file.js.map' ], opts, mockLogger);
     expect(path).toBeNull();
   });
 
   test('should not return a match if "//# sourceMappingURL=" comment has a data URL', async () => {
     mockJsFileContents('//# sourceMappingURL=data:application/json;base64,abcd\n');
 
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/data:application/json;base64,abcd' ], opts);
+    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/data:application/json;base64,abcd' ], opts, mockLogger);
     expect(path).toBeNull();
   });
 
   test('should not return a match if "//# sourceMappingURL=" comment has an HTTP URL', async () => {
     mockJsFileContents('//# sourceMappingURL=http://www.splunk.com/dist/file.js.map\n');
 
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/http://www.splunk.com/dist/file.js.map' ], opts);
+    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/http://www.splunk.com/dist/file.js.map' ], opts, mockLogger);
     expect(path).toBeNull();
   });
 
   test('should not return a match if "//# sourceMappingURL=" comment has an HTTPS URL', async () => {
     mockJsFileContents('//# sourceMappingURL=https://www.splunk.com/dist/file.js.map\n');
 
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/https://www.splunk.com/dist/file.js.map' ], opts);
+    const path = await discoverJsMapFilePath('path/to/file.js', [ 'path/to/https://www.splunk.com/dist/file.js.map' ], opts, mockLogger);
     expect(path).toBeNull();
   });
 
   test('should not return a match if file is not already known and sourceMappingURL comment is absent', async () => {
     mockJsFileContents('console.log("hello world!");');
 
-    const path = await discoverJsMapFilePath('path/to/file.js', [ 'file.map.js' ], opts);
+    const path = await discoverJsMapFilePath('path/to/file.js', [ 'file.map.js' ], opts, mockLogger);
     expect(path).toBeNull();
   });
 
@@ -116,7 +124,7 @@ describe('discoverJsMapFilePath', () => {
     mockJsFileContents('console.log("hello world!");');
     mockJsFileError();
 
-    await expect(discoverJsMapFilePath('path/to/file.js', [], opts)).rejects.toThrowError(UserFriendlyError);
+    await expect(discoverJsMapFilePath('path/to/file.js', [], opts, mockLogger)).rejects.toThrowError(UserFriendlyError);
   });
 });
 

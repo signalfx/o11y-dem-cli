@@ -20,6 +20,7 @@ import { Readable } from 'stream';
 import { injectFile } from '../../src/sourcemaps/injectFile';
 import { UserFriendlyError } from '../../src/utils/userFriendlyErrors';
 import { SourceMapInjectOptions } from '../../src/sourcemaps';
+import { Logger } from '../../src/utils/logger';
 
 describe('injectFile', () => {
   const mockJsFileContentBeforeInjection = (lines: string[]) => {
@@ -42,6 +43,13 @@ describe('injectFile', () => {
     return jest.spyOn(filesystem, 'overwriteFileContents').mockImplementation(() => Promise.reject(throwErrnoException('EACCES')));
   };
 
+  const mockLogger: Logger = {
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn()
+  };
+
   const opts = getMockCommandOptions();
   const dryRunOpts = getMockCommandOptions({ dryRun: true });
 
@@ -52,7 +60,7 @@ describe('injectFile', () => {
     ]);
     const mockOverwriteFn = mockJsFileOverwrite();
 
-    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
+    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts, mockLogger);
 
     expect(mockOverwriteFn).toHaveBeenCalledWith(
       expect.any(String),
@@ -72,7 +80,7 @@ describe('injectFile', () => {
     ]);
     const mockOverwriteFn = mockJsFileOverwrite();
 
-    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
+    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts, mockLogger);
 
     expect(mockOverwriteFn).toHaveBeenCalledWith(
       expect.any(String),
@@ -94,7 +102,7 @@ describe('injectFile', () => {
     ]);
     const mockOverwriteFn = mockJsFileOverwrite();
 
-    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
+    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts, mockLogger);
 
     expect(mockOverwriteFn).toHaveBeenCalledWith(
       expect.any(String),
@@ -113,7 +121,7 @@ describe('injectFile', () => {
     );
     const mockOverwriteFn = mockJsFileOverwrite();
 
-    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
+    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts, mockLogger);
 
     expect(mockOverwriteFn).toHaveBeenCalledWith(
       expect.any(String),
@@ -142,7 +150,7 @@ describe('injectFile', () => {
     ]);
     const mockOverwriteFn = mockJsFileOverwrite();
 
-    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts);
+    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts, mockLogger);
 
     expect(mockOverwriteFn).not.toHaveBeenCalled();
   });
@@ -154,7 +162,7 @@ describe('injectFile', () => {
     ]);
     const mockOverwriteFn = mockJsFileOverwrite();
 
-    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', dryRunOpts);
+    await injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', dryRunOpts, mockLogger);
 
     expect(mockOverwriteFn).not.toHaveBeenCalled();
   });
@@ -162,7 +170,7 @@ describe('injectFile', () => {
   test('should throw a UserFriendlyError if reading jsFilePath fails due to known error code', async () => {
     mockJsFileReadError();
 
-    await expect(injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts))
+    await expect(injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts, mockLogger))
       .rejects
       .toThrowError(UserFriendlyError);
   });
@@ -174,7 +182,7 @@ describe('injectFile', () => {
     ]);
     mockJsFileOverwriteError();
 
-    await expect(injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts))
+    await expect(injectFile('file.js', '647366e7-d3db-6cf4-8693-2c321c377d5a', opts, mockLogger))
       .rejects
       .toThrowError(UserFriendlyError);
   });
