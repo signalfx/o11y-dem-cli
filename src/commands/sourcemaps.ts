@@ -79,7 +79,7 @@ sourcemapsCommand
     async (options: SourceMapInjectOptions) => {
       const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
       try {
-        await runSourcemapInject(options);
+        await runSourcemapInject(options, { logger });
       } catch (e) {
         if (e instanceof UserFriendlyError) {
           logger.debug(e.originalError);

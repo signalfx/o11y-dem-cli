@@ -17,14 +17,13 @@
 import { SourceMapInjectOptions } from './index';
 import { makeReadStream, overwriteFileContents, readlines } from '../utils/filesystem';
 import {
-  debug,
-  info,
   SNIPPET_PREFIX,
   SNIPPET_TEMPLATE,
   SOURCE_MAPPING_URL_COMMENT_PREFIX,
   throwJsFileOverwriteError,
   throwJsFileReadError
 } from './utils';
+import { Logger } from '../utils/logger';
 
 /**
  * Injects the code snippet into the JS file to permanently associate the JS file with its sourceMapId.
@@ -36,9 +35,9 @@ import {
  *
  * If dryRun is true, this function will not write to the file system.
  */
-export async function injectFile(jsFilePath: string, sourceMapId: string, options: SourceMapInjectOptions): Promise<void> {
+export async function injectFile(jsFilePath: string, sourceMapId: string, options: SourceMapInjectOptions, logger: Logger): Promise<void> {
   if (options.dryRun) {
-    info(`sourceMapId ${sourceMapId} would be injected to ${jsFilePath}`);
+    logger.info(`sourceMapId ${sourceMapId} would be injected to ${jsFilePath}`);
     return;
   }
 
@@ -75,7 +74,7 @@ export async function injectFile(jsFilePath: string, sourceMapId: string, option
    * No work required if the snippet already exists in the file (i.e. from a previous manual run)
    */
   if (existingSnippet === snippet) {
-    debug(`sourceMapId ${sourceMapId} already injected into ${jsFilePath}`);
+    logger.debug(`sourceMapId ${sourceMapId} already injected into ${jsFilePath}`);
     return;
   }
 
@@ -93,7 +92,7 @@ export async function injectFile(jsFilePath: string, sourceMapId: string, option
   /*
    * Write new JavaScript file contents to the file system
    */
-  debug(`injecting sourceMapId ${sourceMapId} into ${jsFilePath}`);
+  logger.debug(`injecting sourceMapId ${sourceMapId} into ${jsFilePath}`);
   try {
     await overwriteFileContents(jsFilePath, lines);
   } catch (e) {

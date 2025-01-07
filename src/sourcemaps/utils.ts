@@ -57,23 +57,3 @@ export function throwJsFileOverwriteError(err: unknown, jsFilePath: string, opti
     }
   );
 }
-
-// TODO extract to a configurable, shared logger with improved styling
-export function debug(str: unknown) {
-  console.log('[debug]', str);
-}
-
-// TODO extract to a configurable, shared logger with improved styling
-export function info(str: unknown) {
-  console.log(str);
-}
-
-// TODO extract to a configurable, shared logger with improved styling
-export function warn(str: unknown) {
-  console.log('[warn]', str);
-}
-
-// TODO extract to a configurable, shared logger with improved styling
-export function error(str: unknown) {
-  console.log('[error]', str);
-}

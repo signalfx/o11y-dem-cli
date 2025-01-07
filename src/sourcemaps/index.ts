@@ -16,10 +16,8 @@
 
 import { cleanupTemporaryFiles, readdirRecursive } from '../utils/filesystem';
 import {
-  info,
   isJsFilePath,
-  isJsMapFilePath,
-  warn
+  isJsMapFilePath
 } from './utils';
 import { throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
 import { discoverJsMapFilePath } from './discoverJsMapFilePath';
@@ -35,6 +33,10 @@ export type SourceMapInjectOptions = {
   debug?: boolean;
 };
 
+export type SourceMapInjectContext = {
+  logger: Logger;
+};
+
 export type SourceMapUploadOptions = {
   token: string;
   realm: string;
@@ -45,7 +47,7 @@ export type SourceMapUploadOptions = {
   debug?: boolean;
 };
 
-export type Context = {
+export type SourceMapUploadContext = {
   logger: Logger;
   spinner: Spinner;
 };
@@ -58,8 +60,9 @@ export type Context = {
  *   2. Compute the sourceMapId (by hashing its source map file)
  *   3. Inject the sourceMapId into the JS file
  */
-export async function runSourcemapInject(options: SourceMapInjectOptions) {
+export async function runSourcemapInject(options: SourceMapInjectOptions, ctx: SourceMapInjectContext) {
   const { directory } = options;
+  const { logger } = ctx;
 
   /*
    * Read the provided directory to collect a list of all possible files the script will be working with.
@@ -74,21 +77,21 @@ export async function runSourcemapInject(options: SourceMapInjectOptions) {
   const jsFilePaths = filePaths.filter(isJsFilePath);
   const jsMapFilePaths = filePaths.filter(isJsMapFilePath);
 
-  info(`Found ${jsFilePaths.length} JavaScript file(s) in ${directory}`);
+  logger.info(`Found ${jsFilePaths.length} JavaScript file(s) in ${directory}`);
 
   /*
    * Inject a code snippet into each JS file, whenever applicable.
    */
   const injectedJsFilePaths = [];
   for (const jsFilePath of jsFilePaths) {
-    const matchingSourceMapFilePath = await discoverJsMapFilePath(jsFilePath, jsMapFilePaths, options);
+    const matchingSourceMapFilePath = await discoverJsMapFilePath(jsFilePath, jsMapFilePaths, options, logger);
     if (!matchingSourceMapFilePath) {
-      info(`No source map was detected for ${jsFilePath}.  Skipping injection.`);
+      logger.info(`No source map was detected for ${jsFilePath}.  Skipping injection.`);
       continue;
     }
 
     const sourceMapId = await computeSourceMapId(matchingSourceMapFilePath, options);
-    await injectFile(jsFilePath, sourceMapId, options);
+    await injectFile(jsFilePath, sourceMapId, options, logger);
 
     injectedJsFilePaths.push(jsFilePath);
   }
@@ -101,11 +104,11 @@ export async function runSourcemapInject(options: SourceMapInjectOptions) {
   /*
    * Print summary of results
    */
-  info(`Finished source map injection for ${injectedJsFilePaths.length} JavaScript file(s) in ${directory}`);
+  logger.info(`Finished source map injection for ${injectedJsFilePaths.length} JavaScript file(s) in ${directory}`);
   if (jsFilePaths.length === 0) {
-    warn(`No JavaScript files were found.  Verify that ${directory} is the correct directory for your JavaScript files.`);
+    logger.warn(`No JavaScript files were found.  Verify that ${directory} is the correct directory for your JavaScript files.`);
   } else if (injectedJsFilePaths.length === 0) {
-    warn(`No JavaScript files were injected.  Verify that your build is configured to generate source maps for your JavaScript files.`);
+    logger.warn(`No JavaScript files were injected.  Verify that your build is configured to generate source maps for your JavaScript files.`);
   }
 
 }
@@ -117,7 +120,7 @@ export async function runSourcemapInject(options: SourceMapInjectOptions) {
  *  1. Compute the sourceMapId (by hashing the file)
  *  2. Upload the file to the appropriate URL
  */
-export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: Context) {
+export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: SourceMapUploadContext) {
   const { logger, spinner } = ctx;
   const { directory, realm, appName, appVersion } = options;
 
