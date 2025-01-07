@@ -22,7 +22,6 @@ import { Command } from 'commander';
 import { iosCommand } from './commands/ios';
 import { androidCommand } from './commands/android';
 import { sourcemapsCommand } from './commands/sourcemaps';
-import { sourcefilesCommand } from './commands/sourcefiles';
 
 const program = new Command();
 
@@ -40,6 +39,5 @@ program
 program.addCommand(iosCommand);
 program.addCommand(androidCommand);
 program.addCommand(sourcemapsCommand);
-program.addCommand(sourcefilesCommand);
 
 program.parseAsync(process.argv);
