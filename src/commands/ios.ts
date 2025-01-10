@@ -122,4 +122,3 @@ iOSCommand
     }
   });
 
-iOSCommand.parse(process.argv);
