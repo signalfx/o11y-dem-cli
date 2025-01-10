@@ -35,7 +35,7 @@ afterEach(() => {
 describe('uploadFile', () => {
 
   test('should upload a file and report progress', async () => {
-    jest.spyOn(axios, 'post').mockResolvedValue({
+    jest.spyOn(axios, 'put').mockResolvedValue({
       data: { success: true }
     });
 
@@ -65,7 +65,7 @@ describe('uploadFile', () => {
   });
 
   test('should throw axios errors during upload', async () => {
-    jest.spyOn(axios, 'post').mockRejectedValue(new Error('Axios error during upload'));
+    jest.spyOn(axios, 'put').mockRejectedValue(new Error('Axios error during upload'));
 
     await expect(uploadFile({
       url: 'http://splunko11ycloud.com/upload',
@@ -85,7 +85,7 @@ describe('uploadFile', () => {
   });
 
   it('should upload a file without progress reporting when onProgress is not provided', async () => {
-    jest.spyOn(axios, 'post').mockResolvedValue({
+    jest.spyOn(axios, 'put').mockResolvedValue({
       data: { success: true }
     });
 
