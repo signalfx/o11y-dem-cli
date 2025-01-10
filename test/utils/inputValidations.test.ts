@@ -15,7 +15,7 @@
 */
 
 import fs from 'fs';
-import * as utils from '../../src/utils/androidInputValidations';
+import * as utils from '../../src/utils/inputValidations';
 
 describe('Utility functions', () => {
 
