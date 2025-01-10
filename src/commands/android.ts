@@ -22,7 +22,7 @@ import {
   isValidAppId, 
   isValidVersionCode, 
   isValidUUID 
-} from '../utils/androidInputValidations';
+} from '../utils/inputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import axios from 'axios';

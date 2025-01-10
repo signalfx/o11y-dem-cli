@@ -18,7 +18,7 @@ import { Command } from 'commander';
 import {
   isValidFile,
   hasValidExtension,
-} from '../utils/iOSInputValidations';
+} from '../utils/inputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import { uploadFile } from '../utils/httpUtils';
