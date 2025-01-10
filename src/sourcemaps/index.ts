@@ -25,7 +25,8 @@ import { computeSourceMapId } from './computeSourceMapId';
 import { injectFile } from './injectFile';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
-import { mockUploadFile } from '../utils/httpUtils';
+import { uploadFile } from '../utils/httpUtils';
+import { AxiosError } from 'axios';
 
 export type SourceMapInjectOptions = {
   directory: string;
@@ -141,22 +142,22 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
   let success = 0;
   let failed = 0;
 
-  logger.info('Upload URL: %s', `https://api.${realm}.signalfx.com/v1/sourcemap/id/{id}`);
+  logger.info('Upload URL: %s', getSourceMapUploadUrl(realm, '{id}'));
   logger.info('Found %s source maps to upload', jsMapFilePaths.length);
   spinner.start('');
   for (let i = 0; i < jsMapFilePaths.length; i++) {
     const filesRemaining = jsMapFilePaths.length - i;
     const path = jsMapFilePaths[i];
     const sourceMapId = await computeSourceMapId(path, { directory });
-    const url = `https://api.${realm}.signalfx.com/v1/sourcemap/id/${sourceMapId}`;
+    const url = getSourceMapUploadUrl(realm, sourceMapId);
     const file = {
       filePath: path,
       fieldName: 'file'
     };
+
     const parameters = Object.fromEntries([
       ['appName', appName],
       ['appVersion', appVersion],
-      ['sourceMapId', sourceMapId],
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ].filter(([_, value]) => typeof value !== 'undefined'));
 
@@ -167,7 +168,7 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
 
     // upload a single file
     try {
-      await mockUploadFile({
+      await uploadFile({
         url,
         file,
         onProgress: ({ loaded, total }) => {
@@ -176,10 +177,22 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
         parameters
       });
       success++;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      logger.error('Upload failed for %s', path);
       failed++;
+      spinner.stop();
+
+      const ae = e as AxiosError;
+      if (ae.response) {
+        logger.error(ae.response.status, ae.response.statusText);
+        logger.error(ae.response.data);
+      } else if (ae.request) {
+        logger.error(`Response from ${url} was not received`);
+        logger.error(ae.cause);
+      } else {
+        logger.error(`Request to ${url} could not be sent`);
+        logger.error(e);
+      }
+      logger.error('Upload failed for %s', path);
     }
   }
   spinner.stop();
@@ -187,13 +200,18 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
   /*
    * Print summary of results
    */
-  logger.info(`${success} source maps were uploaded successfully`);
+  logger.info(`${success} source map(s) were uploaded successfully`);
   if (failed > 0) {
-    logger.info(`${failed} source maps could not be uploaded`);
+    logger.info(`${failed} source map(s) could not be uploaded`);
   }
   if (jsMapFilePaths.length === 0) {
     logger.warn(`No source map files were found. Verify that ${directory} is the correct directory for your source map files.`);
   }
+}
+
+function getSourceMapUploadUrl(realm: string, idPathParam: string): string {
+  const API_BASE_URL = process.env.O11Y_API_BASE_URL || `https://api.${realm}.signalfx.com`;
+  return `${API_BASE_URL}/v1/sourcemaps/id/${idPathParam}`;
 }
 
 function throwDirectoryReadErrorDuringInject(err: unknown, directory: string): never {

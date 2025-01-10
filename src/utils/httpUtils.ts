@@ -53,7 +53,7 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
 
   const fileSizeInBytes = fs.statSync(file.filePath).size;
 
-  await axios.post(url, formData, {
+  await axios.put(url, formData, {
     headers: {
       ...formData.getHeaders(),
     },
