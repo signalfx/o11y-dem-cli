@@ -61,6 +61,7 @@ iOSCommand
   .description(iOSUploadDescription)
   .summary('Upload a dSYMs .zip file to the symbolication service')
   .requiredOption('--file <path>', 'Path to the dSYMs .zip file')
+  .option('--debug', 'Enable debug logs')
   .action(async (options: UploadiOSOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
