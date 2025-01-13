@@ -15,17 +15,11 @@ The DEM CLI Tool helps developers upload Android mapping files, iOS dSYM files, 
 
 For official documentation on the Splunk O11Y DEM CLI Tool, see _______
 
-## Sample Usage
-
-tbd
+## Getting Started
 
 ## Build and Development
 
-tbd
-
 ## Troubleshooting
-
-tbd
 
 # License
 
