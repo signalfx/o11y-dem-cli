@@ -1,6 +1,6 @@
 {
   "name": "o11y-dem-cli",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Tools for handling symbol and mapping files for symbolication",
   "main": "./dist/index.js",
   "scripts": {
