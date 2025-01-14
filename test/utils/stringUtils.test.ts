@@ -16,7 +16,7 @@
 
 import { formatUploadProgress } from '../../src/utils/stringUtils';
 
-describe('formatProgress', () => {
+describe('formatUploadProgress', () => {
   it('should format both numbers using the same unit (either B, KB, or MB)', () => {
     expect(formatUploadProgress(100, 2_500_000)).toEqual({ loadedFormatted: '0.0MB', totalFormatted: '2.5MB' });
     expect(formatUploadProgress(100_000, 2_500_000)).toEqual({ loadedFormatted: '0.1MB', totalFormatted: '2.5MB' });
