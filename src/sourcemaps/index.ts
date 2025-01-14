@@ -27,6 +27,7 @@ import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
 import { uploadFile } from '../utils/httpUtils';
 import { AxiosError } from 'axios';
+import { formatUploadProgress } from '../utils/stringUtils';
 
 export type SourceMapInjectOptions = {
   directory: string;
@@ -172,7 +173,8 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
         url,
         file,
         onProgress: ({ loaded, total }) => {
-          spinner.updateText(`Uploading ${loaded} of ${total} bytes for ${path} (${filesRemaining} files remaining)`);
+          const { loadedFormatted, totalFormatted } = formatUploadProgress(loaded, total);
+          spinner.updateText(`Uploading ${loadedFormatted} of ${totalFormatted} for ${path} (${filesRemaining} files remaining)`);
         },
         parameters
       });
@@ -182,22 +184,23 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
       spinner.stop();
 
       const ae = e as AxiosError;
+      const unableToUploadMessage = `Unable to upload ${path}`;
 
       if (ae.response && ae.response.status === 413) {
         logger.warn(ae.response.status, ae.response.statusText);
-        logger.warn('Unable to upload %s', path);
+        logger.warn(unableToUploadMessage);
       } else if (ae.response) {
         logger.error(ae.response.status, ae.response.statusText);
         logger.error(ae.response.data);
-        logger.error('Upload failed for %s', path);
+        logger.error(unableToUploadMessage);
       } else if (ae.request) {
         logger.error(`Response from ${url} was not received`);
         logger.error(ae.cause);
-        logger.error('Upload failed for %s', path);
+        logger.error(unableToUploadMessage);
       } else {
         logger.error(`Request to ${url} could not be sent`);
         logger.error(e);
-        logger.error('Upload failed for %s', path);
+        logger.error(unableToUploadMessage);
       }
     }
   }
