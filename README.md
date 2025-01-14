@@ -10,6 +10,8 @@ The DEM CLI Tool helps developers upload Android mapping files, iOS dSYM files, 
 
 * Uploading and listing of Android Proguard mapping files
 * Uploading and listing of iOS DSym mapping files
+* Performing JavaScript bundle modifications to enable automatic source mapping
+* Uploading JavaScript source map files
 
 ## Documentation
 
