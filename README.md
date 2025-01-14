@@ -1,6 +1,7 @@
 ![Build Status](https://img.shields.io/github/actions/workflow/status/signalfx/o11y-dem-cli/main.yaml?branch=main&style=for-the-badge)
 ![GDI Specification](https://img.shields.io/badge/GDI-1.7.0-blueviolet?style=for-the-badge)
 
+* This tool is still under development, so the readme and source code are not yet complete
 
 # O11Y DEM CLI
 
