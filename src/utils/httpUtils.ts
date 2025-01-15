@@ -55,6 +55,7 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
 
   await axios.put(url, formData, {
     headers: {
+      'x-sf-orgid': 'AAAAAAAB4kA',
       ...formData.getHeaders(),
     },
     onUploadProgress: (progressEvent) => {
