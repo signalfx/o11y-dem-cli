@@ -16,11 +16,6 @@ before_script:
   - npm -v
   - npm ci
 
-install_dependencies:
-  stage: install
-  script:
-    - echo "Dependencies installed using npm ci"
-
 build:
   stage: build
   script:
