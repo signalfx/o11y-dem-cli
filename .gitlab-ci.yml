@@ -7,9 +7,10 @@ stages:
   - lint
   - test
 
-variables:
-  NODE_VERSION: "20"
-  CI_NODEJS_VERSION: $NODE_VERSION
+install_dependencies:
+  stage: install
+  script:
+    - npm ci
 
 build:
   stage: build
