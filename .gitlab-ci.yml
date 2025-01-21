@@ -7,7 +7,6 @@ cache:
           - package-lock.json
   paths:
       - './node_modules'
-      - './packages/*/node_modules'
 
 stages:
   - install
