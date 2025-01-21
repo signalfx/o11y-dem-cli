@@ -33,3 +33,4 @@ unit_tests:
   stage: test
   script:
     - npm run test:unit
+
