@@ -1,25 +1,23 @@
+default:
+  image: 'cimg/node:20.18.0'
+
+cache:
+  key:
+      files:
+          - package-lock.json
+  paths:
+      - './node_modules'
+
 stages:
   - install
   - build
   - lint
   - test
 
-variables:
-  NODE_VERSION: "20"
-  CI_NODEJS_VERSION: $NODE_VERSION
-
-before_script:
-  - echo "Installing Node.js $CI_NODEJS_VERSION"
-  - curl -sL https://deb.nodesource.com/setup_$CI_NODEJS_VERSION.x | bash -
-  - apt-get install -y nodejs
-  - node -v
-  - npm -v
-  - npm ci
-
 install_dependencies:
   stage: install
   script:
-    - echo "Dependencies installed using npm ci"
+    - npm ci
 
 build:
   stage: build
@@ -35,4 +33,3 @@ unit_tests:
   stage: test
   script:
     - npm run test:unit
-
