@@ -33,3 +33,17 @@ unit_tests:
   stage: test
   script:
     - npm run test:unit
+
+release:
+  stage: release
+  script: # update this to reuse above steps
+    - npm ci
+    - npm run build 
+    - npm run test:unit  
+    - echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
+    - npm publish # can add --dry-run flag for testing
+    - rm -f ~/.npmrc
+  rules:
+    # Only run the release step for Git tags (e.g., v1.0.0)
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+.*/
+  when: manual 
