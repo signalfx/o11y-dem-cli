@@ -32,7 +32,7 @@ const TEMP_FILE_EXTENSION: string = '.olly.tmp';
  *  - path/to/dist/main.js.map
  *  - path/to/dist/nested/folder/page1.js
  */
-export async function readdirRecursive(dir: string) {
+export async function readdirRecursive(dir: string, include: string | string[] = '**/*', exclude: string[] = []) {
   // Using 'glob' instead of native 'readdir' due to:
   //   https://github.com/nodejs/node/issues/48858
   //   https://github.com/nodejs/node/issues/51773
@@ -41,9 +41,10 @@ export async function readdirRecursive(dir: string) {
   // that our user should know about, so try reading the dir before running glob
   await readdir(dir);
 
-  const partialPaths = await glob('**/*', {
+  const partialPaths = await glob(include, {
     cwd: dir,
     nodir: true,
+    ignore: exclude
   });
   return partialPaths.map(partialPath => path.join(dir, partialPath));
 }
