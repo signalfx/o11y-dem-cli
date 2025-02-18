@@ -68,8 +68,16 @@ sourcemapsCommand
     'Path to the directory containing your production JavaScript bundles and their source maps'
   )
   .option(
+    '--include <patterns...>',
+    `A space-separated list of glob file patterns for selecting specific source map files to upload.`
+  )
+  .option(
+    '--exclude <patterns...>',
+    'A space-separated list of glob file patterns for selecting specific source map files to not upload.'
+  )
+  .option(
     '--dry-run',
-    'Use --dry-run to preview the files that will be injected for the given options, without modifying any files on the file system'
+    'Preview the files that will be injected for the given options'
   )
   .option(
     '--debug',
@@ -122,6 +130,18 @@ sourcemapsCommand
     'The application version used in your agent configuration'
   )
   .option(
+    '--include <patterns...>',
+    `A space-separated list of glob file patterns for selecting specific source map files to upload.`
+  )
+  .option(
+    '--exclude <patterns...>',
+    'A space-separated list of glob file patterns for selecting specific source map files to not upload.'
+  )
+  .option(
+    '--dry-run',
+    'Preview the files that will be uploaded for the given options'
+  )
+  .option(
     '--debug',
     'Enable debug logs'
   )
@@ -152,4 +172,6 @@ interface SourcemapsUploadCliOptions {
   appVersion?: string;
   dryRun?: boolean;
   debug?: boolean;
+  include?: string[];
+  exclude?: string[];
 }

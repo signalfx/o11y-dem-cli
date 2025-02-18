@@ -21,6 +21,8 @@ export const SOURCE_MAPPING_URL_COMMENT_PREFIX = '//# sourceMappingURL=';
 export const SNIPPET_PREFIX = `;/* olly sourcemaps inject */`;
 export const SNIPPET_TEMPLATE = `${SNIPPET_PREFIX}if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '__SOURCE_MAP_ID_PLACEHOLDER__';}};`;
 
+export const DEFAULT_JS_MAP_GLOB_PATTERN = '**/*.{js,cjs,mjs}.map';
+
 export function isJsFilePath(filePath: string) {
   return filePath.match(/\.(js|cjs|mjs)$/);
 }

@@ -16,6 +16,7 @@
 
 import { cleanupTemporaryFiles, readdirRecursive } from '../utils/filesystem';
 import {
+  DEFAULT_JS_MAP_GLOB_PATTERN,
   isJsFilePath,
   isJsMapFilePath
 } from './utils';
@@ -33,6 +34,8 @@ export type SourceMapInjectOptions = {
   directory: string;
   dryRun?: boolean;
   debug?: boolean;
+  include?: string[];
+  exclude?: string[];
 };
 
 export type SourceMapInjectContext = {
@@ -43,6 +46,8 @@ export type SourceMapUploadOptions = {
   token: string;
   realm: string;
   directory: string;
+  include?: string[];
+  exclude?: string[];
   appName?: string;
   appVersion?: string;
   dryRun?: boolean;
@@ -63,21 +68,24 @@ export type SourceMapUploadContext = {
  *   3. Inject the sourceMapId into the JS file
  */
 export async function runSourcemapInject(options: SourceMapInjectOptions, ctx: SourceMapInjectContext) {
-  const { directory } = options;
+  const { directory, include, exclude } = options;
   const { logger } = ctx;
 
   /*
    * Read the provided directory to collect a list of all possible files the script will be working with.
    */
-  let filePaths;
+  let jsFilePaths;
+  let jsMapFilePaths;
   try {
-    filePaths = await readdirRecursive(directory);
+    jsFilePaths = await readdirRecursive(directory, include, exclude);
+    jsMapFilePaths = await readdirRecursive(directory, DEFAULT_JS_MAP_GLOB_PATTERN);
   } catch (err) {
     throwDirectoryReadErrorDuringInject(err, directory);
   }
 
-  const jsFilePaths = filePaths.filter(isJsFilePath);
-  const jsMapFilePaths = filePaths.filter(isJsMapFilePath);
+  // don't trust user-provided glob results. apply our own file-type filters before moving on
+  jsFilePaths = jsFilePaths.filter(isJsFilePath);
+  jsMapFilePaths = jsMapFilePaths.filter(isJsMapFilePath);
 
   logger.info(`Found ${jsFilePaths.length} JavaScript file(s) in ${directory}`);
 
@@ -108,7 +116,12 @@ export async function runSourcemapInject(options: SourceMapInjectOptions, ctx: S
    */
   logger.info(`Finished source map injection for ${injectedJsFilePaths.length} JavaScript file(s) in ${directory}`);
   if (jsFilePaths.length === 0) {
-    logger.warn(`No JavaScript files were found.  Verify that ${directory} is the correct directory for your JavaScript files.`);
+    logger.warn(`No JavaScript files were found.  Verify that the provided directory contains JavaScript files and that any provided file patterns are correct:`);
+    logger.warn({
+      directory,
+      include,
+      exclude
+    });
   } else if (injectedJsFilePaths.length === 0) {
     logger.warn(`No JavaScript files were injected.  Verify that your build is configured to generate source maps for your JavaScript files.`);
   }
@@ -124,18 +137,20 @@ export async function runSourcemapInject(options: SourceMapInjectOptions, ctx: S
  */
 export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: SourceMapUploadContext) {
   const { logger, spinner } = ctx;
-  const { directory, realm, appName, appVersion } = options;
+  const { directory, include, exclude, realm, appName, appVersion } = options;
 
   /*
    * Read the provided directory to collect a list of all possible files the script will be working with.
    */
-  let filePaths;
+  let jsMapFilePaths;
   try {
-    filePaths = await readdirRecursive(directory);
+    jsMapFilePaths = await readdirRecursive(directory, include, exclude);
   } catch (err) {
     throwDirectoryReadErrorDuringUpload(err, directory);
   }
-  const jsMapFilePaths = filePaths.filter(isJsMapFilePath);
+
+  // don't trust user-provided glob results.  apply our own file-type filter before moving on
+  jsMapFilePaths = jsMapFilePaths.filter(isJsMapFilePath);
 
   /*
    * Upload files to the server
@@ -167,9 +182,17 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
       logger.debug('POST', url);
     });
 
+    const dryRunUploadFile: typeof uploadFile = async () => {
+      spinner.interrupt( () => {
+        logger.info('sourceMapId %s would be used to upload %s', sourceMapId, path);
+      });
+    };
+
+    const uploadFileFn = options.dryRun ? dryRunUploadFile : uploadFile;
+
     // upload a single file
     try {
-      await uploadFile({
+      await uploadFileFn({
         url,
         file,
         onProgress: ({ loaded, total }) => {
@@ -209,12 +232,20 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
   /*
    * Print summary of results
    */
-  logger.info(`${success} source map(s) were uploaded successfully`);
-  if (failed > 0) {
-    logger.info(`${failed} source map(s) could not be uploaded`);
+  if (!options.dryRun) {
+    logger.info(`${success} source map(s) were uploaded successfully`);
+    if (failed > 0) {
+      logger.info(`${failed} source map(s) could not be uploaded`);
+    }
   }
+
   if (jsMapFilePaths.length === 0) {
-    logger.warn(`No source map files were found. Verify that ${directory} is the correct directory for your source map files.`);
+    logger.warn(`No source map files were found. Verify that the provided directory contains source map files and that any provided file patterns are correct:`);
+    logger.warn({
+      directory,
+      include,
+      exclude
+    });
   }
 }
 

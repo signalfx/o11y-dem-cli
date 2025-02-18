@@ -37,6 +37,6 @@
     "typescript": "^5.6.3"
   },
   "bin": {
-    "o11y-dem-cli": "./dist/index.js"
+    "o11y-dem-cli": "dist/index.js"
   }
 }

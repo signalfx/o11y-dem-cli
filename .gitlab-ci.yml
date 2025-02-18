@@ -13,6 +13,7 @@ stages:
   - build
   - lint
   - test
+  - release
 
 install_dependencies:
   stage: install
@@ -23,6 +24,9 @@ build:
   stage: build
   script:
     - npm run build
+  artifacts:
+    paths:
+      - dist/
 
 lint:
   stage: lint
@@ -33,3 +37,45 @@ unit_tests:
   stage: test
   script:
     - npm run test:unit
+
+release_dry_run:
+  stage: release
+  script:
+    - echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
+    - npm publish --dry-run
+    - rm -f ~/.npmrc
+  dependencies:
+    - build 
+    - lint
+    - unit_tests
+  when: manual 
+
+pre_release:
+  stage: release
+  script:
+    - echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
+    - npm publish --tag prerelease
+    - rm -f ~/.npmrc
+  rules:
+    # Only run the pre release step for Git tags (e.g., prerelease-v1.2.3, prerelease-v1.2.3-alpha etc)
+    - if: $CI_COMMIT_TAG =~ /^prerelease-v[0-9]+\.[0-9]+\.[0-9]+(?:-.+)?$/
+  dependencies:
+    - build 
+    - lint
+    - unit_tests
+  when: manual 
+
+release:
+  stage: release
+  script:
+    - echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
+    - npm publish
+    - rm -f ~/.npmrc
+  rules:
+    # Only run the release step for Git tags (e.g., v1.0.0)
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+.*/
+  dependencies:
+    - build 
+    - lint
+    - unit_tests
+  when: manual 
