@@ -29,6 +29,7 @@ import { Spinner } from '../utils/spinner';
 import { uploadFile } from '../utils/httpUtils';
 import { AxiosError } from 'axios';
 import { formatUploadProgress } from '../utils/stringUtils';
+import { wasInjectAlreadyRun } from './wasInjectAlreadyRun';
 
 export type SourceMapInjectOptions = {
   directory: string;
@@ -160,7 +161,11 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
 
   logger.info('Upload URL: %s', getSourceMapUploadUrl(realm, '{id}'));
   logger.info('Found %s source maps to upload', jsMapFilePaths.length);
-  spinner.start('');
+
+  if (!options.dryRun) {
+    spinner.start('');
+  }
+
   for (let i = 0; i < jsMapFilePaths.length; i++) {
     const filesRemaining = jsMapFilePaths.length - i;
     const path = jsMapFilePaths[i];
@@ -189,6 +194,14 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
     };
 
     const uploadFileFn = options.dryRun ? dryRunUploadFile : uploadFile;
+
+    // notify user if we cannot be certain the "sourcemaps inject" command was already run
+    const alreadyInjected = await wasInjectAlreadyRun(path, logger);
+    if (!alreadyInjected.result) {
+      spinner.interrupt(() => {
+        logger.warn(alreadyInjected.message);
+      });
+    }
 
     // upload a single file
     try {

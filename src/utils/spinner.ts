@@ -47,9 +47,13 @@ export function createSpinner(): Spinner {
     updateText: (text) => oraSpinner.text = text,
     stop: () => oraSpinner.stop(),
     interrupt: (writeLogs) => {
-      oraSpinner.clear();
-      writeLogs();
-      oraSpinner.render();
+      if (oraSpinner.isSpinning) {
+        oraSpinner.clear();
+        writeLogs();
+        oraSpinner.render();
+      } else {
+        writeLogs();
+      }
     }
   };
 }
