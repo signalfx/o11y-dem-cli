@@ -24,6 +24,17 @@ describe('filesystem.readdirRecursive', () => {
     expect(paths.every(p => p.startsWith('test'))).toBe(true);
   });
 
+  test('does not return files that should be excluded', async () => {
+    const allPaths = await readdirRecursive('test');
+    const paths = await readdirRecursive('test', undefined, ['**/filesystem.test.ts']);
+    expect(paths.length).toBeLessThan(allPaths.length);
+  });
+
+  test('only returns files that should be included', async () => {
+    const paths = await readdirRecursive('.', ['**/filesystem.test.ts']);
+    expect(paths.length).toEqual(1);
+  });
+
   test('should throw an error if "dir" is not a directory', async () => {
     await expect(readdirRecursive('package.json')).rejects.toThrowError(
       /ENOTDIR/
