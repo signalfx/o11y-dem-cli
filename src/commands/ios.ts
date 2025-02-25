@@ -28,8 +28,10 @@ import { uploadFile } from '../utils/httpUtils';
 const DEFAULT_REALM = 'us0';
 const DSYM_FIELD_NAME = 'dSYM';
 const API_BASE_URL = process.env.O11Y_API_BASE_URL || 'https://api.splunk.com';
-const API_VERSION_STRING = 'v1';
-const API_PATH = 'dsyms';
+const API_VERSION_STRING = 'v2';
+const API_PATH = 'rum-mfm/dsym';
+const ORG_ID = process.env.SF_ORG_ID || 'not-provided';
+const TOKEN = process.env.SF_TOKEN || 'not-provided';
 
 export const iOSCommand = new Command('iOS');
 
@@ -42,7 +44,7 @@ By default, it returns the last 100 dSYM files uploaded, sorted in reverse chron
 
 const generateUrl = (): string => {
   const realm = process.env.O11Y_REALM || DEFAULT_REALM;
-  return `${API_BASE_URL}/${realm}/${API_VERSION_STRING}/${API_PATH}`;
+  return `${API_BASE_URL}/${API_VERSION_STRING}/${API_PATH}`;
 };
 
 iOSCommand
@@ -86,7 +88,12 @@ iOSCommand
       await uploadFile({
         url,
         file: fileData,
-        parameters: {}
+        parameters: {},
+        headers: {
+          'User-Agent': 'splunk-mfm-cli-tool-ios',
+          'X-SF-OrgId': ORG_ID,
+          'X-SF-Token': TOKEN,
+        },
       });
 
       logger.info('\nUpload complete!');
@@ -101,7 +108,6 @@ iOSCommand
       }
     }
   });
-
 
 iOSCommand
   .command('list')
