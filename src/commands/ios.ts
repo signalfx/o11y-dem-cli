@@ -30,13 +30,30 @@ const DSYM_FIELD_NAME = 'dSYM';
 const API_BASE_URL = process.env.O11Y_API_BASE_URL || 'https://api.splunk.com';
 const API_VERSION_STRING = 'v2';
 const API_PATH = 'rum-mfm/dsym';
-const ORG_ID = process.env.SF_ORG_ID || 'not-provided';
-const TOKEN = process.env.SF_TOKEN || 'not-provided';
+const ORG_ID = process.env.SPLUNK_O11Y_ORG;
+const TOKEN = process.env.SPLUNK_O11Y_TOKEN;
 
 export const iOSCommand = new Command('iOS');
 
-const iOSUploadDescription = `This subcommand uploads the specified zipped dSYMs file.
-`;
+// Helper function to check environment variables
+const checkEnvVariables = (requireVars) => {
+  const missingVars = [];
+  if (!ORG_ID) missingVars.push('SPLUNK_O11Y_ORG');
+  if (!TOKEN) missingVars.push('SPLUNK_O11Y_TOKEN');
+
+  if (missingVars.length > 0) {
+    const message = `Missing environment variables: ${missingVars.join(', ')}. Please set them before running this command.`;
+    if (requireVars) {
+      console.error(`Error: ${message}`);
+      process.exit(1);
+    } else {
+      console.warn(`Warning: ${message}`);
+      process.exit(0);
+    }
+  }
+};
+
+const iOSUploadDescription = `This subcommand uploads the specified zipped dSYMs file.`;
 
 const listdSYMsDescription = `This command retrieves and shows a list of the uploaded dSYM files.
 By default, it returns the last 100 dSYM files uploaded, sorted in reverse chronological order based on the upload timestamp.
@@ -65,6 +82,7 @@ iOSCommand
   .requiredOption('--file <path>', 'Path to the dSYMs .zip file')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadiOSOptions) => {
+    checkEnvVariables(true);
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
     try {
@@ -116,6 +134,7 @@ iOSCommand
   .description(listdSYMsDescription)
   .option('--debug', 'Enable debug logs')
   .action(async (options) => {
+    checkEnvVariables(true);
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
     const url = generateUrl();
 
@@ -134,3 +153,4 @@ iOSCommand
       throw error;
     }
   });
+
