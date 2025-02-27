@@ -138,7 +138,7 @@ export async function runSourcemapInject(options: SourceMapInjectOptions, ctx: S
  */
 export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: SourceMapUploadContext) {
   const { logger, spinner } = ctx;
-  const { directory, include, exclude, realm, appName, appVersion } = options;
+  const { directory, include, exclude, realm, appName, appVersion, token } = options;
 
   /*
    * Read the provided directory to collect a list of all possible files the script will be working with.
@@ -160,7 +160,7 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
   let failed = 0;
 
   logger.info('Upload URL: %s', getSourceMapUploadUrl(realm, '{id}'));
-  logger.info('Found %s source maps to upload', jsMapFilePaths.length);
+  logger.info('Found %s source map(s) to upload', jsMapFilePaths.length);
 
   if (!options.dryRun) {
     spinner.start('');
@@ -184,7 +184,7 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
 
     spinner.interrupt(() => {
       logger.debug('Uploading %s', path);
-      logger.debug('POST', url);
+      logger.debug('PUT', url);
     });
 
     const dryRunUploadFile: typeof uploadFile = async () => {
@@ -208,9 +208,10 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
       await uploadFileFn({
         url,
         file,
+        token,
         onProgress: ({ loaded, total }) => {
-          const { loadedFormatted, totalFormatted } = formatUploadProgress(loaded, total);
-          spinner.updateText(`Uploading ${loadedFormatted} of ${totalFormatted} for ${path} (${filesRemaining} files remaining)`);
+          const { totalFormatted } = formatUploadProgress(loaded, total);
+          spinner.updateText(`Uploading ${path} | ${totalFormatted} | ${filesRemaining} file(s) remaining`);
         },
         parameters
       });
@@ -264,7 +265,7 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
 
 function getSourceMapUploadUrl(realm: string, idPathParam: string): string {
   const API_BASE_URL = process.env.O11Y_API_BASE_URL || `https://api.${realm}.signalfx.com`;
-  return `${API_BASE_URL}/v1/sourcemaps/id/${idPathParam}`;
+  return `${API_BASE_URL}/v2/rum-mfm/source-maps/id/${idPathParam}`;
 }
 
 function throwDirectoryReadErrorDuringInject(err: unknown, directory: string): never {
