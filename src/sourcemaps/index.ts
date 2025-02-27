@@ -210,8 +210,8 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
         file,
         token,
         onProgress: ({ loaded, total }) => {
-          const { loadedFormatted, totalFormatted } = formatUploadProgress(loaded, total);
-          spinner.updateText(`Uploading ${loadedFormatted} of ${totalFormatted} for ${path} (${filesRemaining} files remaining)`);
+          const { totalFormatted } = formatUploadProgress(loaded, total);
+          spinner.updateText(`Uploading ${path} | ${totalFormatted} | ${filesRemaining} file(s) remaining`);
         },
         parameters
       });
