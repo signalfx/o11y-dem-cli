@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "description": "Tools for handling symbol and mapping files for symbolication",
   "main": "./dist/index.js",
+  "files": [
+    "dist/**/*.js",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
@@ -37,6 +42,6 @@
     "typescript": "^5.6.3"
   },
   "bin": {
-    "o11y-dem-cli": "./dist/index.js"
+    "o11y-dem-cli": "dist/index.js"
   }
 }
