@@ -26,7 +26,7 @@ interface FileUpload {
 interface UploadOptions {
   url: string;
   file: FileUpload;
-  method?: 'PUT' | 'POST';
+  token?: string;
   parameters: { [key: string]: string | number }; 
   onProgress?: (progressInfo: { progress: number; loaded: number; total: number }) => void;
 }
@@ -37,12 +37,14 @@ export interface ProgressInfo {
   total: number;
 }
 
+const TOKEN_HEADER = 'X-SF-Token';
+
 // This uploadFile method will be used by all the different commands that want to upload various types of
 // symbolication files to o11y cloud. The url, file, and additional parameters are to be prepared by the
 // calling method. Various errors, Error, axiosErrors and all should be handled by the caller of this method.
 // Since the API contracts with the backend are not yet determined. This is subject to change
 
-export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOptions): Promise<void> => {
+export const uploadFile = async ({ url, file, token, parameters, onProgress }: UploadOptions): Promise<void> => {
   const formData = new FormData();
 
   formData.append(file.fieldName, fs.createReadStream(file.filePath));
@@ -56,6 +58,7 @@ export const uploadFile = async ({ url, file, parameters, onProgress }: UploadOp
   await axios.put(url, formData, {
     headers: {
       ...formData.getHeaders(),
+      [TOKEN_HEADER]: token,
     },
     onUploadProgress: (progressEvent) => {
       const loaded = progressEvent.loaded;
