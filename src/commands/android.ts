@@ -26,20 +26,32 @@ import {
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import axios from 'axios';
-import { uploadFileAndroid } from '../utils/httpUtils';
+import { fetchAndroidMappingMetadata, uploadFileAndroid } from '../utils/httpUtils';
 
 export const androidCommand = new Command('android');
 export const realm = process.env.O11Y_REALM || 'us0'; 
 export const token = process.env.SPLUNK_O11Y_TOKEN || '';
 
-const generateURL = (appId: string, versionCode: string, uuid?: string): string => {
+const generateURL = (type: 'upload' | 'list', appId: string, versionCode?: string, uuid?: string): string => {
   // Default to 'us0' if no realm is set according to https://dev.splunk.com/observability/docs/realms_in_endpoints/
-  let uploadUrl = `https://api.${realm}.signalfx.com/v2/rum-mfm/proguard/${appId}/${versionCode}`;
-  if (uuid) {
-    uploadUrl += `/${uuid}`;
+  const baseUrl = `https://api.${realm}.signalfx.com/v2/rum-mfm/proguard`;
+
+  if (type === 'upload') {
+    if (!versionCode) throw new Error('Version code is required for uploading.');
+    let uploadUrl = `${baseUrl}/${appId}/${versionCode}`;
+    if (uuid) {
+      uploadUrl += `/${uuid}`;
+    }
+    return uploadUrl;
   }
-  return uploadUrl;
+
+  if (type === 'list') {
+    return `${baseUrl}/app/${appId}/metadatas`;
+  }
+
+  throw new Error('Invalid URL type specified.');
 };
+
 
 const androidUploadDescription =
 `
@@ -122,8 +134,8 @@ androidCommand
       throw new Error('Auth token is not set in environment variables.');
     }
 
-    const uploadUrl = options.uuid ? generateURL(options.appId, options.versionCode, options.uuid) : generateURL(options.appId, options.versionCode);
-
+    const uploadUrl = options.uuid ? generateURL('upload', options.appId, options.versionCode, options.uuid) : generateURL('upload', options.appId, options.versionCode);
+    
     const parameters: { [key: string]: string | number } = {};
     if (options.uuid) {
       parameters.uuid = options.uuid;
@@ -201,7 +213,7 @@ androidCommand
         throw new Error('Auth token is not set in environment variables.');
       }
     
-      const uploadUrl = uuid ? generateURL(appId, versionCode as string, uuid as string) : generateURL(appId, versionCode as string);
+      const uploadUrl = uuid ? generateURL('upload', appId, versionCode as string, uuid as string) : generateURL('upload', appId, versionCode as string);
     
       const parameters: { [key: string]: string | number } = {};
       if (uuid) {
@@ -234,25 +246,24 @@ androidCommand
 androidCommand
   .command('list')
   .summary(`Retrieves list of metadata of all uploaded Proguard/R8 mapping files`)
+  .requiredOption('--app-id <value>', 'Application ID')
   .showHelpAfterError(true)
   .description(listProguardDescription)
   .option('--debug', 
     'Enable debug logs')
   .action(async (options) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+    if (!token) {
+      throw new Error('Auth token is not set in environment variables.');
+    }
 
-    const url = 'https://whateverTheEndpointURLis/v1/proguard'; // Replace with the actual endpoint for fetching metadata
+    const url = generateURL('list', options.appId);
 
     try {
-      logger.info(`Fetching mapping file data`);
-
-      const response = await axios.get(url); // May need to add headers/authentication, query parameters etc once integrating with backend
-
-      // Logging raw data, slight formatting with json stringify, but can format down the line once we know how it will look returned from the backend
-      logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2)); 
+      const responseData = await fetchAndroidMappingMetadata({ url, token });
+      logger.info('Raw Response Data:', JSON.stringify(responseData, null, 2));
     } catch (error) {
-      logger.error('Failed to fetch the list of uploaded files:');
-      logger.debug(error);
-      throw error;
+      logger.error('Failed to fetch metadata:', error);
+      throw error
     }
   });

@@ -31,6 +31,11 @@ interface UploadOptions {
   onProgress?: (progressInfo: { progress: number; loaded: number; total: number }) => void;
 }
 
+interface FetchAndroidMetadataOptions {
+  url: string;
+  token: string;
+}
+
 export interface ProgressInfo {
   progress: number;
   loaded: number;
@@ -38,6 +43,24 @@ export interface ProgressInfo {
 }
 
 const TOKEN_HEADER = 'X-SF-Token';
+
+export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMetadataOptions): Promise<any> => {
+  const headers = {
+    'X-SF-Token': token,
+    'Accept': 'application/json',
+  };
+
+  try {
+    const response = await axios.get(url, { headers });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`HTTP ${error.response?.status}: ${error.response?.statusText}\nResponse Data: ${JSON.stringify(error.response?.data, null, 2)}`);
+    } else {
+      throw error;
+    }
+  }
+};
 
 export const uploadFileAndroid = async ({ url, file, token, parameters, onProgress }: UploadOptions): Promise<void> => {
   const fileSizeInBytes = fs.statSync(file.filePath).size;
