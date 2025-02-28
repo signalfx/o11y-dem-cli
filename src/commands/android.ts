@@ -209,16 +209,16 @@ androidCommand
       }
     
       try {
-          await uploadFileAndroid({
-            url: uploadUrl,
-            file: { filePath: options.file, fieldName: 'file' },
-            token: token, 
-            parameters,
-          });
-          logger.info(`Upload complete`);
-        } catch (error) {
-          logger.error('Error during upload:', error);
-        }
+        await uploadFileAndroid({
+          url: uploadUrl,
+          file: { filePath: options.file, fieldName: 'file' },
+          token: token, 
+          parameters,
+        });
+        logger.info(`Upload complete`);
+      } catch (error) {
+        logger.error('Error during upload:', error);
+      }
     } catch (err) {
       if (err instanceof UserFriendlyError) {
         logger.debug(err.originalError);
