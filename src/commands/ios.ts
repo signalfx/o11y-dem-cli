@@ -15,14 +15,15 @@
 */
 
 import fs from 'fs';
+import { createSpinner, Spinner } from '../utils/spinner';
+import axios from 'axios';
+import { tmpdir } from 'os';
 import { Command } from 'commander';
 import { ensureEnvVariable } from '../utils/environment';
 import { execSync } from 'child_process';
 import { copyFileSync, mkdtempSync, readdirSync, rmSync, statSync } from 'fs';
-import { tmpdir } from 'os';
-import { join, resolve } from 'path';
+import { basename, join, resolve } from 'path';
 import { createLogger, LogLevel } from '../utils/logger';
-import axios from 'axios';
 import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
 
 // Constants
@@ -146,10 +147,7 @@ function getZippedDSYMs(dsymsPath: string): { zipFiles: string[], uploadPath: st
   const existingZipBasenames = new Set(dSYMZipFiles.map(f => f.replace(/\.zip$/, '')));
 
   for (const dSYMDir of dSYMDirs) {
-    if (existingZipBasenames.has(dSYMDir)) {
-      // A corresponding .dSYM directory exists, so ignore the .zip and zip the directory instead
-      results.push(zipDSYMDirectory(absPath, dSYMDir, uploadPath));
-    }
+    results.push(zipDSYMDirectory(absPath, dSYMDir, uploadPath));
   }
 
   for (const zipFile of dSYMZipFiles) {
@@ -179,9 +177,12 @@ const listdSYMsDescription = `This command retrieves and shows a list of the upl
 By default, it returns the last 100 dSYM files uploaded, sorted in reverse chronological order based on the upload timestamp.
 `;
 
+
 const generateUrl = (): string => {
-  const realm = process.env.O11Y_REALM || DEFAULT_REALM;
-  return `${API_BASE_URL}/${realm}/${API_VERSION_STRING}/${API_PATH}`;
+  const api_prefix = "https://api";
+  const realm = process.env.SPLUNK_O11Y_REALM || DEFAULT_REALM;
+  const domain = "signalfx.com";
+  return `${api_prefix}.${realm}.${domain}/${API_VERSION_STRING}/${API_PATH}`;
 };
 
 
@@ -219,16 +220,19 @@ iOSCommand
       logger.info(`url: ${url}`);
       logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
 
-      for (const filePath of zipFiles) {
-        logger.info(`Uploading ${filePath}...`);
 
+      const spinner = createSpinner();
+
+      for (const filePath of zipFiles) {
         const fileSizeInBytes = fs.statSync(filePath).size;
-        const fileStream = fs.createReadStream(filePath);
-        const headers = {
-          'Content-Type': 'application/zip',
-          [TOKEN_HEADER]: TOKEN,
-          'Content-Length': fileSizeInBytes,
+	const fileStream = fs.createReadStream(filePath);
+	const headers = {
+	  'Content-Type': 'application/zip',
+	  [TOKEN_HEADER]: TOKEN,
+	  'Content-Length': fileSizeInBytes,
         };
+	
+        spinner.start(`Uploading file: ${basename(filePath)}`);
 
         try {
           await axios.put(url, fileStream, {
@@ -237,16 +241,17 @@ iOSCommand
               const loaded = progressEvent.loaded;
               const total = progressEvent.total || fileSizeInBytes;
               const progress = (loaded / total) * 100;
-              logger.info(`Progress: ${progress.toFixed(2)}%`);
+              spinner.updateText(`Progress: ${progress.toFixed(2)}% for ${basename(filePath)}`);
             },
           });
 
-          logger.info(`Upload complete for ${filePath}!`);
+          spinner.stop();
+          logger.info(`Upload complete for ${basename(filePath)}`);
         } catch (err) {
-          throw new UserFriendlyError(err, `Failed to upload ${filePath}. Please check your network connection and try again.`);
+          spinner.stop();
+          throw new UserFriendlyError(err, `Failed to upload ${basename(filePath)}. Please check your network connection and try again.`);
         }
       }
-
       cleanupTemporaryZips(uploadPath);
 
     } catch (error) {
@@ -273,12 +278,14 @@ iOSCommand
       onMissing: 'error'
     });
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
-    const url = generateUrl();
+    const url = 'https://app.lab0.signalfx.com/v2/rum-mfm/macho/metadatas';
 
     try {
       logger.info('Fetching dSYM file data');
+      //const response = await axios.get(url);
       const response = await axios.get(url, {
         headers: {
+	  'Content-Type': 'application/json',
           'User-Agent': 'splunk-mfm-cli-tool-ios',
           'X-SF-Token': TOKEN,
         },
