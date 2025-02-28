@@ -25,11 +25,25 @@ import { basename, join, resolve } from 'path';
 import { createLogger, LogLevel } from '../utils/logger';
 import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
 
+interface UploadCommandOptions {
+  directory: string;
+  realm: string;
+  token: string;
+  debug?: boolean;
+  dryRun?: boolean;
+}
+
+interface ListCommandOptions {
+  realm: string;
+  token: string;
+  debug?: boolean;
+}
+
 // Constants
 const API_VERSION_STRING = 'v2';
-const API_PATH = 'rum-mfm/dsym';
+const API_PATH_FOR_LIST = 'rum-mfm/macho/metadatas';
+const API_PATH_FOR_UPLOAD = 'rum-mfm/dsym';
 const TOKEN_HEADER = 'X-SF-Token';
-const TOKEN = process.env.O11Y_TOKEN;
 const DEFAULT_REALM = 'us0';
 
 export const iOSCommand = new Command('iOS');
@@ -170,16 +184,24 @@ const listdSYMsDescription = `This command retrieves and shows a list of the upl
 By default, it returns the last 100 dSYM files uploaded, sorted in reverse chronological order based on the upload timestamp.
 `;
 
-const generateUrl = (): string => {
-  const api_prefix = 'https://api';
-  const realm = process.env.O11Y_REALM || DEFAULT_REALM;
-  const domain = 'signalfx.com';
-  return `${api_prefix}.${realm}.${domain}/${API_VERSION_STRING}/${API_PATH}`;
+const generateUrl = ({
+  urlPrefix,
+  apiPath,
+  realm = process.env.O11Y_REALM || DEFAULT_REALM,
+  domain = 'signalfx.com',
+}: {
+  urlPrefix: string;
+  apiPath: string;
+  realm?: string;
+  domain?: string;
+}): string => {
+  return `${urlPrefix}.${realm}.${domain}/${API_VERSION_STRING}/${apiPath}`;
 };
 
 iOSCommand
   .name('ios')
   .description('Upload and list zipped iOS symbolication files (dSYMs)');
+
 
 iOSCommand
   .command('upload')
@@ -212,8 +234,29 @@ iOSCommand
       // Get the list of zipped dSYM files
       const { zipFiles, uploadPath } = getZippedDSYMs(absPath);
 
-      const url = generateUrl();
+      // If dry-run mode is enabled, log the actions and exit early
+      if (options.dryRun) {
+        if (zipFiles.length === 0) {
+          logger.info(`Dry run mode: No files found to upload for directory: ${dsymsPath}.`);
+        } else {
+          const descriptor = zipFiles.length === 1 ? 'file' : 'files';
+          logger.info(`Dry run mode: Would upload the following ${descriptor}:`);
+          zipFiles.forEach((filePath) => {
+            const fileName = basename(filePath);
+            logger.info(`\t${fileName}`);
+          });
+        }
+	cleanupTemporaryZips(uploadPath);
+        return;
+      }
+
+      // Get the URL for the upload endpoint
+      const url = generateUrl({
+        urlPrefix: 'https://api',
+        apiPath: API_PATH_FOR_UPLOAD,
+      });
       logger.info(`url: ${url}`);
+      
       logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
 
       const spinner = createSpinner();
