@@ -15,7 +15,7 @@
 */
 
 import fs from 'fs';
-import { createSpinner, Spinner } from '../utils/spinner';
+import { createSpinner } from '../utils/spinner';
 import axios from 'axios';
 import { tmpdir } from 'os';
 import { Command } from 'commander';
