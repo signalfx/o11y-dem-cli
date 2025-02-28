@@ -246,7 +246,7 @@ iOSCommand
             logger.info(`\t${fileName}`);
           });
         }
-	cleanupTemporaryZips(uploadPath);
+        cleanupTemporaryZips(uploadPath);
         return;
       }
 
