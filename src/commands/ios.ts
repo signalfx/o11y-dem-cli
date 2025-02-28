@@ -19,7 +19,6 @@ import { createSpinner } from '../utils/spinner';
 import axios from 'axios';
 import { tmpdir } from 'os';
 import { Command } from 'commander';
-import { ensureEnvVariable } from '../utils/environment';
 import { execSync } from 'child_process';
 import { copyFileSync, mkdtempSync, readdirSync, rmSync, statSync } from 'fs';
 import { basename, join, resolve } from 'path';
@@ -27,11 +26,10 @@ import { createLogger, LogLevel } from '../utils/logger';
 import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
 
 // Constants
-const API_BASE_URL = process.env.O11Y_API_BASE_URL || 'https://api.splunk.com';
 const API_VERSION_STRING = 'v2';
 const API_PATH = 'rum-mfm/dsym';
 const TOKEN_HEADER = 'X-SF-Token';
-const TOKEN = process.env.SPLUNK_O11Y_TOKEN;
+const TOKEN = process.env.O11Y_TOKEN;
 const DEFAULT_REALM = 'us0';
 
 export const iOSCommand = new Command('iOS');
@@ -179,9 +177,9 @@ By default, it returns the last 100 dSYM files uploaded, sorted in reverse chron
 
 
 const generateUrl = (): string => {
-  const api_prefix = "https://api";
-  const realm = process.env.SPLUNK_O11Y_REALM || DEFAULT_REALM;
-  const domain = "signalfx.com";
+  const api_prefix = 'https://api';
+  const realm = process.env.O11Y_REALM || DEFAULT_REALM;
+  const domain = 'signalfx.com';
   return `${api_prefix}.${realm}.${domain}/${API_VERSION_STRING}/${API_PATH}`;
 };
 
@@ -198,12 +196,18 @@ iOSCommand
   .description(iOSUploadDescription)
   .summary('Upload dSYM files from a directory to the symbolication service')
   .requiredOption('--directory <path>', 'Path to the dSYMs directory')
+  .requiredOption(
+    '--realm <value>',
+    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
+    process.env.O11Y_REALM
+  )
+  .requiredOption(
+    '--token <value>',
+    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
+    process.env.O11Y_TOKEN
+  )
   .option('--debug', 'Enable debug logs')
   .action(async (options: { directory: string, debug?: boolean }) => {
-    ensureEnvVariable({
-      variableName: 'SPLUNK_O11Y_TOKEN',
-      onMissing: 'error'
-    });
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
@@ -272,11 +276,17 @@ iOSCommand
   .showHelpAfterError(true)
   .description(listdSYMsDescription)
   .option('--debug', 'Enable debug logs')
+  .requiredOption(
+    '--realm <value>',
+    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
+    process.env.O11Y_REALM
+  )
+  .requiredOption(
+    '--token <value>',
+    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
+    process.env.O11Y_TOKEN
+  )
   .action(async (options) => {
-    ensureEnvVariable({
-      variableName: 'SPLUNK_O11Y_TOKEN',
-      onMissing: 'error'
-    });
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
     const url = 'https://app.lab0.signalfx.com/v2/rum-mfm/macho/metadatas';
 
