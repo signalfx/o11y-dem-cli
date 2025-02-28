@@ -26,8 +26,20 @@ import {
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import axios from 'axios';
+import { uploadFileAndroid } from '../utils/httpUtils';
 
 export const androidCommand = new Command('android');
+export const realm = process.env.O11Y_REALM || 'us0'; 
+export const token = process.env.SPLUNK_O11Y_TOKEN || '';
+
+const generateURL = (appId: string, versionCode: string, uuid?: string): string => {
+  // Default to 'us0' if no realm is set according to https://dev.splunk.com/observability/docs/realms_in_endpoints/
+  let uploadUrl = `https://api.${realm}.signalfx.com/v2/rum-mfm/proguard/${appId}/${versionCode}`;
+  if (uuid) {
+    uploadUrl += `/${uuid}`;
+  }
+  return uploadUrl;
+};
 
 const androidUploadDescription =
 `
@@ -105,10 +117,29 @@ androidCommand
       Version Code: ${options.versionCode}
       File: ${options.file}
       UUID: ${options.uuid || 'Not provided'}`);
+    
+    if (!token) {
+      throw new Error('Auth token is not set in environment variables.');
+    }
 
-    // call uploadFile method with generated URL, path to file, fields and potentially catch any errors and log
-  
-    logger.info(`\nUpload complete!`);
+    const uploadUrl = options.uuid ? generateURL(options.appId, options.versionCode, options.uuid) : generateURL(options.appId, options.versionCode);
+
+    const parameters: { [key: string]: string | number } = {};
+    if (options.uuid) {
+      parameters.uuid = options.uuid;
+    }
+
+    try {
+      await uploadFileAndroid({
+        url: uploadUrl,
+        file: { filePath: options.file, fieldName: 'file' },
+        token: token, 
+        parameters,
+      });
+      logger.info(`Upload complete`);
+    } catch (error) {
+      logger.error('Error during upload:', error);
+    }
   });
 
 androidCommand
@@ -166,9 +197,28 @@ androidCommand
         App ID: ${appId}
         Version Code: ${versionCode}`);
 
-      // call uploadFile method with generated URL, path to file, fields and potentially catch any errors and log
-
-      logger.info(`\nUpload complete!`);
+      if (!token) {
+        throw new Error('Auth token is not set in environment variables.');
+      }
+    
+      const uploadUrl = uuid ? generateURL(appId, versionCode as string, uuid as string) : generateURL(appId, versionCode as string);
+    
+      const parameters: { [key: string]: string | number } = {};
+      if (uuid) {
+        parameters.uuid = uuid as string;
+      }
+    
+      try {
+          await uploadFileAndroid({
+            url: uploadUrl,
+            file: { filePath: options.file, fieldName: 'file' },
+            token: token, 
+            parameters,
+          });
+          logger.info(`Upload complete`);
+        } catch (error) {
+          logger.error('Error during upload:', error);
+        }
     } catch (err) {
       if (err instanceof UserFriendlyError) {
         logger.debug(err.originalError);
