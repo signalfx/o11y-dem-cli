@@ -221,8 +221,8 @@ iOSCommand
     process.env.O11Y_TOKEN
   )
   .option('--debug', 'Enable debug logs')
-  .action(async (options: { directory: string, debug?: boolean }) => {
-
+  .option('--dry-run', 'Perform a trial run with no changes made', false)
+  .action(async (options: UploadCommandOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
     try {
@@ -266,7 +266,7 @@ iOSCommand
         const fileStream = fs.createReadStream(filePath);
         const headers = {
           'Content-Type': 'application/zip',
-          [TOKEN_HEADER]: TOKEN,
+          [TOKEN_HEADER]: options.token,
           'Content-Length': fileSizeInBytes,
         };
 
@@ -319,17 +319,22 @@ iOSCommand
     'API access token.  Can also be set using the environment variable O11Y_TOKEN',
     process.env.O11Y_TOKEN
   )
-  .action(async (options) => {
+  .action(async (options: ListCommandOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
-    const url = 'https://app.lab0.signalfx.com/v2/rum-mfm/macho/metadatas';
 
+    // Get the URL for the list endpoint
+    const url = generateUrl({
+      urlPrefix: 'https://app',
+      apiPath: API_PATH_FOR_LIST
+    });
+    
     try {
       logger.info('Fetching dSYM file data');
       const response = await axios.get(url, {
         headers: {
           'Content-Type': 'application/json',
           'User-Agent': 'splunk-mfm-cli-tool-ios',
-          [TOKEN_HEADER]: TOKEN,
+          [TOKEN_HEADER]: options.token,
         },
       });
       logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2));
