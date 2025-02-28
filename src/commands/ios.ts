@@ -45,18 +45,18 @@ function validateDSYMsPath(dsymsPath: string): string {
     absPath = absPath.slice(0, -1);
   }
 
-  if (!absPath.endsWith('.dSYMs')) {
-    throw new UserFriendlyError(null, `Invalid input: Expected a path ending in '.dSYMs'.`);
+  if (!absPath.endsWith('dSYMs')) {
+    throw new UserFriendlyError(null, `Invalid input: Expected a path ending in 'dSYMs'.`);
   }
 
   try {
     const stats = statSync(absPath);
     if (!stats.isDirectory()) {
-      throw new UserFriendlyError(null, `Invalid input: Expected a '.dSYMs/' folder but got a file.`);
+      throw new UserFriendlyError(null, `Invalid input: Expected a 'dSYMs/' directory but got a file.`);
     }
   } catch (err) {
     throwAsUserFriendlyErrnoException(err, {
-      ENOENT: `Path not found: Ensure the provided folder exists before re-running.`,
+      ENOENT: `Path not found: Ensure the provided directory exists before re-running.`,
     });
   }
   return absPath;
@@ -64,9 +64,9 @@ function validateDSYMsPath(dsymsPath: string): string {
 
 
 /**
- * Scan the `.dSYMs/` folder and return categorized lists of `.dSYM/` directories and `.dSYM.zip` files.
+ * Scan the `dSYMs/` directory and return categorized lists of `.dSYM/` directories and `.dSYM.zip` files.
  */
-function scanDSYMsFolder(dsymsPath: string): { dSYMDirs: string[], dSYMZipFiles: string[] } {
+function scanDSYMsDirectory(dsymsPath: string): { dSYMDirs: string[], dSYMZipFiles: string[] } {
   const files = readdirSync(dsymsPath);
   const dSYMDirs: string[] = [];
   const dSYMZipFiles: string[] = [];
@@ -91,12 +91,12 @@ function scanDSYMsFolder(dsymsPath: string): { dSYMDirs: string[], dSYMZipFiles:
 
 
 /**
- * zip a single `dSYM/` folder into the provided `uploadPath` directory.
+ * zip a single `dSYM/` directory into the provided `uploadPath` directory.
  * Returns the full path of the created `.zip` file.
  */
-function zipDSYMFolder(parentPath: string, dsymFolder: string, uploadPath: string): string {
-  const sourcePath = join(parentPath, dsymFolder);
-  const zipPath = join(uploadPath, `${dsymFolder}.zip`);
+function zipDSYMDirectory(parentPath: string, dsymDirectory: string, uploadPath: string): string {
+  const sourcePath = join(parentPath, dsymDirectory);
+  const zipPath = join(uploadPath, `${dsymDirectory}.zip`);
 
   try {
     execSync(`zip -r '${zipPath}' '${sourcePath}'`, { stdio: 'ignore' });
@@ -125,7 +125,7 @@ function cleanupTemporaryZips(uploadPath: string): void {
 
 
 /**
- * Given a .dSYMs/ directory path, visit the contents of the directory and gather
+ * Given a dSYMs/ directory path, visit the contents of the directory and gather
  * zipped copies of all the .dSYM/ directories it contains, including .dSYM/
  * directories that were already zipped before we arrived. If both a .dSYM/ and
  * its corresponding .dSYM.zip file exist, make a fresh .zip; if only the .zip
@@ -135,27 +135,27 @@ function cleanupTemporaryZips(uploadPath: string): void {
  **/
 function getZippedDSYMs(dsymsPath: string): { zipFiles: string[], uploadPath: string } {
   const absPath = validateDSYMsPath(dsymsPath);
-  const { dSYMDirs, dSYMZipFiles } = scanDSYMsFolder(absPath);
+  const { dSYMDirs, dSYMZipFiles } = scanDSYMsDirectory(absPath);
 
   // Create a unique system temp directory for storing zip files
   const uploadPath = mkdtempSync(join(tmpdir(), 'splunk_dSYMs_upload_'));
 
   const results: string[] = [];
 
-  // Build a Set of `.dSYM.zip` filenames without the `.zip` extension for quick lookup
+  // Build a Set of `*.dSYM.zip` filenames without the `.zip` extension for quick lookup
   const existingZipBasenames = new Set(dSYMZipFiles.map(f => f.replace(/\.zip$/, '')));
 
   for (const dSYMDir of dSYMDirs) {
     if (existingZipBasenames.has(dSYMDir)) {
-      // A corresponding .dSYM folder exists, so ignore the .zip and zip the folder instead
-      results.push(zipDSYMFolder(absPath, dSYMDir, uploadPath));
+      // A corresponding .dSYM directory exists, so ignore the .zip and zip the directory instead
+      results.push(zipDSYMDirectory(absPath, dSYMDir, uploadPath));
     }
   }
 
   for (const zipFile of dSYMZipFiles) {
     const baseName = zipFile.replace(/\.zip$/, '');
     if (!existingZipBasenames.has(baseName)) {
-      // Only copy .dSYM.zip files that don't have a corresponding .dSYM/ directory
+      // Only copy *.dSYM.zip files that don't have a corresponding *.dSYM/ directory
       const srcPath = join(absPath, zipFile);
       const destPath = join(uploadPath, zipFile);
       try {
@@ -173,7 +173,7 @@ function getZippedDSYMs(dsymsPath: string): { zipFiles: string[], uploadPath: st
   return { zipFiles: results, uploadPath };
 }
 
-const iOSUploadDescription = `This subcommand uploads the specified zipped dSYMs file.`;
+const iOSUploadDescription = `This subcommand uploads any dSYM directories found in the specified dSYMs/ directory.`;
 
 const listdSYMsDescription = `This command retrieves and shows a list of the uploaded dSYM files.
 By default, it returns the last 100 dSYM files uploaded, sorted in reverse chronological order based on the upload timestamp.
@@ -195,7 +195,7 @@ iOSCommand
   .showHelpAfterError(true)
   .usage('--directory <path>')
   .description(iOSUploadDescription)
-  .summary('Upload dSYMs files from a directory to the symbolication service')
+  .summary('Upload dSYM files from a directory to the symbolication service')
   .requiredOption('--directory <path>', 'Path to the dSYMs directory')
   .option('--debug', 'Enable debug logs')
   .action(async (options: { directory: string, debug?: boolean }) => {
@@ -209,10 +209,10 @@ iOSCommand
     try {
       const dsymsPath = options.directory;
 
-      // Validate that the provided path is a directory ending with .dSYMs
+      // Validate that the provided path is a directory ending with dSYMs
       const absPath = validateDSYMsPath(dsymsPath);
 
-      // Get the list of zipped dSYMs files
+      // Get the list of zipped dSYM files
       const { zipFiles, uploadPath } = getZippedDSYMs(absPath);
 
       const url = generateUrl();
