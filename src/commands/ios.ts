@@ -34,7 +34,6 @@ const DEFAULT_REALM = 'us0';
 
 export const iOSCommand = new Command('iOS');
 
-
 /**
  * Helper functions for locating and zipping dSYMs
  **/
@@ -60,7 +59,6 @@ function validateDSYMsPath(dsymsPath: string): string {
   }
   return absPath;
 }
-
 
 /**
  * Scan the `dSYMs/` directory and return categorized lists of `.dSYM/` directories and `.dSYM.zip` files.
@@ -88,9 +86,8 @@ function scanDSYMsDirectory(dsymsPath: string): { dSYMDirs: string[], dSYMZipFil
   return { dSYMDirs, dSYMZipFiles };
 }
 
-
 /**
- * zip a single `dSYM/` directory into the provided `uploadPath` directory.
+ * Zip a single `dSYM/` directory into the provided `uploadPath` directory.
  * Returns the full path of the created `.zip` file.
  */
 function zipDSYMDirectory(parentPath: string, dsymDirectory: string, uploadPath: string): string {
@@ -106,7 +103,6 @@ function zipDSYMDirectory(parentPath: string, dsymDirectory: string, uploadPath:
   return zipPath;
 }
 
-
 /**
  * Remove the temporary upload directory and all files inside it.
  */
@@ -121,7 +117,6 @@ function cleanupTemporaryZips(uploadPath: string): void {
     console.warn(`Warning: Failed to remove temporary directory '${uploadPath}'.`, err);
   }
 }
-
 
 /**
  * Given a dSYMs/ directory path, visit the contents of the directory and gather
@@ -175,7 +170,6 @@ const listdSYMsDescription = `This command retrieves and shows a list of the upl
 By default, it returns the last 100 dSYM files uploaded, sorted in reverse chronological order based on the upload timestamp.
 `;
 
-
 const generateUrl = (): string => {
   const api_prefix = 'https://api';
   const realm = process.env.O11Y_REALM || DEFAULT_REALM;
@@ -183,11 +177,9 @@ const generateUrl = (): string => {
   return `${api_prefix}.${realm}.${domain}/${API_VERSION_STRING}/${API_PATH}`;
 };
 
-
 iOSCommand
   .name('ios')
   .description('Upload and list zipped iOS symbolication files (dSYMs)');
-
 
 iOSCommand
   .command('upload')
@@ -224,18 +216,17 @@ iOSCommand
       logger.info(`url: ${url}`);
       logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
 
-
       const spinner = createSpinner();
 
       for (const filePath of zipFiles) {
         const fileSizeInBytes = fs.statSync(filePath).size;
-	const fileStream = fs.createReadStream(filePath);
-	const headers = {
-	  'Content-Type': 'application/zip',
-	  [TOKEN_HEADER]: TOKEN,
-	  'Content-Length': fileSizeInBytes,
+        const fileStream = fs.createReadStream(filePath);
+        const headers = {
+          'Content-Type': 'application/zip',
+          [TOKEN_HEADER]: TOKEN,
+          'Content-Length': fileSizeInBytes,
         };
-	
+
         spinner.start(`Uploading file: ${basename(filePath)}`);
 
         try {
@@ -269,7 +260,6 @@ iOSCommand
     }
   });
 
-
 iOSCommand
   .command('list')
   .summary('Retrieves list of metadata of all uploaded dSYM files')
@@ -292,12 +282,11 @@ iOSCommand
 
     try {
       logger.info('Fetching dSYM file data');
-      //const response = await axios.get(url);
       const response = await axios.get(url, {
         headers: {
-	  'Content-Type': 'application/json',
+          'Content-Type': 'application/json',
           'User-Agent': 'splunk-mfm-cli-tool-ios',
-          'X-SF-Token': TOKEN,
+          [TOKEN_HEADER]: TOKEN,
         },
       });
       logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2));
