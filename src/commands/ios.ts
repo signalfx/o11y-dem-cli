@@ -16,28 +16,29 @@
 
 import fs from 'fs';
 import { Command } from 'commander';
-import { FormData } from 'form-data';
 import { ensureEnvVariable } from '../utils/environment';
 import { execSync } from 'child_process';
 import { copyFileSync, mkdtempSync, readdirSync, rmSync, statSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
-import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import axios from 'axios';
-import { uploadFile } from '../utils/httpUtils';
+import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
 
 // Constants
-const DSYM_FIELD_NAME = 'dSYM';
 const API_BASE_URL = process.env.O11Y_API_BASE_URL || 'https://api.splunk.com';
 const API_VERSION_STRING = 'v2';
 const API_PATH = 'rum-mfm/dsym';
+const TOKEN_HEADER = 'X-SF-Token';
 const TOKEN = process.env.SPLUNK_O11Y_TOKEN;
+const DEFAULT_REALM = 'us0';
 
 export const iOSCommand = new Command('iOS');
 
-// Helper functions for locating and zipping dSYMs
 
+/**
+ * Helper functions for locating and zipping dSYMs
+ **/
 function validateDSYMsPath(dsymsPath: string): string {
   let absPath = resolve(dsymsPath);
   if (absPath.endsWith('/')) {
@@ -45,16 +46,18 @@ function validateDSYMsPath(dsymsPath: string): string {
   }
 
   if (!absPath.endsWith('.dSYMs')) {
-    throw new Error(`Invalid input: Expected a path ending in '.dSYMs'.`);
+    throw new UserFriendlyError(null, `Invalid input: Expected a path ending in '.dSYMs'.`);
   }
 
   try {
     const stats = statSync(absPath);
     if (!stats.isDirectory()) {
-      throw new Error(`Invalid input: Expected a '.dSYMs/' folder but got a file.`);
+      throw new UserFriendlyError(null, `Invalid input: Expected a '.dSYMs/' folder but got a file.`);
     }
   } catch (err) {
-    throw new Error(`Path not found: Ensure the provided folder exists before re-running: ${err}`);
+    throwAsUserFriendlyErrnoException(err, {
+      ENOENT: `Path not found: Ensure the provided folder exists before re-running.`,
+    });
   }
   return absPath;
 }
@@ -71,10 +74,16 @@ function scanDSYMsFolder(dsymsPath: string): { dSYMDirs: string[], dSYMZipFiles:
   for (const file of files) {
     const fullPath = join(dsymsPath, file);
 
-    if (file.endsWith('.dSYM') && statSync(fullPath).isDirectory()) {
-      dSYMDirs.push(file);
-    } else if (file.endsWith('.dSYM.zip') && statSync(fullPath).isFile()) {
-      dSYMZipFiles.push(file);
+    try {
+      if (file.endsWith('.dSYM') && statSync(fullPath).isDirectory()) {
+        dSYMDirs.push(file);
+      } else if (file.endsWith('.dSYM.zip') && statSync(fullPath).isFile()) {
+        dSYMZipFiles.push(file);
+      }
+    } catch (err) {
+      throwAsUserFriendlyErrnoException(err, {
+        ENOENT: `Error accessing file or directory at ${fullPath}. Please ensure it exists and is accessible.`,
+      });
     }
   }
   return { dSYMDirs, dSYMZipFiles };
@@ -89,10 +98,15 @@ function zipDSYMFolder(parentPath: string, dsymFolder: string, uploadPath: strin
   const sourcePath = join(parentPath, dsymFolder);
   const zipPath = join(uploadPath, `${dsymFolder}.zip`);
 
-  execSync(`zip -r '${zipPath}' '${sourcePath}'`, { stdio: 'ignore' });
+  try {
+    execSync(`zip -r '${zipPath}' '${sourcePath}'`, { stdio: 'ignore' });
+  } catch (err) {
+    throw new UserFriendlyError(err, `Failed to zip ${sourcePath}. Please ensure you have the necessary permissions and that the zip command is available.`);
+  }
 
   return zipPath;
 }
+
 
 /**
  * Remove the temporary upload directory and all files inside it.
@@ -110,6 +124,15 @@ function cleanupTemporaryZips(uploadPath: string): void {
 }
 
 
+/**
+ * Given a .dSYMs/ directory path, visit the contents of the directory and gather
+ * zipped copies of all the .dSYM/ directories it contains, including .dSYM/
+ * directories that were already zipped before we arrived. If both a .dSYM/ and
+ * its corresponding .dSYM.zip file exist, make a fresh .zip; if only the .zip
+ * exists, accept the .zip file. Put files (or, in the case of existing .zips,
+ * copies of them) in a temp dir `uploadPath`, then return the full list `zipFiles`
+ * of all .zip files placed there, along with the path to the temp dir itself.
+ **/
 function getZippedDSYMs(dsymsPath: string): { zipFiles: string[], uploadPath: string } {
   const absPath = validateDSYMsPath(dsymsPath);
   const { dSYMDirs, dSYMZipFiles } = scanDSYMsFolder(absPath);
@@ -135,14 +158,20 @@ function getZippedDSYMs(dsymsPath: string): { zipFiles: string[], uploadPath: st
       // Only copy .dSYM.zip files that don't have a corresponding .dSYM/ directory
       const srcPath = join(absPath, zipFile);
       const destPath = join(uploadPath, zipFile);
-      copyFileSync(srcPath, destPath);
+      try {
+        copyFileSync(srcPath, destPath);
+      } catch (err) {
+        throwAsUserFriendlyErrnoException(err, {
+          ENOENT: `Failed to copy ${srcPath} to ${destPath}. Please ensure the file exists and is not in use.`,
+          EACCES: `Permission denied while copying ${srcPath}. Please check your access rights.`,
+        });
+      }
       results.push(destPath);
     }
   }
 
-  return  { zipFiles: results, uploadPath };
+  return { zipFiles: results, uploadPath };
 }
-
 
 const iOSUploadDescription = `This subcommand uploads the specified zipped dSYMs file.`;
 
@@ -151,17 +180,15 @@ By default, it returns the last 100 dSYM files uploaded, sorted in reverse chron
 `;
 
 const generateUrl = (): string => {
-  return `${API_BASE_URL}/${API_VERSION_STRING}/${API_PATH}`;
+  const realm = process.env.O11Y_REALM || DEFAULT_REALM;
+  return `${API_BASE_URL}/${realm}/${API_VERSION_STRING}/${API_PATH}`;
 };
+
 
 iOSCommand
   .name('ios')
   .description('Upload and list zipped iOS symbolication files (dSYMs)');
 
-interface UploadiOSOptions {
-  file: string;
-  debug?: boolean;
-}
 
 iOSCommand
   .command('upload')
@@ -172,12 +199,11 @@ iOSCommand
   .requiredOption('--directory <path>', 'Path to the dSYMs directory')
   .option('--debug', 'Enable debug logs')
   .action(async (options: { directory: string, debug?: boolean }) => {
-
     ensureEnvVariable({
       variableName: 'SPLUNK_O11Y_TOKEN',
       onMissing: 'error'
     });
-    
+
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
     try {
@@ -194,48 +220,46 @@ iOSCommand
       logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
 
       for (const filePath of zipFiles) {
-        const fileData = {
-          filePath,
-          fieldName: DSYM_FIELD_NAME,
-        };
-
         logger.info(`Uploading ${filePath}...`);
 
-        const formData = new FormData();
-        formData.append(fileData.fieldName, fs.createReadStream(fileData.filePath));
+        const fileSizeInBytes = fs.statSync(filePath).size;
+        const fileStream = fs.createReadStream(filePath);
+        const headers = {
+          'Content-Type': 'application/zip',
+          [TOKEN_HEADER]: TOKEN,
+          'Content-Length': fileSizeInBytes,
+        };
 
-        const fileSizeInBytes = fs.statSync(fileData.filePath).size;
+        try {
+          await axios.put(url, fileStream, {
+            headers,
+            onUploadProgress: (progressEvent) => {
+              const loaded = progressEvent.loaded;
+              const total = progressEvent.total || fileSizeInBytes;
+              const progress = (loaded / total) * 100;
+              logger.info(`Progress: ${progress.toFixed(2)}%`);
+            },
+          });
 
-        await axios.put(url, formData, {
-          headers: {
-            ...formData.getHeaders(),
-            'User-Agent': 'splunk-mfm-cli-tool-ios',
-            'X-SF-Token': TOKEN,
-          },
-          onUploadProgress: (progressEvent) => {
-            const loaded = progressEvent.loaded;
-            const total = progressEvent.total || fileSizeInBytes;
-            const progress = (loaded / total) * 100;
-            logger.info(`Progress: ${progress.toFixed(2)}%`);
-          },
-        });
-
-        logger.info(`Upload complete for ${filePath}!`);
+          logger.info(`Upload complete for ${filePath}!`);
+        } catch (err) {
+          throw new UserFriendlyError(err, `Failed to upload ${filePath}. Please check your network connection and try again.`);
+        }
       }
+
       cleanupTemporaryZips(uploadPath);
 
     } catch (error) {
-      if (error instanceof Error) {
-        logger.error('Failed to upload the dSYMs files:', error.message);
-        throw error;
+      if (error instanceof UserFriendlyError) {
+        logger.error(error.message);
+        console.debug(error.originalError);
       } else {
-        const errorMessage = `Unexpected error type: ${JSON.stringify(error)}`;
-        logger.error('Failed to upload the dSYMs files:', errorMessage);
-        throw new Error(errorMessage);
+        logger.error('An unexpected error occurred:', error);
+        throw error;
       }
     }
   });
-  
+
 
 iOSCommand
   .command('list')
@@ -261,7 +285,10 @@ iOSCommand
       });
       logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2));
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof UserFriendlyError) {
+        logger.error(error.message);
+        console.debug(error.originalError);
+      } else if (error instanceof Error) {
         logger.error('Failed to fetch the list of uploaded files:', error.message);
       } else {
         logger.error('Failed to fetch the list of uploaded files:', String(error));
