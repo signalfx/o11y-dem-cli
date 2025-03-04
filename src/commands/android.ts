@@ -26,6 +26,7 @@ import {
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import { fetchAndroidMappingMetadata, uploadFileAndroid } from '../utils/httpUtils';
+import { AxiosError } from 'axios';
 
 export const androidCommand = new Command('android');
 
@@ -140,7 +141,7 @@ androidCommand
       File: ${options.file}
       UUID: ${options.uuid || 'Not provided'}`);
 
-    const uploadUrl = generateURL('upload', options.realm, options.appId, options.versionCode, options.uuid);
+    const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.uuid);
     
     const parameters: { [key: string]: string | number } = {};
     if (options.uuid) {
@@ -148,15 +149,34 @@ androidCommand
     }
 
     try {
+      logger.debug('Uploading %s', options.file);
       await uploadFileAndroid({
-        url: uploadUrl,
+        url: url,
         file: { filePath: options.file, fieldName: 'file' },
         token: options.token, 
         parameters,
       });
       logger.info(`Upload complete`);
     } catch (error) {
-      logger.error('Error during upload:', error);
+      const ae = error as AxiosError;
+      const unableToUploadMessage = `Unable to upload ${options.file}`;
+
+      if (ae.response && ae.response.status === 413) {
+        logger.warn(ae.response.status, ae.response.statusText);
+        logger.warn(unableToUploadMessage);
+      } else if (ae.response) {
+        logger.error(ae.response.status, ae.response.statusText);
+        logger.error(ae.response.data);
+        logger.error(unableToUploadMessage);
+      } else if (ae.request) {
+        logger.error(`Response from ${url} was not received`);
+        logger.error(ae.cause);
+        logger.error(unableToUploadMessage);
+      } else {
+        logger.error(`Request to ${url} could not be sent`);
+        logger.error(error);
+        logger.error(unableToUploadMessage);
+      }
     }
   });
 
@@ -224,7 +244,7 @@ androidCommand
         App ID: ${appId}
         Version Code: ${versionCode}`);
 
-      const uploadUrl = generateURL('upload', options.realm, appId, versionCode as string, uuid as string);
+      const url = generateURL('upload', options.realm, appId, versionCode as string, uuid as string);
     
       const parameters: { [key: string]: string | number } = {};
       if (uuid) {
@@ -233,14 +253,32 @@ androidCommand
     
       try {
         await uploadFileAndroid({
-          url: uploadUrl,
+          url: url,
           file: { filePath: options.file, fieldName: 'file' },
           token: options.token, 
           parameters,
         });
         logger.info(`Upload complete`);
       } catch (error) {
-        logger.error('Error during upload:', error);
+        const ae = error as AxiosError;
+        const unableToUploadMessage = `Unable to upload ${options.file}`;
+  
+        if (ae.response && ae.response.status === 413) {
+          logger.warn(ae.response.status, ae.response.statusText);
+          logger.warn(unableToUploadMessage);
+        } else if (ae.response) {
+          logger.error(ae.response.status, ae.response.statusText);
+          logger.error(ae.response.data);
+          logger.error(unableToUploadMessage);
+        } else if (ae.request) {
+          logger.error(`Response from ${url} was not received`);
+          logger.error(ae.cause);
+          logger.error(unableToUploadMessage);
+        } else {
+          logger.error(`Request to ${url} could not be sent`);
+          logger.error(error);
+          logger.error(unableToUploadMessage);
+        }
       }
     } catch (err) {
       if (err instanceof UserFriendlyError) {
