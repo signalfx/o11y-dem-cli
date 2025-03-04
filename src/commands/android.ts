@@ -27,6 +27,7 @@ import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import { fetchAndroidMappingMetadata, uploadFileAndroid } from '../utils/httpUtils';
 import { AxiosError } from 'axios';
+import { createSpinner } from '../utils/spinner';
 
 export const androidCommand = new Command('android');
 
@@ -141,23 +142,23 @@ androidCommand
       File: ${options.file}
       UUID: ${options.uuid || 'Not provided'}`);
 
+    const spinner = createSpinner();
+    spinner.start(`Uploading Android mapping file: ${options.file}`);
+
     const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.uuid);
-    
-    const parameters: { [key: string]: string | number } = {};
-    if (options.uuid) {
-      parameters.uuid = options.uuid;
-    }
 
     try {
       logger.debug('Uploading %s', options.file);
       await uploadFileAndroid({
         url: url,
         file: { filePath: options.file, fieldName: 'file' },
-        token: options.token, 
-        parameters,
+        token: options.token,
+        parameters: {}
       });
+      spinner.stop();
       logger.info(`Upload complete`);
     } catch (error) {
+      spinner.stop();
       const ae = error as AxiosError;
       const unableToUploadMessage = `Unable to upload ${options.file}`;
 
@@ -244,22 +245,22 @@ androidCommand
         App ID: ${appId}
         Version Code: ${versionCode}`);
 
+      const spinner = createSpinner();
+      spinner.start(`Uploading Android mapping file: ${options.file}`);
+
       const url = generateURL('upload', options.realm, appId, versionCode as string, uuid as string);
-    
-      const parameters: { [key: string]: string | number } = {};
-      if (uuid) {
-        parameters.uuid = uuid as string;
-      }
-    
+        
       try {
         await uploadFileAndroid({
           url: url,
           file: { filePath: options.file, fieldName: 'file' },
-          token: options.token, 
-          parameters,
+          token: options.token,
+          parameters: {}
         });
+        spinner.stop();
         logger.info(`Upload complete`);
       } catch (error) {
+        spinner.stop();
         const ae = error as AxiosError;
         const unableToUploadMessage = `Unable to upload ${options.file}`;
   
@@ -312,12 +313,12 @@ androidCommand
   .action(async (options) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
     const url = generateURL('list', options.realm, options.appId);
-    const token = options.token
+    const token = options.token;
     try {
       const responseData = await fetchAndroidMappingMetadata({ url, token });
-      logger.info('Raw Response Data:', JSON.stringify(responseData, null, 2));
+      logger.info('Uploaded mapping file metadata:', JSON.stringify(responseData, null, 2));
     } catch (error) {
       logger.error('Failed to fetch metadata:', error);
-      throw error
+      throw error;
     }
   });
