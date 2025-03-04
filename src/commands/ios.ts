@@ -15,27 +15,25 @@
 */
 
 import fs from 'fs';
-import { createSpinner } from '../utils/spinner';
 import axios from 'axios';
-import { tmpdir } from 'os';
+import { basename } from 'path';
 import { Command } from 'commander';
-import { execSync } from 'child_process';
-import { copyFileSync, mkdtempSync, readdirSync, rmSync, statSync } from 'fs';
-import { basename, join, resolve } from 'path';
+import { createSpinner } from '../utils/spinner';
 import { createLogger, LogLevel } from '../utils/logger';
-import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
+import { validateDSYMsPath, cleanupTemporaryZips, getZippedDSYMs } from '../utils/iOSdSYMUtils';
+import { UserFriendlyError } from '../utils/userFriendlyErrors';
 
 interface UploadCommandOptions {
   directory: string;
   realm: string;
-  token: string;
+  token?: string;
   debug?: boolean;
   dryRun?: boolean;
 }
 
 interface ListCommandOptions {
   realm: string;
-  token: string;
+  token?: string;
   debug?: boolean;
 }
 
@@ -46,137 +44,8 @@ const API_PATH_FOR_UPLOAD = 'rum-mfm/dsym';
 const TOKEN_HEADER = 'X-SF-Token';
 const DEFAULT_REALM = 'us0';
 
-export const iOSCommand = new Command('iOS');
-
-/**
- * Helper functions for locating and zipping dSYMs
- **/
-function validateDSYMsPath(dsymsPath: string): string {
-  let absPath = resolve(dsymsPath);
-  if (absPath.endsWith('/')) {
-    absPath = absPath.slice(0, -1);
-  }
-
-  if (!absPath.endsWith('dSYMs')) {
-    throw new UserFriendlyError(null, `Invalid input: Expected a path ending in 'dSYMs'.`);
-  }
-
-  try {
-    const stats = statSync(absPath);
-    if (!stats.isDirectory()) {
-      throw new UserFriendlyError(null, `Invalid input: Expected a 'dSYMs/' directory but got a file.`);
-    }
-  } catch (err) {
-    throwAsUserFriendlyErrnoException(err, {
-      ENOENT: `Path not found: Ensure the provided directory exists before re-running.`,
-    });
-  }
-  return absPath;
-}
-
-/**
- * Scan the `dSYMs/` directory and return categorized lists of `.dSYM/` directories and `.dSYM.zip` files.
- */
-function scanDSYMsDirectory(dsymsPath: string): { dSYMDirs: string[], dSYMZipFiles: string[] } {
-  const files = readdirSync(dsymsPath);
-  const dSYMDirs: string[] = [];
-  const dSYMZipFiles: string[] = [];
-
-  for (const file of files) {
-    const fullPath = join(dsymsPath, file);
-
-    try {
-      if (file.endsWith('.dSYM') && statSync(fullPath).isDirectory()) {
-        dSYMDirs.push(file);
-      } else if (file.endsWith('.dSYM.zip') && statSync(fullPath).isFile()) {
-        dSYMZipFiles.push(file);
-      }
-    } catch (err) {
-      throwAsUserFriendlyErrnoException(err, {
-        ENOENT: `Error accessing file or directory at ${fullPath}. Please ensure it exists and is accessible.`,
-      });
-    }
-  }
-  return { dSYMDirs, dSYMZipFiles };
-}
-
-/**
- * Zip a single `dSYM/` directory into the provided `uploadPath` directory.
- * Returns the full path of the created `.zip` file.
- */
-function zipDSYMDirectory(parentPath: string, dsymDirectory: string, uploadPath: string): string {
-  const sourcePath = join(parentPath, dsymDirectory);
-  const zipPath = join(uploadPath, `${dsymDirectory}.zip`);
-
-  try {
-    execSync(`zip -r '${zipPath}' '${sourcePath}'`, { stdio: 'ignore' });
-  } catch (err) {
-    throw new UserFriendlyError(err, `Failed to zip ${sourcePath}. Please ensure you have the necessary permissions and that the zip command is available.`);
-  }
-
-  return zipPath;
-}
-
-/**
- * Remove the temporary upload directory and all files inside it.
- */
-function cleanupTemporaryZips(uploadPath: string): void {
-  if (!uploadPath.includes('splunk_dSYMs_upload_')) {
-    console.warn(`Warning: refusing to delete '${uploadPath}' as it does not appear to be a temp dSYMs upload directory.`);
-    return;
-  }
-  try {
-    rmSync(uploadPath, { recursive: true, force: true });
-  } catch (err) {
-    console.warn(`Warning: Failed to remove temporary directory '${uploadPath}'.`, err);
-  }
-}
-
-/**
- * Given a dSYMs/ directory path, visit the contents of the directory and gather
- * zipped copies of all the .dSYM/ directories it contains, including .dSYM/
- * directories that were already zipped before we arrived. If both a .dSYM/ and
- * its corresponding .dSYM.zip file exist, make a fresh .zip; if only the .zip
- * exists, accept the .zip file. Put files (or, in the case of existing .zips,
- * copies of them) in a temp dir `uploadPath`, then return the full list `zipFiles`
- * of all .zip files placed there, along with the path to the temp dir itself.
- **/
-function getZippedDSYMs(dsymsPath: string): { zipFiles: string[], uploadPath: string } {
-  const absPath = validateDSYMsPath(dsymsPath);
-  const { dSYMDirs, dSYMZipFiles } = scanDSYMsDirectory(absPath);
-
-  // Create a unique system temp directory for storing zip files
-  const uploadPath = mkdtempSync(join(tmpdir(), 'splunk_dSYMs_upload_'));
-
-  const results: string[] = [];
-
-  // Build a Set of `*.dSYM.zip` filenames without the `.zip` extension for quick lookup
-  const existingZipBasenames = new Set(dSYMZipFiles.map(f => f.replace(/\.zip$/, '')));
-
-  for (const dSYMDir of dSYMDirs) {
-    results.push(zipDSYMDirectory(absPath, dSYMDir, uploadPath));
-  }
-
-  for (const zipFile of dSYMZipFiles) {
-    const baseName = zipFile.replace(/\.zip$/, '');
-    if (!existingZipBasenames.has(baseName)) {
-      // Only copy *.dSYM.zip files that don't have a corresponding *.dSYM/ directory
-      const srcPath = join(absPath, zipFile);
-      const destPath = join(uploadPath, zipFile);
-      try {
-        copyFileSync(srcPath, destPath);
-      } catch (err) {
-        throwAsUserFriendlyErrnoException(err, {
-          ENOENT: `Failed to copy ${srcPath} to ${destPath}. Please ensure the file exists and is not in use.`,
-          EACCES: `Permission denied while copying ${srcPath}. Please check your access rights.`,
-        });
-      }
-      results.push(destPath);
-    }
-  }
-
-  return { zipFiles: results, uploadPath };
-}
+const program = new Command();
+export const iOSCommand = program.command('ios');
 
 const iOSUploadDescription = `This subcommand uploads any dSYM directories found in the specified dSYMs/ directory.`;
 
@@ -199,9 +68,7 @@ const generateUrl = ({
 };
 
 iOSCommand
-  .name('ios')
   .description('Upload and list zipped iOS symbolication files (dSYMs)');
-
 
 iOSCommand
   .command('upload')
@@ -210,19 +77,25 @@ iOSCommand
   .description(iOSUploadDescription)
   .summary('Upload dSYM files from a directory to the symbolication service')
   .requiredOption('--directory <path>', 'Path to the dSYMs directory')
-  .requiredOption(
+  .option(
     '--realm <value>',
-    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
+    'Realm for your organization (example: us0). Can also be set using the environment variable O11Y_REALM',
     process.env.O11Y_REALM
   )
-  .requiredOption(
+  .option(
     '--token <value>',
-    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
-    process.env.O11Y_TOKEN
+    'API access token. Can also be set using the environment variable O11Y_TOKEN'
   )
   .option('--debug', 'Enable debug logs')
   .option('--dry-run', 'Perform a trial run with no changes made', false)
   .action(async (options: UploadCommandOptions) => {
+    const token = options.token || process.env.O11Y_TOKEN;
+    if (!token) {
+      console.error('Error: API access token is required.');
+      process.exit(1);
+    }
+    options.token = token;
+
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
     try {
@@ -309,18 +182,26 @@ iOSCommand
   .showHelpAfterError(true)
   .description(listdSYMsDescription)
   .option('--debug', 'Enable debug logs')
-  .requiredOption(
+  .option(
     '--realm <value>',
-    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
+    'Realm for your organization (example: us0). Can also be set using the environment variable O11Y_REALM',
     process.env.O11Y_REALM
   )
-  .requiredOption(
+  .option(
     '--token <value>',
-    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
-    process.env.O11Y_TOKEN
+    'API access token. Can also be set using the environment variable O11Y_TOKEN'
   )
   .action(async (options: ListCommandOptions) => {
+    const token = options.token || process.env.O11Y_TOKEN;
+    if (!token) {
+      console.error('Error: API access token is required.');
+      process.exit(1);
+    }
+    options.token = token;
+
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+
+    logger.info('Fetching dSYM file data');
 
     // Get the URL for the list endpoint
     const url = generateUrl({
@@ -329,7 +210,6 @@ iOSCommand
     });
     
     try {
-      logger.info('Fetching dSYM file data');
       const response = await axios.get(url, {
         headers: {
           'Content-Type': 'application/json',
@@ -350,4 +230,17 @@ iOSCommand
       throw error;
     }
   });
+
+// Custom error handling for unknown commands and missing options
+program.exitOverride((err) => {
+  if (err.code === 'commander.unknownCommand') {
+    console.log(`\nUnknown command. Here is the available command structure:\n`);
+    program.help();
+  } else if (err.code === 'commander.missingArgument' || err.code === 'commander.missingOptionArgument') {
+    console.log(`\nOne or more required options are missing:\n`);
+    program.help();
+  } else {
+    throw err; // Rethrow other errors
+  }
+});
 
