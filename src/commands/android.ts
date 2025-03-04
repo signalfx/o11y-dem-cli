@@ -32,7 +32,6 @@ import { createSpinner } from '../utils/spinner';
 export const androidCommand = new Command('android');
 
 const generateURL = (type: 'upload' | 'list', realm: string, appId: string, versionCode?: string, uuid?: string): string => {
-  // Default to 'us0' if no realm is set according to https://dev.splunk.com/observability/docs/realms_in_endpoints/
   const baseUrl = `https://api.${realm}.signalfx.com/v2/rum-mfm/proguard`;
 
   if (type === 'upload') {
