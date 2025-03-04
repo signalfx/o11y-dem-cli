@@ -44,7 +44,7 @@ export interface ProgressInfo {
 
 const TOKEN_HEADER = 'X-SF-Token';
 
-export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMetadataOptions): Promise<any> => {
+export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMetadataOptions): Promise<string[]> => {
   const headers = {
     'X-SF-Token': token,
     'Accept': 'application/json',
@@ -62,7 +62,7 @@ export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMe
   }
 };
 
-export const uploadFileAndroid = async ({ url, file, token, parameters, onProgress }: UploadOptions): Promise<void> => {
+export const uploadFileAndroid = async ({ url, file, token, onProgress }: UploadOptions): Promise<void> => {
   const fileSizeInBytes = fs.statSync(file.filePath).size;
 
   const ext = file.filePath.split('.').pop()?.toLowerCase();
@@ -80,14 +80,8 @@ export const uploadFileAndroid = async ({ url, file, token, parameters, onProgre
     'Content-Length': fileSizeInBytes,
   };
 
-  const params = new URLSearchParams();
-  Object.entries(parameters).forEach(([key, value]) => {
-    params.append(key, String(value));
-  });
-
   await axios.put(url, fileStream, {
     headers,
-    params,  
     onUploadProgress: (progressEvent) => {
       const loaded = progressEvent.loaded;
       const total = progressEvent.total || fileSizeInBytes;
