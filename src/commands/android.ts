@@ -25,14 +25,11 @@ import {
 } from '../utils/inputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
-import axios from 'axios';
 import { fetchAndroidMappingMetadata, uploadFileAndroid } from '../utils/httpUtils';
 
 export const androidCommand = new Command('android');
-export const realm = process.env.O11Y_REALM || 'us0'; 
-export const token = process.env.SPLUNK_O11Y_TOKEN || '';
 
-const generateURL = (type: 'upload' | 'list', appId: string, versionCode?: string, uuid?: string): string => {
+const generateURL = (type: 'upload' | 'list', realm: string, appId: string, versionCode?: string, uuid?: string): string => {
   // Default to 'us0' if no realm is set according to https://dev.splunk.com/observability/docs/realms_in_endpoints/
   const baseUrl = `https://api.${realm}.signalfx.com/v2/rum-mfm/proguard`;
 
@@ -79,12 +76,16 @@ interface UploadAndroidOptions {
   'versionCode': string,
   'uuid': string,
   'debug'?: boolean
+  'token': string,
+  'realm': string
 }
 
 interface UploadAndroidWithManifestOptions {
   'file': string,
   'manifest': string,
-  'debug'?: boolean
+  'debug'?: boolean,
+  'token': string,
+  'realm': string
 }
 
 androidCommand
@@ -96,6 +97,15 @@ androidCommand
   .requiredOption('--app-id <value>', 'Application ID')
   .requiredOption('--version-code <int>', 'Version code')
   .requiredOption('--file <path>', 'Path to the mapping file')
+  .requiredOption('--realm <value>',
+    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
+    process.env.O11Y_REALM
+  )
+  .requiredOption(
+    '--token <value>',
+    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
+    process.env.O11Y_TOKEN
+  )
   .option('--uuid <value>', 'Optional UUID for the upload')
   .option(
     '--debug',
@@ -129,12 +139,8 @@ androidCommand
       Version Code: ${options.versionCode}
       File: ${options.file}
       UUID: ${options.uuid || 'Not provided'}`);
-    
-    if (!token) {
-      throw new Error('Auth token is not set in environment variables.');
-    }
 
-    const uploadUrl = options.uuid ? generateURL('upload', options.appId, options.versionCode, options.uuid) : generateURL('upload', options.appId, options.versionCode);
+    const uploadUrl = generateURL('upload', options.realm, options.appId, options.versionCode, options.uuid);
     
     const parameters: { [key: string]: string | number } = {};
     if (options.uuid) {
@@ -145,7 +151,7 @@ androidCommand
       await uploadFileAndroid({
         url: uploadUrl,
         file: { filePath: options.file, fieldName: 'file' },
-        token: token, 
+        token: options.token, 
         parameters,
       });
       logger.info(`Upload complete`);
@@ -162,6 +168,15 @@ androidCommand
   .description(androidUploadWithManifestDescription)
   .requiredOption('--manifest <path>', 'Path to the packaged AndroidManifest.xml file')
   .requiredOption('--file <path>', 'Path to the mapping.txt file')
+  .requiredOption('--realm <value>',
+    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
+    process.env.O11Y_REALM
+  )
+  .requiredOption(
+    '--token <value>',
+    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
+    process.env.O11Y_TOKEN
+  )
   .option(
     '--debug',
     'Enable debug logs'
@@ -209,11 +224,7 @@ androidCommand
         App ID: ${appId}
         Version Code: ${versionCode}`);
 
-      if (!token) {
-        throw new Error('Auth token is not set in environment variables.');
-      }
-    
-      const uploadUrl = uuid ? generateURL('upload', appId, versionCode as string, uuid as string) : generateURL('upload', appId, versionCode as string);
+      const uploadUrl = generateURL('upload', options.realm, appId, versionCode as string, uuid as string);
     
       const parameters: { [key: string]: string | number } = {};
       if (uuid) {
@@ -224,7 +235,7 @@ androidCommand
         await uploadFileAndroid({
           url: uploadUrl,
           file: { filePath: options.file, fieldName: 'file' },
-          token: token, 
+          token: options.token, 
           parameters,
         });
         logger.info(`Upload complete`);
@@ -247,18 +258,23 @@ androidCommand
   .command('list')
   .summary(`Retrieves list of metadata of all uploaded Proguard/R8 mapping files`)
   .requiredOption('--app-id <value>', 'Application ID')
+  .requiredOption('--realm <value>',
+    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
+    process.env.O11Y_REALM
+  )
+  .requiredOption(
+    '--token <value>',
+    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
+    process.env.O11Y_TOKEN
+  )
   .showHelpAfterError(true)
   .description(listProguardDescription)
   .option('--debug', 
     'Enable debug logs')
   .action(async (options) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
-    if (!token) {
-      throw new Error('Auth token is not set in environment variables.');
-    }
-
-    const url = generateURL('list', options.appId);
-
+    const url = generateURL('list', options.realm, options.appId);
+    const token = options.token
     try {
       const responseData = await fetchAndroidMappingMetadata({ url, token });
       logger.info('Raw Response Data:', JSON.stringify(responseData, null, 2));
