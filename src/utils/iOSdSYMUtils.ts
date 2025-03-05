@@ -24,7 +24,7 @@ import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/u
  * Helper functions for locating and zipping dSYMs
  **/
 export function validateDSYMsPath(dsymsPath: string): string {
-  let absPath = resolve(dsymsPath);
+  const absPath = resolve(dsymsPath);
 
   if (!absPath.endsWith('dSYMs')) {
     throw new UserFriendlyError(null, `Invalid input: Expected a path ending in 'dSYMs'.`);
