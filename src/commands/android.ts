@@ -25,9 +25,31 @@ import {
 } from '../utils/inputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
-import axios from 'axios';
+import { fetchAndroidMappingMetadata, uploadFileAndroid } from '../utils/httpUtils';
+import { AxiosError } from 'axios';
+import { createSpinner } from '../utils/spinner';
 
 export const androidCommand = new Command('android');
+
+const generateURL = (type: 'upload' | 'list', realm: string, appId: string, versionCode?: string, uuid?: string): string => {
+  const baseUrl = `https://api.${realm}.signalfx.com/v2/rum-mfm/proguard`;
+
+  if (type === 'upload') {
+    if (!versionCode) throw new Error('Version code is required for uploading.');
+    let uploadUrl = `${baseUrl}/${appId}/${versionCode}`;
+    if (uuid) {
+      uploadUrl += `/${uuid}`;
+    }
+    return uploadUrl;
+  }
+
+  if (type === 'list') {
+    return `${baseUrl}/app/${appId}/metadatas`;
+  }
+
+  throw new Error('Invalid URL type specified.');
+};
+
 
 const androidUploadDescription =
 `
@@ -55,12 +77,18 @@ interface UploadAndroidOptions {
   'versionCode': string,
   'uuid': string,
   'debug'?: boolean
+  'token': string,
+  'realm': string,
+  'dryRun'?: boolean
 }
 
 interface UploadAndroidWithManifestOptions {
   'file': string,
   'manifest': string,
-  'debug'?: boolean
+  'debug'?: boolean,
+  'token': string,
+  'realm': string,
+  'dryRun'?: boolean
 }
 
 androidCommand
@@ -72,11 +100,18 @@ androidCommand
   .requiredOption('--app-id <value>', 'Application ID')
   .requiredOption('--version-code <int>', 'Version code')
   .requiredOption('--file <path>', 'Path to the mapping file')
-  .option('--uuid <value>', 'Optional UUID for the upload')
-  .option(
-    '--debug',
-    'Enable debug logs'
+  .requiredOption('--realm <value>',
+    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
+    process.env.O11Y_REALM
   )
+  .requiredOption(
+    '--token <value>',
+    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
+    process.env.O11Y_TOKEN
+  )
+  .option('--uuid <value>', 'Optional UUID for the upload')
+  .option( '--dry-run', 'Preview the file that will be uploaded')
+  .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
@@ -101,14 +136,53 @@ androidCommand
     }
 
     logger.info(`Preparing to upload Android mapping file:
+      File: ${options.file}
       App ID: ${options.appId}
       Version Code: ${options.versionCode}
-      File: ${options.file}
       UUID: ${options.uuid || 'Not provided'}`);
 
-    // call uploadFile method with generated URL, path to file, fields and potentially catch any errors and log
-  
-    logger.info(`\nUpload complete!`);
+    if (options.dryRun) {
+      logger.info('Dry Run complete - No file will be uploaded.');
+      return;
+    }
+
+    const spinner = createSpinner();
+    spinner.start(`Uploading Android mapping file: ${options.file}`);
+
+    const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.uuid);
+
+    try {
+      logger.debug('Uploading %s', options.file);
+      await uploadFileAndroid({
+        url: url,
+        file: { filePath: options.file, fieldName: 'file' },
+        token: options.token,
+        parameters: {}
+      });
+      spinner.stop();
+      logger.info(`Upload complete`);
+    } catch (error) {
+      spinner.stop();
+      const ae = error as AxiosError;
+      const unableToUploadMessage = `Unable to upload ${options.file}`;
+
+      if (ae.response && ae.response.status === 413) {
+        logger.warn(ae.response.status, ae.response.statusText);
+        logger.warn(unableToUploadMessage);
+      } else if (ae.response) {
+        logger.error(ae.response.status, ae.response.statusText);
+        logger.error(ae.response.data);
+        logger.error(unableToUploadMessage);
+      } else if (ae.request) {
+        logger.error(`Response from ${url} was not received`);
+        logger.error(ae.cause);
+        logger.error(unableToUploadMessage);
+      } else {
+        logger.error(`Request to ${url} could not be sent`);
+        logger.error(error);
+        logger.error(unableToUploadMessage);
+      }
+    }
   });
 
 androidCommand
@@ -119,10 +193,17 @@ androidCommand
   .description(androidUploadWithManifestDescription)
   .requiredOption('--manifest <path>', 'Path to the packaged AndroidManifest.xml file')
   .requiredOption('--file <path>', 'Path to the mapping.txt file')
-  .option(
-    '--debug',
-    'Enable debug logs'
+  .requiredOption('--realm <value>',
+    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
+    process.env.O11Y_REALM
   )
+  .requiredOption(
+    '--token <value>',
+    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
+    process.env.O11Y_TOKEN
+  )
+  .option('--dry-run', 'Preview the file that will be uploaded and the parameters extracted from the AndroidManifest.xml file')
+  .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidWithManifestOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
@@ -143,9 +224,7 @@ androidCommand
         throw new UserFriendlyError(null, `Manifest file does not have correct extension: ${options.manifest}.`);
       }
 
-      logger.info(`Preparing to upload Android mapping file with manifest:
-        Manifest: ${options.manifest}
-        File: ${options.file}`);
+      logger.info(`Preparing to extract parameters from ${options.manifest}`);
 
       const { package: appId, versionCode, uuid } = await extractManifestData(options.manifest);
 
@@ -161,14 +240,54 @@ androidCommand
         throw new UserFriendlyError(null, `Invalid UUID extracted from the manifest: ${uuid}.`);
       }
 
-      logger.info(`Mapping file identifier data extracted from Manifest
-        UUID: ${uuid || 'Not provided'}
-        App ID: ${appId}
-        Version Code: ${versionCode}`);
+      logger.info(`Preparing to upload Android mapping file:
+        File: ${options.file}
+        Extracted parameters from the AndroidManifest.xml:
+        - UUID: ${uuid || 'Not provided'}
+        - App ID: ${appId}
+        - Version Code: ${versionCode}`);
 
-      // call uploadFile method with generated URL, path to file, fields and potentially catch any errors and log
+      if (options.dryRun) {
+        logger.info('Dry Run complete - No file will be uploaded.');
+        return;
+      }
 
-      logger.info(`\nUpload complete!`);
+      const spinner = createSpinner();
+      spinner.start(`Uploading Android mapping file: ${options.file}`);
+
+      const url = generateURL('upload', options.realm, appId, versionCode as string, uuid as string);
+        
+      try {
+        await uploadFileAndroid({
+          url: url,
+          file: { filePath: options.file, fieldName: 'file' },
+          token: options.token,
+          parameters: {}
+        });
+        spinner.stop();
+        logger.info(`Upload complete`);
+      } catch (error) {
+        spinner.stop();
+        const ae = error as AxiosError;
+        const unableToUploadMessage = `Unable to upload ${options.file}`;
+  
+        if (ae.response && ae.response.status === 413) {
+          logger.warn(ae.response.status, ae.response.statusText);
+          logger.warn(unableToUploadMessage);
+        } else if (ae.response) {
+          logger.error(ae.response.status, ae.response.statusText);
+          logger.error(ae.response.data);
+          logger.error(unableToUploadMessage);
+        } else if (ae.request) {
+          logger.error(`Response from ${url} was not received`);
+          logger.error(ae.cause);
+          logger.error(unableToUploadMessage);
+        } else {
+          logger.error(`Request to ${url} could not be sent`);
+          logger.error(error);
+          logger.error(unableToUploadMessage);
+        }
+      }
     } catch (err) {
       if (err instanceof UserFriendlyError) {
         logger.debug(err.originalError);
@@ -184,25 +303,29 @@ androidCommand
 androidCommand
   .command('list')
   .summary(`Retrieves list of metadata of all uploaded Proguard/R8 mapping files`)
+  .requiredOption('--app-id <value>', 'Application ID')
+  .requiredOption('--realm <value>',
+    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
+    process.env.O11Y_REALM
+  )
+  .requiredOption(
+    '--token <value>',
+    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
+    process.env.O11Y_TOKEN
+  )
   .showHelpAfterError(true)
   .description(listProguardDescription)
   .option('--debug', 
     'Enable debug logs')
   .action(async (options) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
-
-    const url = 'https://whateverTheEndpointURLis/v1/proguard'; // Replace with the actual endpoint for fetching metadata
-
+    const url = generateURL('list', options.realm, options.appId);
+    const token = options.token;
     try {
-      logger.info(`Fetching mapping file data`);
-
-      const response = await axios.get(url); // May need to add headers/authentication, query parameters etc once integrating with backend
-
-      // Logging raw data, slight formatting with json stringify, but can format down the line once we know how it will look returned from the backend
-      logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2)); 
+      const responseData = await fetchAndroidMappingMetadata({ url, token });
+      logger.info('Uploaded mapping file metadata:', JSON.stringify(responseData, null, 2));
     } catch (error) {
-      logger.error('Failed to fetch the list of uploaded files:');
-      logger.debug(error);
+      logger.error('Failed to fetch metadata:', error);
       throw error;
     }
   });
