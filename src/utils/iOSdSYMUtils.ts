@@ -25,9 +25,6 @@ import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/u
  **/
 export function validateDSYMsPath(dsymsPath: string): string {
   let absPath = resolve(dsymsPath);
-  if (absPath.endsWith('/')) {
-    absPath = absPath.slice(0, -1);
-  }
 
   if (!absPath.endsWith('dSYMs')) {
     throw new UserFriendlyError(null, `Invalid input: Expected a path ending in 'dSYMs'.`);

@@ -16,6 +16,7 @@
 
 import fs from 'fs';
 import axios from 'axios';
+import { AxiosError } from 'axios';
 import { basename } from 'path';
 import { Command } from 'commander';
 import { createSpinner } from '../utils/spinner';
@@ -42,7 +43,6 @@ const API_VERSION_STRING = 'v2';
 const API_PATH_FOR_LIST = 'rum-mfm/macho/metadatas';
 const API_PATH_FOR_UPLOAD = 'rum-mfm/dsym';
 const TOKEN_HEADER = 'X-SF-Token';
-const DEFAULT_REALM = 'us0';
 
 const program = new Command();
 export const iOSCommand = program.command('ios');
@@ -56,12 +56,12 @@ By default, it returns the last 100 dSYM files uploaded, sorted in reverse chron
 const generateUrl = ({
   urlPrefix,
   apiPath,
-  realm = process.env.O11Y_REALM || DEFAULT_REALM,
+  realm,
   domain = 'signalfx.com',
 }: {
   urlPrefix: string;
   apiPath: string;
-  realm?: string;
+  realm: string;
   domain?: string;
 }): string => {
   return `${urlPrefix}.${realm}.${domain}/${API_VERSION_STRING}/${apiPath}`;
@@ -77,7 +77,7 @@ iOSCommand
   .description(iOSUploadDescription)
   .summary('Upload dSYM files from a directory to the symbolication service')
   .requiredOption('--directory <path>', 'Path to the dSYMs directory')
-  .option(
+  .requiredOption(
     '--realm <value>',
     'Realm for your organization (example: us0). Can also be set using the environment variable O11Y_REALM',
     process.env.O11Y_REALM
@@ -127,6 +127,7 @@ iOSCommand
       const url = generateUrl({
         urlPrefix: 'https://api',
         apiPath: API_PATH_FOR_UPLOAD,
+        realm: options.realm
       });
       logger.info(`url: ${url}`);
       
@@ -144,23 +145,33 @@ iOSCommand
         };
 
         spinner.start(`Uploading file: ${basename(filePath)}`);
-
         try {
           await axios.put(url, fileStream, {
-            headers,
-            onUploadProgress: (progressEvent) => {
-              const loaded = progressEvent.loaded;
-              const total = progressEvent.total || fileSizeInBytes;
-              const progress = (loaded / total) * 100;
-              spinner.updateText(`Progress: ${progress.toFixed(2)}% for ${basename(filePath)}`);
-            },
+            headers
           });
-
           spinner.stop();
           logger.info(`Upload complete for ${basename(filePath)}`);
-        } catch (err) {
+        } catch (error) {
           spinner.stop();
-          throw new UserFriendlyError(err, `Failed to upload ${basename(filePath)}. Please check your network connection and try again.`);
+          const ae = error as AxiosError;
+          const unableToUploadMessage = `Unable to upload ${basename(filePath)}`;
+
+          if (ae.response && ae.response.status === 413) {
+            logger.warn(ae.response.status, ae.response.statusText);
+            logger.warn(unableToUploadMessage);
+          } else if (ae.response) {
+            logger.error(ae.response.status, ae.response.statusText);
+            logger.error(ae.response.data);
+            logger.error(unableToUploadMessage);
+          } else if (ae.request) {
+            logger.error(`Response from ${url} was not received`);
+            logger.error(ae.cause);
+            logger.error(unableToUploadMessage);
+          } else {
+            logger.error(`Request to ${url} could not be sent`);
+            logger.error(error);
+            logger.error(unableToUploadMessage);
+          }
         }
       }
       cleanupTemporaryZips(uploadPath);
@@ -168,7 +179,7 @@ iOSCommand
     } catch (error) {
       if (error instanceof UserFriendlyError) {
         logger.error(error.message);
-        console.debug(error.originalError);
+        logger.debug(error.originalError);
       } else {
         logger.error('An unexpected error occurred:', error);
         throw error;
@@ -182,7 +193,7 @@ iOSCommand
   .showHelpAfterError(true)
   .description(listdSYMsDescription)
   .option('--debug', 'Enable debug logs')
-  .option(
+  .requiredOption(
     '--realm <value>',
     'Realm for your organization (example: us0). Can also be set using the environment variable O11Y_REALM',
     process.env.O11Y_REALM
@@ -205,15 +216,15 @@ iOSCommand
 
     // Get the URL for the list endpoint
     const url = generateUrl({
-      urlPrefix: 'https://app',
-      apiPath: API_PATH_FOR_LIST
+      urlPrefix: 'https://api',
+      apiPath: API_PATH_FOR_LIST,
+      realm: options.realm
     });
     
     try {
       const response = await axios.get(url, {
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'splunk-mfm-cli-tool-ios',
           [TOKEN_HEADER]: options.token,
         },
       });
@@ -230,17 +241,4 @@ iOSCommand
       throw error;
     }
   });
-
-// Custom error handling for unknown commands and missing options
-program.exitOverride((err) => {
-  if (err.code === 'commander.unknownCommand') {
-    console.log(`\nUnknown command. Here is the available command structure:\n`);
-    program.help();
-  } else if (err.code === 'commander.missingArgument' || err.code === 'commander.missingOptionArgument') {
-    console.log(`\nOne or more required options are missing:\n`);
-    program.help();
-  } else {
-    throw err; // Rethrow other errors
-  }
-});
 
