@@ -127,7 +127,7 @@ androidCommand
       throw new UserFriendlyError(null, `Invalid mapping file path: ${options.file}.`);
     }
 
-    if (!hasValidExtension(options.file, '.txt')) {
+    if (!hasValidExtension(options.file, '.txt', '.gz')) {
       throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
     }
 
