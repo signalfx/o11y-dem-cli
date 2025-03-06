@@ -78,7 +78,8 @@ interface UploadAndroidOptions {
   'uuid': string,
   'debug'?: boolean
   'token': string,
-  'realm': string
+  'realm': string,
+  'dryRun'?: boolean
 }
 
 interface UploadAndroidWithManifestOptions {
@@ -86,7 +87,8 @@ interface UploadAndroidWithManifestOptions {
   'manifest': string,
   'debug'?: boolean,
   'token': string,
-  'realm': string
+  'realm': string,
+  'dryRun'?: boolean
 }
 
 androidCommand
@@ -108,10 +110,8 @@ androidCommand
     process.env.O11Y_TOKEN
   )
   .option('--uuid <value>', 'Optional UUID for the upload')
-  .option(
-    '--debug',
-    'Enable debug logs'
-  )
+  .option( '--dry-run', 'Preview the file that will be uploaded')
+  .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
@@ -127,7 +127,7 @@ androidCommand
       throw new UserFriendlyError(null, `Invalid mapping file path: ${options.file}.`);
     }
 
-    if (!hasValidExtension(options.file, '.txt')) {
+    if (!hasValidExtension(options.file, '.txt', '.gz')) {
       throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
     }
 
@@ -136,10 +136,15 @@ androidCommand
     }
 
     logger.info(`Preparing to upload Android mapping file:
+      File: ${options.file}
       App ID: ${options.appId}
       Version Code: ${options.versionCode}
-      File: ${options.file}
       UUID: ${options.uuid || 'Not provided'}`);
+
+    if (options.dryRun) {
+      logger.info('Dry Run complete - No file will be uploaded.');
+      return;
+    }
 
     const spinner = createSpinner();
     spinner.start(`Uploading Android mapping file: ${options.file}`);
@@ -197,10 +202,8 @@ androidCommand
     'API access token.  Can also be set using the environment variable O11Y_TOKEN',
     process.env.O11Y_TOKEN
   )
-  .option(
-    '--debug',
-    'Enable debug logs'
-  )
+  .option('--dry-run', 'Preview the file that will be uploaded and the parameters extracted from the AndroidManifest.xml file')
+  .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidWithManifestOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
@@ -221,9 +224,7 @@ androidCommand
         throw new UserFriendlyError(null, `Manifest file does not have correct extension: ${options.manifest}.`);
       }
 
-      logger.info(`Preparing to upload Android mapping file with manifest:
-        Manifest: ${options.manifest}
-        File: ${options.file}`);
+      logger.info(`Preparing to extract parameters from ${options.manifest}`);
 
       const { package: appId, versionCode, uuid } = await extractManifestData(options.manifest);
 
@@ -239,10 +240,17 @@ androidCommand
         throw new UserFriendlyError(null, `Invalid UUID extracted from the manifest: ${uuid}.`);
       }
 
-      logger.info(`Mapping file identifier data extracted from Manifest
-        UUID: ${uuid || 'Not provided'}
-        App ID: ${appId}
-        Version Code: ${versionCode}`);
+      logger.info(`Preparing to upload Android mapping file:
+        File: ${options.file}
+        Extracted parameters from the AndroidManifest.xml:
+        - UUID: ${uuid || 'Not provided'}
+        - App ID: ${appId}
+        - Version Code: ${versionCode}`);
+
+      if (options.dryRun) {
+        logger.info('Dry Run complete - No file will be uploaded.');
+        return;
+      }
 
       const spinner = createSpinner();
       spinner.start(`Uploading Android mapping file: ${options.file}`);

@@ -23,11 +23,10 @@ export const isValidFile = (filePath: string): boolean => {
 };
 
 // Check if a file has correct extension type
-export const hasValidExtension = (filePath: string, expectedExtension: string): boolean => {
+export const hasValidExtension = (filePath: string, ...expectedExtensions: string[]): boolean => {
   const ext = path.extname(filePath);
-  return ext === expectedExtension;
+  return expectedExtensions.includes(ext);
 };
-
 // Validate applicationID (should be a non-empty string)
 export const isValidAppId = (appId: unknown): appId is string => {
   return typeof appId ===  'string' && appId.length > 0;
