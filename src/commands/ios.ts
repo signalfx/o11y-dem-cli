@@ -172,6 +172,7 @@ iOSCommand
             logger.error(error);
             logger.error(unableToUploadMessage);
           }
+          process.exit(1);
         }
       }
       cleanupTemporaryZips(uploadPath);
@@ -182,8 +183,8 @@ iOSCommand
         logger.debug(error.originalError);
       } else {
         logger.error('An unexpected error occurred:', error);
-        throw error;
       }
+      process.exit(1);
     }
   });
 
@@ -238,7 +239,6 @@ iOSCommand
       } else {
         logger.error('Failed to fetch the list of uploaded files:', String(error));
       }
-      throw error;
+      process.exit(1);
     }
   });
-
