@@ -1,22 +1,6 @@
-/*
- * Copyright Splunk Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
-*/
-
 import { tmpdir } from 'os';
 import { execSync } from 'child_process';
-import { join, resolve } from 'path';
+import { join, resolve, basename, dirname } from 'path';
 import { copyFileSync, mkdtempSync, readdirSync, rmSync, statSync } from 'fs';
 import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
 
@@ -26,21 +10,101 @@ import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/u
 export function validateDSYMsPath(dsymsPath: string): string {
   const absPath = resolve(dsymsPath);
 
-  if (!absPath.endsWith('dSYMs')) {
-    throw new UserFriendlyError(null, `Invalid input: Expected a path ending in 'dSYMs'.`);
+  if (absPath.endsWith('.dSYMs')) {
+    try {
+      const stats = statSync(absPath);
+      if (!stats.isDirectory()) {
+        throw new UserFriendlyError(null, `Invalid input: Expected a 'dSYMs/' directory but got a file.`);
+      }
+    } catch (err) {
+      throwAsUserFriendlyErrnoException(err, {
+        ENOENT: `Path not found: Ensure the provided directory exists before re-running.`,
+      });
+    }
+    return absPath;
   }
 
-  try {
-    const stats = statSync(absPath);
-    if (!stats.isDirectory()) {
-      throw new UserFriendlyError(null, `Invalid input: Expected a 'dSYMs/' directory but got a file.`);
+  if (absPath.endsWith('.dSYM.zip') || absPath.endsWith('.dSYMs.zip')) {
+    try {
+      const stats = statSync(absPath);
+      if (!stats.isFile()) {
+        throw new UserFriendlyError(null, `Invalid input: Expected a '.dSYM.zip' or '.dSYMs.zip' file.`);
+      }
+    } catch (err) {
+      throwAsUserFriendlyErrnoException(err, {
+        ENOENT: `File not found: Ensure the provided file exists before re-running.`,
+      });
     }
-  } catch (err) {
-    throwAsUserFriendlyErrnoException(err, {
-      ENOENT: `Path not found: Ensure the provided directory exists before re-running.`,
-    });
+    return absPath;
   }
-  return absPath;
+
+  if (absPath.endsWith('.dSYM')) {
+    try {
+      const stats = statSync(absPath);
+      if (!stats.isDirectory()) {
+        throw new UserFriendlyError(null, `Invalid input: Expected a '.dSYM' directory but got a file.`);
+      }
+    } catch (err) {
+      throwAsUserFriendlyErrnoException(err, {
+        ENOENT: `Directory not found: Ensure the provided directory exists before re-running.`,
+      });
+    }
+    return absPath;
+  }
+
+  throw new UserFriendlyError(null, `Invalid input: Expected a path ending in '.dSYMs', '.dSYM.zip', '.dSYMs.zip', or '.dSYM'.`);
+}
+
+/**
+ * Given a dSYMs path, process the input as per the specified format and return
+ * the zipped files or copied files as necessary.
+ **/
+export function getZippedDSYMs(dsymsPath: string): { zipFiles: string[], uploadPath: string } {
+  const absPath = validateDSYMsPath(dsymsPath);
+
+  // Create a unique system temp directory for storing zip files
+  const uploadPath = mkdtempSync(join(tmpdir(), 'splunk_dSYMs_upload_'));
+
+  if (absPath.endsWith('.dSYMs')) {
+    const { dSYMDirs, dSYMZipFiles } = scanDSYMsDirectory(absPath);
+    const results: string[] = [];
+
+    for (const dSYMDir of dSYMDirs) {
+      results.push(zipDSYMDirectory(absPath, dSYMDir, uploadPath));
+    }
+
+    for (const zipFile of dSYMZipFiles) {
+      const srcPath = join(absPath, zipFile);
+      const destPath = join(uploadPath, zipFile);
+      try {
+        copyFileSync(srcPath, destPath);
+      } catch (err) {
+        throwAsUserFriendlyErrnoException(err, {
+          ENOENT: `Failed to copy ${srcPath} to ${destPath}. Please ensure the file exists and is not in use.`,
+          EACCES: `Permission denied while copying ${srcPath}. Please check your access rights.`,
+        });
+      }
+      results.push(destPath);
+    }
+
+    return { zipFiles: results, uploadPath };
+  } else if (absPath.endsWith('.dSYM.zip') || absPath.endsWith('.dSYMs.zip')) {
+    const destPath = join(uploadPath, basename(absPath));
+    try {
+      copyFileSync(absPath, destPath);
+    } catch (err) {
+      throwAsUserFriendlyErrnoException(err, {
+        ENOENT: `Failed to copy ${absPath} to ${destPath}. Please ensure the file exists and is not in use.`,
+        EACCES: `Permission denied while copying ${absPath}. Please check your access rights.`,
+      });
+    }
+    return { zipFiles: [destPath], uploadPath };
+  } else if (absPath.endsWith('.dSYM')) {
+    const zipPath = zipDSYMDirectory(dirname(absPath), basename(absPath), uploadPath);
+    return { zipFiles: [zipPath], uploadPath };
+  }
+
+  throw new UserFriendlyError(null, `Unexpected error with the provided input path.`);
 }
 
 /**
@@ -100,51 +164,3 @@ export function cleanupTemporaryZips(uploadPath: string): void {
     console.warn(`Warning: Failed to remove temporary directory '${uploadPath}'.`, err);
   }
 }
-
-/**
- * Given a dSYMs/ directory path, visit the contents of the directory and gather
- * zipped copies of all the .dSYM/ directories it contains, including .dSYM/
- * directories that were already zipped before we arrived. If both a .dSYM/ and
- * its corresponding .dSYM.zip file exist, make a fresh .zip; if only the .zip
- * exists, accept the .zip file. Put files (or, in the case of existing .zips,
- * copies of them) in a temp dir `uploadPath`, then return the full list `zipFiles`
- * of all .zip files placed there, along with the path to the temp dir itself.
- **/
-export function getZippedDSYMs(dsymsPath: string): { zipFiles: string[], uploadPath: string } {
-  const absPath = validateDSYMsPath(dsymsPath);
-  const { dSYMDirs, dSYMZipFiles } = scanDSYMsDirectory(absPath);
-
-  // Create a unique system temp directory for storing zip files
-  const uploadPath = mkdtempSync(join(tmpdir(), 'splunk_dSYMs_upload_'));
-
-  const results: string[] = [];
-
-  // Build a Set of `*.dSYM.zip` filenames without the `.zip` extension for quick lookup
-  const existingZipBasenames = new Set(dSYMZipFiles.map(f => f.replace(/\.zip$/, '')));
-
-  for (const dSYMDir of dSYMDirs) {
-    results.push(zipDSYMDirectory(absPath, dSYMDir, uploadPath));
-  }
-
-  for (const zipFile of dSYMZipFiles) {
-    const baseName = zipFile.replace(/\.zip$/, '');
-    if (!existingZipBasenames.has(baseName)) {
-      // Only copy *.dSYM.zip files that don't have a corresponding *.dSYM/ directory
-      const srcPath = join(absPath, zipFile);
-      const destPath = join(uploadPath, zipFile);
-      try {
-        copyFileSync(srcPath, destPath);
-      } catch (err) {
-        throwAsUserFriendlyErrnoException(err, {
-          ENOENT: `Failed to copy ${srcPath} to ${destPath}. Please ensure the file exists and is not in use.`,
-          EACCES: `Permission denied while copying ${srcPath}. Please check your access rights.`,
-        });
-      }
-      results.push(destPath);
-    }
-  }
-
-  return { zipFiles: results, uploadPath };
-}
-
-
