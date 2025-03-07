@@ -52,7 +52,7 @@ export function validateDSYMsPath(dsymsPath: string): string {
     return absPath;
   }
 
-  throw new UserFriendlyError(null, `Invalid input: Expected a path ending in '.dSYMs', '.dSYM.zip', '.dSYMs.zip', or '.dSYM'.`);
+  throw new UserFriendlyError(null, `Invalid input: Expected a path named 'dSYMs' or ending in '.dSYM', '.dSYMs.zip', or '.dSYM.zip'.`);
 }
 
 /**
