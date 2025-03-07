@@ -10,7 +10,7 @@ import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/u
 export function validateDSYMsPath(dsymsPath: string): string {
   const absPath = resolve(dsymsPath);
 
-  if (absPath.endsWith('.dSYMs')) {
+  if (absPath.endsWith('/dSYMs') || absPath === 'dSYMs') {
     try {
       const stats = statSync(absPath);
       if (!stats.isDirectory()) {
@@ -32,7 +32,7 @@ export function validateDSYMsPath(dsymsPath: string): string {
       }
     } catch (err) {
       throwAsUserFriendlyErrnoException(err, {
-        ENOENT: `File not found: Ensure the provided file exists before re-running.`,
+        ENOENT: `File not found: Ensure the provided file [${absPath}] exists before re-running.`,
       });
     }
     return absPath;
@@ -65,7 +65,7 @@ export function getZippedDSYMs(dsymsPath: string): { zipFiles: string[], uploadP
   // Create a unique system temp directory for storing zip files
   const uploadPath = mkdtempSync(join(tmpdir(), 'splunk_dSYMs_upload_'));
 
-  if (absPath.endsWith('.dSYMs')) {
+  if (absPath.endsWith('dSYMs')) {
     const { dSYMDirs, dSYMZipFiles } = scanDSYMsDirectory(absPath);
     const results: string[] = [];
 
