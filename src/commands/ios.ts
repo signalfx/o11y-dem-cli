@@ -91,8 +91,7 @@ iOSCommand
   .action(async (options: UploadCommandOptions) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      console.error('Error: API access token is required.');
-      process.exit(1);
+      iOSCommand.error('Error: API access token is required.');
     }
     options.token = token;
 
@@ -172,7 +171,7 @@ iOSCommand
             logger.error(error);
             logger.error(unableToUploadMessage);
           }
-          process.exit(1);
+          iOSCommand.error('');
         }
       }
       cleanupTemporaryZips(uploadPath);
@@ -184,7 +183,7 @@ iOSCommand
       } else {
         logger.error('An unexpected error occurred:', error);
       }
-      process.exit(1);
+      iOSCommand.error('');
     }
   });
 
@@ -206,8 +205,7 @@ iOSCommand
   .action(async (options: ListCommandOptions) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      console.error('Error: API access token is required.');
-      process.exit(1);
+      iOSCommand.error('Error: API access token is required.');
     }
     options.token = token;
 
@@ -239,6 +237,6 @@ iOSCommand
       } else {
         logger.error('Failed to fetch the list of uploaded files:', String(error));
       }
-      process.exit(1);
+      iOSCommand.error('');
     }
   });
