@@ -8,11 +8,21 @@ cache:
   paths:
       - './node_modules'
 
+include:
+  - project: 'ci-cd/templates'
+    ref: master
+    file: '/prodsec/.oss-scan.yml'
+  - project: 'ci-cd/templates'
+    ref: latest
+    file: '/prodsec/.sast-scan.yml'
+
+
 stages:
   - install
   - build
   - lint
   - test
+  - verify
   - release
 
 install_dependencies:
@@ -27,7 +37,6 @@ build:
   artifacts:
     paths:
       - dist/
-
 lint:
   stage: lint
   script:
@@ -37,6 +46,14 @@ unit_tests:
   stage: test
   script:
     - npm run test:unit
+
+oss-scan:
+  stage: verify
+  extends: .oss-scan
+
+sast-scanner:
+  stage: verify
+  extends: .sast_scan
 
 release_dry_run:
   stage: release
@@ -78,4 +95,4 @@ release:
     - build 
     - lint
     - unit_tests
-  when: manual 
+  when: manual
