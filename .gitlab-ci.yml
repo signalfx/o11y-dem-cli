@@ -18,11 +18,11 @@ include:
 
 
 stages:
+  - code_analysis
   - install
   - build
   - lint
   - test
-  - verify
   - release
 
 install_dependencies:
@@ -48,11 +48,11 @@ unit_tests:
     - npm run test:unit
 
 oss-scan:
-  stage: verify
+  stage: code_analysis
   extends: .oss-scan
 
 sast-scanner:
-  stage: verify
+  stage: code_analysis
   extends: .sast_scan
 
 release_dry_run:
