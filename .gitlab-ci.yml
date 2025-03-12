@@ -53,6 +53,8 @@ oss-scan:
 sast-scanner:
   stage: verify
   extends: .sast_scan
+  variables:
+    alert_mode: "policy"
 
 release_dry_run:
   stage: release
