@@ -8,9 +8,9 @@ https://www.splunk.com/en_us/product-security/report.html).
 
 ## Dependencies
 
-This project relies on a variety of external dependencies.
-
-((tbd renovate))
+This project relies on a variety of external dependencies. These dependencies are monitored by
+[Dependabot](https://docs.github.com/en/code-security/dependabot).  Dependabot regularly checks for dependencies
+and automatically opens pull requests when newer versions are available.
 
 Upgrading to the [latest release](https://github.com/signalfx/o11y-dem-cli/releases)
 is recommended to ensure you have the latest security updates. If a security
