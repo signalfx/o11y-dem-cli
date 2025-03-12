@@ -16,13 +16,12 @@ include:
     ref: master
     file: '/prodsec/.sast-scan.yml'
 
-
 stages:
-  - code_analysis
   - install
   - build
   - lint
   - test
+  - verify
   - release
 
 install_dependencies:
@@ -48,11 +47,11 @@ unit_tests:
     - npm run test:unit
 
 oss-scan:
-  stage: code_analysis
+  stage: verify
   extends: .oss-scan
 
 sast-scanner:
-  stage: code_analysis
+  stage: verify
   extends: .sast_scan
 
 release_dry_run:
