@@ -21,7 +21,7 @@ import { throwAsUserFriendlyErrnoException, UserFriendlyError } from './userFrie
 interface ManifestData {
   package: unknown;
   versionCode: unknown;
-  uuid?: unknown;
+  uniqueId?: unknown;
 }
 
 export const extractManifestData = async (manifestPath: string): Promise<ManifestData> => {
@@ -31,12 +31,12 @@ export const extractManifestData = async (manifestPath: string): Promise<Manifes
 
     const packageId = extractPackageId(result);
     const versionCode = extractVersionCode(result);
-    const uuid = extractUuid(result);
+    const uniqueId = extractUniqueId(result);
 
     return {
       package: packageId,
       versionCode,
-      uuid,
+      uniqueId,
     };
   } catch (error: unknown) {
     const fileMessages = {
@@ -68,13 +68,13 @@ const extractVersionCode = (manifest: any): unknown => {
 };
 
 /* eslint-disable */
-const extractUuid = (manifest: any): unknown => {
+const extractUniqueId = (manifest: any): unknown => {
   const metaData = manifest.manifest.application[0]['meta-data'];
   if (!metaData) return undefined;
 
-  const uuidMeta = metaData.find((meta: { $: { [key: string]: string } }) =>
+  const uniqueIdMeta = metaData.find((meta: { $: { [key: string]: string } }) =>
     meta.$['android:name'] === 'SPLUNK_O11Y_CUSTOM_UUID'
   );
 
-  return uuidMeta ? uuidMeta.$['android:value'] : undefined;
+  return uniqueIdMeta ? uniqueIdMeta.$['android:value'] : undefined;
 };

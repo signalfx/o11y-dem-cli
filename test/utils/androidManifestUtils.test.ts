@@ -21,7 +21,7 @@ import fs from 'fs';
 
 describe('extractManifestData', () => {
 
-  test('should extract package, versionCode, and uuid from a valid manifest file', async () => {
+  test('should extract package, versionCode, and uniqueId from a valid manifest file', async () => {
     
     jest.spyOn(fs, 'readFileSync').mockReturnValue(`
       <?xml version="1.0" encoding="utf-8"?>
@@ -37,7 +37,7 @@ describe('extractManifestData', () => {
     expect(manifestData).toEqual({
       package: 'com.example.app',
       versionCode: '1234',
-      uuid: 'unique-uuid-1234'
+      uniqueId: 'unique-uuid-1234'
     });
   });
   

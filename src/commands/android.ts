@@ -21,7 +21,7 @@ import {
   hasValidExtension,
   isValidAppId, 
   isValidVersionCode, 
-  isValidUUID 
+  isValidUniqueId 
 } from '../utils/inputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
@@ -31,14 +31,14 @@ import { createSpinner } from '../utils/spinner';
 
 export const androidCommand = new Command('android');
 
-const generateURL = (type: 'upload' | 'list', realm: string, appId: string, versionCode?: string, uuid?: string): string => {
+const generateURL = (type: 'upload' | 'list', realm: string, appId: string, versionCode?: string, uniqueId?: string): string => {
   const baseUrl = `https://api.${realm}.signalfx.com/v2/rum-mfm/proguard`;
 
   if (type === 'upload') {
     if (!versionCode) throw new Error('Version code is required for uploading.');
     let uploadUrl = `${baseUrl}/${appId}/${versionCode}`;
-    if (uuid) {
-      uploadUrl += `/${uuid}`;
+    if (uniqueId) {
+      uploadUrl += `/${uniqueId}`;
     }
     return uploadUrl;
   }
@@ -55,14 +55,14 @@ const androidUploadDescription =
 `
 This command uploads the provided mapping.txt file. 
 You need to provide the Application ID and version code of the app, and the path to the mapping file. 
-Optionally, you can also include a UUID to identify the upload session.
+Optionally, you can also include an uniqueId to identify the upload session.
 `;
 
 const androidUploadWithManifestDescription =
 `
 This command uploads the provided file using the packaged AndroidManifest.xml provided. 
 You need to provide the path to the mapping file, and the path to the AndroidManifest.xml file.
-The application ID, version code, and optional UUID will be extracted from the manifest file. 
+The application ID, version code, and optional uniqueId will be extracted from the manifest file. 
 This command is recommended if you want to automate the upload process without manually specifying the application details.
 `;
 
@@ -75,7 +75,7 @@ interface UploadAndroidOptions {
   'file': string,
   'appId': string,
   'versionCode': string,
-  'uuid': string,
+  'uniqueId': string,
   'debug'?: boolean
   'token': string,
   'realm': string,
@@ -94,9 +94,9 @@ interface UploadAndroidWithManifestOptions {
 androidCommand
   .command('upload')
   .showHelpAfterError(true)
-  .usage('--app-id <value> --version-code <int> --file <path> [--uuid <value>]')
+  .usage('--app-id <value> --version-code <int> --file <path> [--uniqueId <value>]')
   .description(androidUploadDescription)
-  .summary(`Uploads the Android mapping.txt file with the provided application ID, version code, and optional UUID`)
+  .summary(`Uploads the Android mapping.txt file with the provided application ID, version code, and optional uniqueId`)
   .requiredOption('--app-id <value>', 'Application ID')
   .requiredOption('--version-code <int>', 'Version code')
   .requiredOption('--file <path>', 'Path to the mapping file')
@@ -109,7 +109,7 @@ androidCommand
     'API access token.  Can also be set using the environment variable O11Y_TOKEN',
     process.env.O11Y_TOKEN
   )
-  .option('--uuid <value>', 'Optional UUID for the upload')
+  .option('--uniqueId <value>', 'Optional uniqueId for the upload')
   .option( '--dry-run', 'Preview the file that will be uploaded')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidOptions) => {
@@ -131,15 +131,15 @@ androidCommand
       throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
     }
 
-    if (options.uuid && !isValidUUID(options.uuid)) {
-      throw new UserFriendlyError(null, 'Error: Invalid UUID. It must be a non-empty string.');
+    if (options.uniqueId && !isValidUniqueId(options.uniqueId)) {
+      throw new UserFriendlyError(null, 'Error: Invalid uniqueId. It must be a non-empty string.');
     }
 
     logger.info(`Preparing to upload Android mapping file:
       File: ${options.file}
       App ID: ${options.appId}
       Version Code: ${options.versionCode}
-      UUID: ${options.uuid || 'Not provided'}`);
+      UniqueId: ${options.uniqueId || 'Not provided'}`);
 
     if (options.dryRun) {
       logger.info('Dry Run complete - No file will be uploaded.');
@@ -149,7 +149,7 @@ androidCommand
     const spinner = createSpinner();
     spinner.start(`Uploading Android mapping file: ${options.file}`);
 
-    const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.uuid);
+    const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.uniqueId);
 
     try {
       logger.debug('Uploading %s', options.file);
@@ -226,7 +226,7 @@ androidCommand
 
       logger.info(`Preparing to extract parameters from ${options.manifest}`);
 
-      const { package: appId, versionCode, uuid } = await extractManifestData(options.manifest);
+      const { package: appId, versionCode, uniqueId } = await extractManifestData(options.manifest);
 
       if (!isValidAppId(appId)) {
         throw new UserFriendlyError(null, 'Invalid Application ID extracted from the manifest.');
@@ -236,14 +236,14 @@ androidCommand
         throw new UserFriendlyError(null, 'Invalid Version Code extracted from the manifest.');
       }
 
-      if (uuid && !isValidUUID(uuid)) {
-        throw new UserFriendlyError(null, `Invalid UUID extracted from the manifest: ${uuid}.`);
+      if (uniqueId && !isValidUniqueId(uniqueId)) {
+        throw new UserFriendlyError(null, `Invalid uniqueId extracted from the manifest: ${uniqueId}.`);
       }
 
       logger.info(`Preparing to upload Android mapping file:
         File: ${options.file}
         Extracted parameters from the AndroidManifest.xml:
-        - UUID: ${uuid || 'Not provided'}
+        - UniqueId: ${uniqueId || 'Not provided'}
         - App ID: ${appId}
         - Version Code: ${versionCode}`);
 
@@ -255,7 +255,7 @@ androidCommand
       const spinner = createSpinner();
       spinner.start(`Uploading Android mapping file: ${options.file}`);
 
-      const url = generateURL('upload', options.realm, appId, versionCode as string, uuid as string);
+      const url = generateURL('upload', options.realm, appId, versionCode as string, uniqueId as string);
         
       try {
         await uploadFileAndroid({
