@@ -25,7 +25,7 @@ import { validateDSYMsPath, cleanupTemporaryZips, getZippedDSYMs } from '../dsym
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 
 interface UploadCommandOptions {
-  directory: string;
+  path: string;
   realm: string;
   token?: string;
   debug?: boolean;
@@ -47,10 +47,10 @@ const TOKEN_HEADER = 'X-SF-Token';
 const program = new Command();
 export const iOSCommand = program.command('ios');
 
-const iOSUploadDescription = `This subcommand uploads any dSYM directories found in the specified dSYMs/ directory.`;
+const iOSUploadDescription = `This subcommand uploads dSYMs provided as either a zip file, or a dSYM or dSYMs directory.`;
 
-const listdSYMsDescription = `This command retrieves and shows a list of the uploaded dSYM files.
-By default, it returns the last 100 dSYM files uploaded, sorted in reverse chronological order based on the upload timestamp.
+const listdSYMsDescription = `This subcommand retrieves and shows a list of the uploaded dSYMs.
+By default, it returns the last 100 dSYMs uploaded, sorted in reverse chronological order based on the upload timestamp.
 `;
 
 const generateUrl = ({
@@ -68,15 +68,21 @@ const generateUrl = ({
 };
 
 iOSCommand
-  .description('Upload and list zipped iOS symbolication files (dSYMs)');
+  .description('Upload and list iOS symbolication files (dSYMs)')
+  .addHelpText('after', `
+Examples:
+  $ o11y-dem-cli ios upload --path /path/to/dSYMs --realm us0
+  $ o11y-dem-cli ios list --realm us0
+  `);
 
 iOSCommand
   .command('upload')
+  .helpOption(false)
   .showHelpAfterError(true)
-  .usage('--directory <path>')
+  .usage('--path <dSYMs directory or zip file>')
   .description(iOSUploadDescription)
-  .summary('Upload dSYM files from a directory to the symbolication service')
-  .requiredOption('--directory <path>', 'Path to the dSYMs directory')
+  .summary('Upload dSYMs, either by directory path or zip path, to the symbolication service')
+  .requiredOption('--path <dSYMs dir or zip>', 'Path to the dSYM[s] directory or zip file.')
   .requiredOption(
     '--realm <value>',
     'Realm for your organization (example: us0). Can also be set using the environment variable O11Y_REALM',
@@ -98,9 +104,9 @@ iOSCommand
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
     try {
-      const dsymsPath = options.directory;
+      const dsymsPath = options.path;
 
-      // Validate that the provided path is a directory ending with dSYMs
+      // Validate that the provided path fits one of our expected patterns for dSYMs
       const absPath = validateDSYMsPath(dsymsPath);
 
       // Get the list of zipped dSYM files
