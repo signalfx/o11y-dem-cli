@@ -55,7 +55,7 @@ const androidUploadDescription =
 `
 This command uploads the provided mapping.txt file. 
 You need to provide the Application ID and version code of the app, and the path to the mapping file. 
-Optionally, you can also include an uniqueId to identify the upload session.
+Optionally, you can also include an uniqueId to identify the different pre-production app builds.
 `;
 
 const androidUploadWithManifestDescription =
@@ -91,6 +91,14 @@ interface UploadAndroidWithManifestOptions {
   'dryRun'?: boolean
 }
 
+const helpDescription = `Upload and list zipped or unzipped Proguard/R8 mapping.txt files
+
+For each respective command listed below under 'Commands', please run 'o11y-dem-cli android <command> --help' for an overview of its usage and options
+`;
+
+androidCommand
+  .description(helpDescription);
+
 androidCommand
   .command('upload')
   .showHelpAfterError(true)
@@ -104,33 +112,49 @@ androidCommand
     'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
     process.env.O11Y_REALM
   )
-  .requiredOption(
+  .option(
     '--token <value>',
-    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
-    process.env.O11Y_TOKEN
+    'API access token. Can also be set using the environment variable O11Y_TOKEN'
   )
   .option('--uniqueId <value>', 'Optional uniqueId for the upload')
   .option( '--dry-run', 'Preview the file that will be uploaded')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidOptions) => {
+    const token = options.token || process.env.O11Y_TOKEN;
+    if (!token) {
+      console.error('Error: API access token is required.');
+      process.exit(1);
+    }
+    options.token = token;
+
+    if (!options.realm || options.realm.trim() === '') {
+      console.error('Error: Realm is required and cannot be empty.');
+      process.exit(1);
+    }
+
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
+    logger.debug(`Validating App ID: ${options.appId}`);
     if (!isValidAppId(options.appId)) {
       throw new UserFriendlyError(null, 'Invalid Application ID. It must be a non-empty string.');
     }
 
+    logger.debug(`Validating Version Code: ${options.versionCode}`);
     if (!isValidVersionCode(options.versionCode)) {
       throw new UserFriendlyError(null, 'Invalid Version Code. It must be an integer.');
     }
 
+    logger.debug(`Validating Mapping File Path: ${options.file}`);
     if (!isValidFile(options.file)) {
       throw new UserFriendlyError(null, `Invalid mapping file path: ${options.file}.`);
     }
 
+    logger.debug(`Validating Mapping File Extension`);
     if (!hasValidExtension(options.file, '.txt', '.gz')) {
       throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
     }
 
+    logger.debug(`Validating optional UniqueId: ${options.uniqueId}`);
     if (options.uniqueId && !isValidUniqueId(options.uniqueId)) {
       throw new UserFriendlyError(null, 'Error: Invalid uniqueId. It must be a non-empty string.');
     }
@@ -152,7 +176,7 @@ androidCommand
     const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.uniqueId);
 
     try {
-      logger.debug('Uploading %s', options.file);
+      logger.debug(`URL Endpoint: ${url}`);
       await uploadFileAndroid({
         url: url,
         file: { filePath: options.file, fieldName: 'file' },
@@ -197,45 +221,62 @@ androidCommand
     'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
     process.env.O11Y_REALM
   )
-  .requiredOption(
+  .option(
     '--token <value>',
-    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
-    process.env.O11Y_TOKEN
+    'API access token. Can also be set using the environment variable O11Y_TOKEN'
   )
   .option('--dry-run', 'Preview the file that will be uploaded and the parameters extracted from the AndroidManifest.xml file')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidWithManifestOptions) => {
+    const token = options.token || process.env.O11Y_TOKEN;
+    if (!token) {
+      console.error('Error: API access token is required.');
+      process.exit(1);
+    }
+    options.token = token;
+
+    if (!options.realm || options.realm.trim() === '') {
+      console.error('Error: Realm is required and cannot be empty.');
+      process.exit(1);
+    }
+
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
     try {
+      logger.debug(`Validating Mapping File Path: ${options.file}`);
       if (!isValidFile(options.file)) {
         throw new UserFriendlyError(null, `Invalid mapping file path: ${options.file}.`);
       }
 
-      if (!hasValidExtension(options.file, '.txt')) {
+      logger.debug(`Validating Mapping File Extension`);
+      if (!hasValidExtension(options.file, '.txt', '.gz')) {
         throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
       }
 
+      logger.debug(`Validating Manifest File Path: ${options.manifest}`);
       if (!isValidFile(options.manifest)) {
-        throw new UserFriendlyError(null, `Invalid manifest file path: ${options.file}.`);
+        throw new UserFriendlyError(null, `Invalid manifest file path: ${options.manifest}.`);
       }
 
+      logger.debug(`Validating Mapping File Extension`);
       if (!hasValidExtension(options.manifest, '.xml')) {
         throw new UserFriendlyError(null, `Manifest file does not have correct extension: ${options.manifest}.`);
       }
 
       logger.info(`Preparing to extract parameters from ${options.manifest}`);
-
       const { package: appId, versionCode, uniqueId } = await extractManifestData(options.manifest);
 
+      logger.debug(`Validating App ID: ${appId}`);
       if (!isValidAppId(appId)) {
         throw new UserFriendlyError(null, 'Invalid Application ID extracted from the manifest.');
       }
 
+      logger.debug(`Validating Version Code: ${versionCode}`);
       if (!isValidVersionCode(versionCode)) {
         throw new UserFriendlyError(null, 'Invalid Version Code extracted from the manifest.');
       }
 
+      logger.debug(`Validating optional UniqueId: ${uniqueId}`);
       if (uniqueId && !isValidUniqueId(uniqueId)) {
         throw new UserFriendlyError(null, `Invalid uniqueId extracted from the manifest: ${uniqueId}.`);
       }
@@ -258,6 +299,7 @@ androidCommand
       const url = generateURL('upload', options.realm, appId, versionCode as string, uniqueId as string);
         
       try {
+        logger.debug(`URL Endpoint: ${url}`);
         await uploadFileAndroid({
           url: url,
           file: { filePath: options.file, fieldName: 'file' },
@@ -308,20 +350,30 @@ androidCommand
     'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
     process.env.O11Y_REALM
   )
-  .requiredOption(
+  .option(
     '--token <value>',
-    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
-    process.env.O11Y_TOKEN
+    'API access token. Can also be set using the environment variable O11Y_TOKEN'
   )
   .showHelpAfterError(true)
   .description(listProguardDescription)
   .option('--debug', 
     'Enable debug logs')
   .action(async (options) => {
+    const token = options.token || process.env.O11Y_TOKEN;
+    if (!token) {
+      console.error('Error: API access token is required.');
+      process.exit(1);
+    }
+
+    if (!options.realm || options.realm.trim() === '') {
+      console.error('Error: Realm is required and cannot be empty.');
+      process.exit(1);
+    }
+
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
     const url = generateURL('list', options.realm, options.appId);
-    const token = options.token;
     try {
+      logger.debug(`URL Endpoint: ${url}`);
       const responseData = await fetchAndroidMappingMetadata({ url, token });
       logger.info('Uploaded mapping file metadata:', JSON.stringify(responseData, null, 2));
     } catch (error) {
