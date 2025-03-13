@@ -55,7 +55,7 @@ const androidUploadDescription =
 `
 This command uploads the provided mapping.txt file. 
 You need to provide the Application ID and version code of the app, and the path to the mapping file. 
-Optionally, you can also include an uniqueId to identify the different pre-production app builds.
+Optionally, you can also include a uniqueId to identify the different pre-production app builds.
 `;
 
 const androidUploadWithManifestDescription =
@@ -122,13 +122,13 @@ androidCommand
   .action(async (options: UploadAndroidOptions) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      console.error('Error: API access token is required.');
+      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variables O11Y_TOKEN')
       process.exit(1);
     }
     options.token = token;
 
     if (!options.realm || options.realm.trim() === '') {
-      console.error('Error: Realm is required and cannot be empty.');
+      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variables O11Y_REALM');
       process.exit(1);
     }
 
@@ -230,13 +230,13 @@ androidCommand
   .action(async (options: UploadAndroidWithManifestOptions) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      console.error('Error: API access token is required.');
+      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variables O11Y_TOKEN');
       process.exit(1);
     }
     options.token = token;
 
     if (!options.realm || options.realm.trim() === '') {
-      console.error('Error: Realm is required and cannot be empty.');
+      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variables O11Y_REALM');
       process.exit(1);
     }
 
@@ -361,12 +361,12 @@ androidCommand
   .action(async (options) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      console.error('Error: API access token is required.');
+      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variables O11Y_TOKEN');
       process.exit(1);
     }
 
     if (!options.realm || options.realm.trim() === '') {
-      console.error('Error: Realm is required and cannot be empty.');
+      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variables O11Y_REALM');
       process.exit(1);
     }
 
