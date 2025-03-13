@@ -37,7 +37,7 @@ program
   .version('1.0.0')
   .description(helpDescription)
   .name('o11y-dem-cli')
-  .usage('[command] [sub-command] [options]');
+  .usage('[command] [subcommand] [options]');
   
 program.addCommand(iOSCommand);
 program.addCommand(androidCommand);
