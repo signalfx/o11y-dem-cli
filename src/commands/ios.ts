@@ -195,6 +195,7 @@ iOSCommand
 
 iOSCommand
   .command('list')
+  .helpOption(false)
   .summary('Retrieves list of metadata of all uploaded dSYM files')
   .showHelpAfterError(true)
   .description(listdSYMsDescription)
