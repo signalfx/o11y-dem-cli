@@ -16,6 +16,7 @@
 
 import { tmpdir } from 'os';
 import { execSync } from 'child_process';
+import { Logger } from '../utils/logger';
 import { join, resolve, basename, dirname } from 'path';
 import { copyFileSync, mkdtempSync, readdirSync, rmSync, statSync } from 'fs';
 import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
@@ -75,7 +76,7 @@ export function validateDSYMsPath(dsymsPath: string): string {
  * Given a dSYMs path, process the input as per the specified format and return
  * the zipped files or copied files as necessary.
  **/
-export function getZippedDSYMs(dsymsPath: string): { zipFiles: string[], uploadPath: string } {
+export function getZippedDSYMs(dsymsPath: string, logger: Logger): { zipFiles: string[], uploadPath: string } {
   const absPath = validateDSYMsPath(dsymsPath);
 
   // Create a unique system temp directory for storing zip files
@@ -86,6 +87,7 @@ export function getZippedDSYMs(dsymsPath: string): { zipFiles: string[], uploadP
     const results: string[] = [];
 
     for (const dSYMDir of dSYMDirs) {
+      logger.info(`Zipping dSYM directory ${dSYMDir}`);
       results.push(zipDSYMDirectory(absPath, dSYMDir, uploadPath));
     }
 
