@@ -21,7 +21,7 @@ import { basename } from 'path';
 import { Command } from 'commander';
 import { createSpinner } from '../utils/spinner';
 import { createLogger, LogLevel } from '../utils/logger';
-import { validateDSYMsPath, cleanupTemporaryZips, getZippedDSYMs } from '../utils/iOSdSYMUtils';
+import { validateDSYMsPath, cleanupTemporaryZips, getZippedDSYMs } from '../dsyms/iOSdSYMUtils';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 
 interface UploadCommandOptions {
@@ -104,7 +104,7 @@ iOSCommand
       const absPath = validateDSYMsPath(dsymsPath);
 
       // Get the list of zipped dSYM files
-      const { zipFiles, uploadPath } = getZippedDSYMs(absPath);
+      const { zipFiles, uploadPath } = getZippedDSYMs(absPath, logger);
 
       // If dry-run mode is enabled, log the actions and exit early
       if (options.dryRun) {
