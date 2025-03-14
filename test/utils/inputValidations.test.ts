@@ -101,24 +101,24 @@ describe('Utility functions', () => {
     });
   });
 
-  describe('isValidUUID', () => {
-    test('should return true if the UUID is a non-empty string', () => {
-      const result = utils.isValidUUID('mySampleUUID');
+  describe('isValidUniqueId', () => {
+    test('should return true if the UniqueId is a non-empty string', () => {
+      const result = utils.isValidUniqueId('mySampleUniqueId');
       expect(result).toBe(true);
     });
 
-    test('should return false if the UUID is an empty string', () => {
-      const result = utils.isValidUUID('');
+    test('should return false if the UniqueId is an empty string', () => {
+      const result = utils.isValidUniqueId('');
       expect(result).toBe(false);
     });
 
-    test('should return false if the UUID is undefined', () => {
-      const result = utils.isValidUUID(undefined);
+    test('should return false if the UniqueId is undefined', () => {
+      const result = utils.isValidUniqueId(undefined);
       expect(result).toBe(false);
     });
 
-    test('should return false if the UUID is not a string', () => {
-      const result = utils.isValidUUID(123);
+    test('should return false if the UniqueId is not a string', () => {
+      const result = utils.isValidUniqueId(123);
       expect(result).toBe(false);
     });
   });

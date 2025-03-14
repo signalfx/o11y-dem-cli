@@ -53,6 +53,11 @@ const listdSYMsDescription = `This subcommand retrieves and shows a list of the 
 By default, it returns the last 100 dSYMs uploaded, sorted in reverse chronological order based on the upload timestamp.
 `;
 
+const helpDescription = `Upload and list zipped iOS symbolication files (dSYMs)
+
+For each respective command listed below under 'Commands', please run 'o11y-dem-cli ios <command> --help' for an overview of its usage and options
+`;
+
 const generateUrl = ({
   urlPrefix,
   apiPath,
@@ -68,12 +73,13 @@ const generateUrl = ({
 };
 
 iOSCommand
-  .description('Upload and list iOS symbolication files (dSYMs)')
+  .description(helpDescription)
   .addHelpText('after', `
 Examples:
   $ o11y-dem-cli ios upload --path /path/to/dSYMs --realm us0
   $ o11y-dem-cli ios list --realm us0
   `);
+
 
 iOSCommand
   .command('upload')

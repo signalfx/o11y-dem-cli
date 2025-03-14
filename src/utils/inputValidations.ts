@@ -38,7 +38,7 @@ export const isValidVersionCode = (versionCode: unknown): boolean => {
   (typeof versionCode === 'string' && Number.isInteger(Number(versionCode)));
 };
 
-// Validate UUID (should be a string)
-export const isValidUUID = (uuid: unknown | undefined): boolean => {
-  return uuid !== undefined && typeof uuid === 'string' && uuid.length > 0;
+// Validate UniqueId (should be a string)
+export const isValidUniqueId = (uniqueId: unknown | undefined): boolean => {
+  return uniqueId !== undefined && typeof uniqueId === 'string' && uniqueId.length > 0;
 };
