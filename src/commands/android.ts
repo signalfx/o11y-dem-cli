@@ -55,14 +55,14 @@ const androidUploadDescription =
 `
 This command uploads the provided mapping.txt file. 
 You need to provide the Application ID and version code of the app, and the path to the mapping file. 
-Optionally, you can also include a uniqueId to identify the different pre-production app builds.
+Optionally, you can also include a unique ID to identify the different pre-production app builds.
 `;
 
 const androidUploadWithManifestDescription =
 `
 This command uploads the provided file using the packaged AndroidManifest.xml provided. 
 You need to provide the path to the mapping file, and the path to the AndroidManifest.xml file.
-The application ID, version code, and optional uniqueId will be extracted from the manifest file. 
+The application ID, version code, and optional unique ID will be extracted from the manifest file. 
 This command is recommended if you want to automate the upload process without manually specifying the application details.
 `;
 
@@ -105,7 +105,7 @@ androidCommand
   .showHelpAfterError(true)
   .usage('--app-id <value> --version-code <int> --file <path> [--uniqueId <value>]')
   .description(androidUploadDescription)
-  .summary(`Uploads the Android mapping.txt file with the provided application ID, version code, and optional uniqueId`)
+  .summary(`Uploads the Android mapping.txt file with the provided application ID, version code, and optional unique ID`)
   .requiredOption('--app-id <value>', 'Application ID')
   .requiredOption('--version-code <int>', 'Version code')
   .requiredOption('--file <path>', 'Path to the mapping file')
@@ -117,20 +117,19 @@ androidCommand
     '--token <value>',
     'API access token. Can also be set using the environment variable O11Y_TOKEN'
   )
-  .option('--uniqueId <value>', 'Optional uniqueId for the upload')
+  .option('--uniqueId <value>', 'Optional unique ID for the upload')
   .option( '--dry-run', 'Preview the file that will be uploaded')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidOptions) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variables O11Y_TOKEN');
-      process.exit(1);
+      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variable O11Y_TOKEN');
+    } else {
+      options.token = token;
     }
-    options.token = token;
 
     if (!options.realm || options.realm.trim() === '') {
-      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variables O11Y_REALM');
-      process.exit(1);
+      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable O11Y_REALM');
     }
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
@@ -155,7 +154,7 @@ androidCommand
       throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
     }
 
-    logger.debug(`Validating optional UniqueId: ${options.uniqueId}`);
+    logger.debug(`Validating optional Unique ID: ${options.uniqueId}`);
     if (options.uniqueId && !isValidUniqueId(options.uniqueId)) {
       throw new UserFriendlyError(null, 'Error: Invalid uniqueId. It must be a non-empty string.');
     }
@@ -164,7 +163,7 @@ androidCommand
       File: ${options.file}
       App ID: ${options.appId}
       Version Code: ${options.versionCode}
-      UniqueId: ${options.uniqueId || 'Not provided'}`);
+      Unique ID: ${options.uniqueId || 'Not provided'}`);
 
     if (options.dryRun) {
       logger.info('Dry Run complete - No file will be uploaded.');
@@ -231,14 +230,13 @@ androidCommand
   .action(async (options: UploadAndroidWithManifestOptions) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variables O11Y_TOKEN');
-      process.exit(1);
+      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variable O11Y_TOKEN');
+    } else {
+      options.token = token;
     }
-    options.token = token;
 
     if (!options.realm || options.realm.trim() === '') {
-      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variables O11Y_REALM');
-      process.exit(1);
+      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable O11Y_REALM');
     }
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
@@ -277,7 +275,7 @@ androidCommand
         throw new UserFriendlyError(null, 'Invalid Version Code extracted from the manifest.');
       }
 
-      logger.debug(`Validating optional UniqueId: ${uniqueId}`);
+      logger.debug(`Validating optional Unique ID: ${uniqueId}`);
       if (uniqueId && !isValidUniqueId(uniqueId)) {
         throw new UserFriendlyError(null, `Invalid uniqueId extracted from the manifest: ${uniqueId}.`);
       }
@@ -285,7 +283,7 @@ androidCommand
       logger.info(`Preparing to upload Android mapping file:
         File: ${options.file}
         Extracted parameters from the AndroidManifest.xml:
-        - UniqueId: ${uniqueId || 'Not provided'}
+        - Unique ID: ${uniqueId || 'Not provided'}
         - App ID: ${appId}
         - Version Code: ${versionCode}`);
 
@@ -362,13 +360,11 @@ androidCommand
   .action(async (options) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variables O11Y_TOKEN');
-      process.exit(1);
+      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variable O11Y_TOKEN');
     }
 
     if (!options.realm || options.realm.trim() === '') {
-      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variables O11Y_REALM');
-      process.exit(1);
+      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable O11Y_REALM');
     }
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
