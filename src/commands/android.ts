@@ -170,13 +170,13 @@ androidCommand
       return;
     }
 
+    const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.uniqueId);
+    logger.debug(`URL Endpoint: ${url}`);
+
     const spinner = createSpinner();
     spinner.start(`Uploading Android mapping file: ${options.file}`);
 
-    const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.uniqueId);
-
     try {
-      logger.debug(`URL Endpoint: ${url}`);
       await uploadFileAndroid({
         url: url,
         file: { filePath: options.file, fieldName: 'file' },
@@ -292,13 +292,13 @@ androidCommand
         return;
       }
 
+      const url = generateURL('upload', options.realm, appId, versionCode as string, uniqueId as string);
+      logger.debug(`URL Endpoint: ${url}`);
+
       const spinner = createSpinner();
       spinner.start(`Uploading Android mapping file: ${options.file}`);
-
-      const url = generateURL('upload', options.realm, appId, versionCode as string, uniqueId as string);
-        
+      
       try {
-        logger.debug(`URL Endpoint: ${url}`);
         await uploadFileAndroid({
           url: url,
           file: { filePath: options.file, fieldName: 'file' },
