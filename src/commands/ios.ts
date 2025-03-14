@@ -72,7 +72,7 @@ const generateUrl = ({
 };
 
 iOSCommand
-  .description(helpDescription)
+  .description(helpDescription);
 
 iOSCommand
   .command('upload')
