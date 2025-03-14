@@ -97,7 +97,8 @@ For each respective command listed below under 'Commands', please run 'o11y-dem-
 `;
 
 androidCommand
-  .description(helpDescription);
+  .description(helpDescription)
+  .usage('[command] [options]');
 
 androidCommand
   .command('upload')
