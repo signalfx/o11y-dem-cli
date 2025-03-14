@@ -17,8 +17,8 @@
 import axios from 'axios';
 import fs from 'fs';
 import { AxiosError } from 'axios';
-import { Logger } from '../utils/logger';  // Adjust the import path as necessary
-import { Spinner } from '../utils/spinner'; // Adjust the import path as necessary
+import { Logger } from '../utils/logger';
+import { Spinner } from '../utils/spinner';
 
 interface UploadParams {
   filePath: string;
@@ -94,6 +94,6 @@ export async function listDSYMs({ url, token, logger, TOKEN_HEADER }: ListParams
     } else {
       logger.error('Failed to fetch the list of uploaded files:', String(error));
     }
-    throw error;  // Re-throw to handle it in the action handler
+    throw error;
   }
 }
