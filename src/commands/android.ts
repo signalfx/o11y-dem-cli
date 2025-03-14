@@ -123,7 +123,7 @@ androidCommand
   .action(async (options: UploadAndroidOptions) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variables O11Y_TOKEN')
+      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variables O11Y_TOKEN');
       process.exit(1);
     }
     options.token = token;
