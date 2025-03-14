@@ -66,7 +66,7 @@ const generateUrl = ({
 };
 
 iOSCommand
-  .description('Upload and list iOS symbolication files (dSYMs)')
+  .description('Upload and list iOS symbolication files (dSYMs)');
 
 iOSCommand
   .command('upload')
