@@ -67,11 +67,6 @@ const generateUrl = ({
 
 iOSCommand
   .description('Upload and list iOS symbolication files (dSYMs)')
-  .addHelpText('after', `
-Examples:
-  $ o11y-dem-cli ios upload --path /path/to/dSYMs --realm us0
-  $ o11y-dem-cli ios list --realm us0
-  `);
 
 iOSCommand
   .command('upload')
