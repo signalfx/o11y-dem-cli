@@ -168,7 +168,7 @@ iOSCommand
 
       // Report failed uploads if there are any
       if (failedUploads.length > 0) {
-        iOSCommand.error(`The following files failed to upload: ${failedUploads.join(', ')}`);
+        iOSCommand.error(`Upload failed for ${failedUploads.length} file${failedUploads.length !== 1 ? 's' : ''}`);
       } else {
         logger.info('All files uploaded successfully.');
       }
