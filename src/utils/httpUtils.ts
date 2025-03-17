@@ -15,6 +15,7 @@
 */
 
 import axios from 'axios';
+import { AxiosError } from 'axios';
 import fs from 'fs';
 import FormData from 'form-data';
 

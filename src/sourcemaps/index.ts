@@ -220,24 +220,9 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
       failed++;
       spinner.stop();
 
-      const ae = e as AxiosError;
-      const unableToUploadMessage = `Unable to upload ${path}`;
-
-      if (ae.response && ae.response.status === 413) {
-        logger.warn(ae.response.status, ae.response.statusText);
-        logger.warn(unableToUploadMessage);
-      } else if (ae.response) {
-        logger.error(ae.response.status, ae.response.statusText);
-        logger.error(ae.response.data);
-        logger.error(unableToUploadMessage);
-      } else if (ae.request) {
-        logger.error(`Response from ${url} was not received`);
-        logger.error(ae.cause);
-        logger.error(unableToUploadMessage);
-      } else {
-        logger.error(`Request to ${url} could not be sent`);
-        logger.error(e);
-        logger.error(unableToUploadMessage);
+      const operationMessage = `Unable to upload ${path}`;
+      if (!handleAxiosError(e, operationMessage, url, logger)) {
+        logger.error(operationMessage);
       }
     }
   }
