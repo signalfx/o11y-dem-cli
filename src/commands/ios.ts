@@ -23,6 +23,7 @@ import { createSpinner } from '../utils/spinner';
 import { createLogger, LogLevel } from '../utils/logger';
 import { validateDSYMsPath, cleanupTemporaryZips, getZippedDSYMs } from '../dsyms/iOSdSYMUtils';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
+import { COMMON_ERROR_MESSAGES } from '../utils/inputValidations';
 
 interface UploadCommandOptions {
   path: string;
@@ -103,7 +104,7 @@ iOSCommand
   .action(async (options: UploadCommandOptions) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      iOSCommand.error('Error: API access token is required.');
+      iOSCommand.error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
     }
     options.token = token;
 

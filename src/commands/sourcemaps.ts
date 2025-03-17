@@ -19,6 +19,7 @@ import { runSourcemapInject, runSourcemapUpload, SourceMapInjectOptions } from '
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import { createSpinner } from '../utils/spinner';
+import { COMMON_ERROR_MESSAGES } from '../utils/inputValidations';
 
 export const sourcemapsCommand = new Command('sourcemaps');
 
@@ -124,10 +125,9 @@ sourcemapsCommand
     'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
     process.env.O11Y_REALM
   )
-  .requiredOption(
+  .option(
     '--token <value>',
     'API access token.  Can also be set using the environment variable O11Y_TOKEN',
-    process.env.O11Y_TOKEN
   )
   .option(
     '--app-name <value>',
@@ -155,6 +155,16 @@ sourcemapsCommand
   )
   .action(
     async (options: SourcemapsUploadCliOptions) => {
+      const token = options.token || process.env.O11Y_TOKEN;
+      if (!token) {
+        sourcemapsCommand.error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
+      } else {
+        options.token = token;
+      }
+      if (!options.realm || options.realm.trim() === '') {
+        sourcemapsCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
+      }
+
       const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
       const spinner = createSpinner();
       try {
