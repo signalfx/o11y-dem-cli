@@ -15,6 +15,7 @@
 */
 
 import axios from 'axios';
+import { handleAxiosError } from '../utils/httpUtils';
 import fs from 'fs';
 import { AxiosError } from 'axios';
 import { Logger } from '../utils/logger';
@@ -46,26 +47,10 @@ export async function uploadDSYM({ filePath, url, token, logger, spinner, TOKEN_
     logger.info(`Upload complete for ${filePath}`);
   } catch (error) {
     spinner.stop();
-    const ae = error as AxiosError;
-    const unableToUploadMessage = `Unable to upload ${filePath}`;
-
-    if (ae.response && ae.response.status === 413) {
-      logger.warn(`${ae.response.status} ${ae.response.statusText}`);
-      logger.warn(unableToUploadMessage);
-    } else if (ae.response) {
-      logger.error(`${ae.response.status} ${ae.response.statusText}`);
-      logger.error(ae.response.data);
-      logger.error(unableToUploadMessage);
-    } else if (ae.request) {
-      logger.error(`Response from ${url} was not received`);
-      logger.error(ae.cause);
-      logger.error(unableToUploadMessage);
-    } else {
-      logger.error(`Request to ${url} could not be sent`);
-      logger.error(error);
-      logger.error(unableToUploadMessage);
+    const operationMessage = `Unable to upload ${filePath}`;
+    if (!handleAxiosError(error, operationMessage, url, logger)) {
+      throw new Error(operationMessage);
     }
-    throw new Error(unableToUploadMessage);
   }
 }
 
@@ -86,14 +71,9 @@ export async function listDSYMs({ url, token, logger, TOKEN_HEADER }: ListParams
     });
     logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2));
   } catch (error) {
-    if (error instanceof AxiosError && error.response) {
-      logger.error(`HTTP ${error.response.status}: ${error.response.statusText}`);
-      logger.error(error.response.data);
-    } else if (error instanceof Error) {
-      logger.error('Failed to fetch the list of uploaded files:', error.message);
-    } else {
-      logger.error('Failed to fetch the list of uploaded files:', String(error));
+    const operationMessage = 'Unable to fetch the list of uploaded files.';
+    if (!handleAxiosError(error, operationMessage, url, logger)) {
+      throw new Error(operationMessage);
     }
-    throw error;
   }
 }
