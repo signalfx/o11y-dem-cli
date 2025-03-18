@@ -27,7 +27,6 @@ import { injectFile } from './injectFile';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
 import { handleAxiosError, uploadFile } from '../utils/httpUtils';
-import { AxiosError } from 'axios';
 import { formatUploadProgress } from '../utils/stringUtils';
 import { wasInjectAlreadyRun } from './wasInjectAlreadyRun';
 

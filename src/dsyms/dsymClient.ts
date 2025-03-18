@@ -17,7 +17,6 @@
 import axios from 'axios';
 import { handleAxiosError } from '../utils/httpUtils';
 import fs from 'fs';
-import { AxiosError } from 'axios';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
 
