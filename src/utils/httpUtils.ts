@@ -18,6 +18,7 @@ import axios from 'axios';
 import { AxiosError } from 'axios';
 import fs from 'fs';
 import FormData from 'form-data';
+import { Logger } from '../utils/logger';
 
 interface FileUpload {
   filePath: string;
@@ -44,6 +45,43 @@ export interface ProgressInfo {
 }
 
 const TOKEN_HEADER = 'X-SF-Token';
+
+export const handleAxiosError = (
+  error: unknown,
+  operationMessage: string,
+  url: string,
+  logger: Logger
+): boolean => {
+  let isHandled = false;
+
+  if (axios.isAxiosError(error)) {
+    isHandled = true;
+    if (error.response && error.response.status === 413) {
+      logger.warn(`${error.response.status} ${error.response.statusText}`);
+      logger.warn(operationMessage);
+    } else if (error.response) {
+      logger.error(`${error.response.status} ${error.response.statusText}`);
+      const errorData = typeof error.response.data === 'string' ? error.response.data : 'Error data not available';
+      logger.error(errorData);
+      logger.error(operationMessage);
+    } else if (error.request) {
+      logger.error(`Response from ${url} was not received`);
+      if (error.cause instanceof Error) {
+        logger.error(error.cause.message);
+      }
+      logger.error(operationMessage);
+    } else {
+      logger.error(`Request to ${url} could not be sent`);
+      logger.error(error.message || 'An unknown error occurred');
+      logger.error(operationMessage);
+    }
+  } else {
+    logger.error(`An unexpected error occurred: ${error}`);
+    logger.error(operationMessage);
+  }
+
+  return isHandled;
+};
 
 export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMetadataOptions): Promise<string[]> => {
   const headers = {
