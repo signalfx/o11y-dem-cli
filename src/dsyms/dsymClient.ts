@@ -19,6 +19,7 @@ import { handleAxiosError } from '../utils/httpUtils';
 import fs from 'fs';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
+import { UserFriendlyError } from '../utils/userFriendlyErrors';
 
 interface UploadParams {
   filePath: string;
@@ -47,8 +48,10 @@ export async function uploadDSYM({ filePath, url, token, logger, spinner, TOKEN_
   } catch (error) {
     spinner.stop();
     const operationMessage = `Unable to upload ${filePath}`;
-    if (!handleAxiosError(error, operationMessage, url, logger)) {
-      throw new Error(operationMessage);
+    const result = handleAxiosError(error, operationMessage, url, logger);
+    if (result) {
+      const userFriendlyMessage = `Failed to upload ${filePath}. Please check your network connection and ensure the file size does not exceed the limit.`;
+      throw new UserFriendlyError(error, userFriendlyMessage);
     }
   }
 }
@@ -71,8 +74,11 @@ export async function listDSYMs({ url, token, logger, TOKEN_HEADER }: ListParams
     logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2));
   } catch (error) {
     const operationMessage = 'Unable to fetch the list of uploaded files.';
-    if (!handleAxiosError(error, operationMessage, url, logger)) {
-      throw new Error(operationMessage);
+    const result = handleAxiosError(error, operationMessage, url, logger);
+    if (result) {
+      const userFriendlyMessage = `There was a problem accessing the list of uploaded files. 
+      Please check your network connection or try again later.`;
+      throw new UserFriendlyError(error, userFriendlyMessage);
     }
   }
 }

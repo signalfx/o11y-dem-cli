@@ -29,6 +29,7 @@ import { Spinner } from '../utils/spinner';
 import { handleAxiosError, uploadFile } from '../utils/httpUtils';
 import { formatUploadProgress } from '../utils/stringUtils';
 import { wasInjectAlreadyRun } from './wasInjectAlreadyRun';
+import { UserFriendlyError } from '../utils/userFriendlyErrors';
 
 export type SourceMapInjectOptions = {
   directory: string;
@@ -218,9 +219,15 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
     } catch (e) {
       failed++;
       spinner.stop();
-
+    
       const operationMessage = `Unable to upload ${path}`;
-      if (!handleAxiosError(e, operationMessage, url, logger)) {
+      const result = handleAxiosError(e, operationMessage, url, logger);
+      if (result) {
+        // Log or handle based on error category
+        const userFriendlyMessage = `Failed to upload ${path}. Please check the error log for more details.`;
+        logger.error(`Error category: ${result.category}`);
+        throw new UserFriendlyError(e, userFriendlyMessage);
+      } else {
         logger.error(operationMessage);
       }
     }

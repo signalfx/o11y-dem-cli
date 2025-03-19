@@ -134,16 +134,16 @@ iOSCommand
         realm: options.realm
       });
       logger.info(`url: ${url}`);
-      
-      logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
 
-      const spinner = createSpinner();
-      const failedUploads: string[] = [];
+      logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
 
       const token = options.token || process.env.O11Y_TOKEN;
       if (!token) {
         iOSCommand.error('Error: API access token is required.');
       }
+
+      let failedUploads = 0;
+      const spinner = createSpinner();
       
       for (const filePath of zipFiles) {
         try {
@@ -156,9 +156,17 @@ iOSCommand
             TOKEN_HEADER,
           });
         } catch (error) {
-          failedUploads.push(basename(filePath));
-          if (error instanceof Error) {
+	  failedUploads++;
+          if (error instanceof UserFriendlyError) {
+            logger.error(error.message);
+            logger.debug(`Original error: ${error.originalError instanceof Error ? error.originalError.stack : 'No stack trace available'}`);
+            iOSCommand.error(error.message);
+          } else if (error instanceof Error) {
             logger.error(`Failed to upload ${basename(filePath)}: ${error.message}`);
+            iOSCommand.error(`Error during upload: ${error.message}`);
+          } else {
+            logger.error('Unknown error during upload');
+            iOSCommand.error('Unknown error during upload');
           }
         }
       }
@@ -167,19 +175,20 @@ iOSCommand
       cleanupTemporaryZips(uploadPath);
 
       // Report failed uploads if there are any
-      if (failedUploads.length > 0) {
-        iOSCommand.error(`Upload failed for ${failedUploads.length} file${failedUploads.length !== 1 ? 's' : ''}`);
+      if (failedUploads > 0) {
+        iOSCommand.error(`Upload failed for ${failedUploads} file${failedUploads !== 1 ? 's' : ''}`);
       } else {
         logger.info('All files uploaded successfully.');
       }
     } catch (error) {
       if (error instanceof UserFriendlyError) {
         logger.error(error.message);
-        logger.debug(error.originalError);
+        logger.debug(`Original error: ${error.originalError instanceof Error ? error.originalError.stack : 'No stack trace available'}`);
+        iOSCommand.error(error.message);
       } else {
         logger.error('An unexpected error occurred:', error);
+        iOSCommand.error('An unexpected error occurred.');
       }
-      iOSCommand.error('');
     }
   });
 
@@ -222,11 +231,16 @@ iOSCommand
         TOKEN_HEADER,
       });
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof UserFriendlyError) {
+        logger.error(`User-friendly error: ${error.message}`);
+        logger.debug(`Original error: ${error.originalError instanceof Error ? error.originalError.stack : 'No stack trace available'}`);
+        iOSCommand.error(error.message);
+      } else if (error instanceof Error) {
         logger.error(`Failed to fetch the list of uploaded files: ${error.message}`);
+        iOSCommand.error(`Error during list operation: ${error.message}`);
       } else {
         logger.error('Failed to fetch the list of uploaded files: An unknown error occurred.');
+        iOSCommand.error('Error occurred during the list operation.');
       }
-      iOSCommand.error('Error occurred during the list operation.');
     }
   });

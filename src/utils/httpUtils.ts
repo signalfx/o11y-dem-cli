@@ -45,41 +45,51 @@ export interface ProgressInfo {
 
 const TOKEN_HEADER = 'X-SF-Token';
 
+export type ErrorHandlingResult = {
+  category: ErrorCategory;
+};
+
+export enum ErrorCategory {
+  RequestEntityTooLarge = 'REQUEST_ENTITY_TOO_LARGE',
+  NetworkIssue = 'NETWORK_ISSUE',
+  NoResponse = 'NO_RESPONSE',
+  GeneralHttpError = 'GENERAL_HTTP_ERROR',
+  Unexpected = 'UNEXPECTED'
+}
+
 export const handleAxiosError = (
   error: unknown,
   operationMessage: string,
   url: string,
   logger: Logger
-): boolean => {
-  let isHandled = false;
-
+): ErrorHandlingResult | undefined => {
   if (axios.isAxiosError(error)) {
-    isHandled = true;
-    if (error.response && error.response.status === 413) {
-      logger.warn(`${error.response.status} ${error.response.statusText}`);
-      logger.warn(operationMessage);
-    } else if (error.response) {
-      logger.error(`${error.response.status} ${error.response.statusText}`);
-      const errorData = typeof error.response.data === 'string' ? error.response.data : 'Error data not available';
-      logger.error(errorData);
+    if (error.response) {
+      const { status, statusText } = error.response;
+      logger.error(`${status} ${statusText}`);
+      logger.error(error.response.data || 'No HTTP response body');
       logger.error(operationMessage);
+      if (status === 413) {
+        return { category: ErrorCategory.RequestEntityTooLarge };
+      }
+      return { category: ErrorCategory.GeneralHttpError };
     } else if (error.request) {
-      logger.error(`Response from ${url} was not received`);
+      logger.error(`No response received from ${url}`);
       if (error.cause instanceof Error) {
         logger.error(error.cause.message);
       }
       logger.error(operationMessage);
+      return { category: ErrorCategory.NoResponse };
     } else {
-      logger.error(`Request to ${url} could not be sent`);
-      logger.error(error.message || 'An unknown error occurred');
+      logger.error(`Network issue: ${error.message || 'Unknown network error'}`);
       logger.error(operationMessage);
+      return { category: ErrorCategory.NetworkIssue };
     }
   } else {
-    logger.error(`An unexpected error occurred: ${error}`);
+    logger.error(`Unexpected error: ${error}`);
     logger.error(operationMessage);
+    return { category: ErrorCategory.Unexpected };
   }
-
-  return isHandled;
 };
 
 export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMetadataOptions): Promise<string[]> => {
