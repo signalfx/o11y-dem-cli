@@ -156,7 +156,7 @@ iOSCommand
             TOKEN_HEADER,
           });
         } catch (error) {
-	  failedUploads++;
+          failedUploads++;
           if (error instanceof UserFriendlyError) {
             logger.error(error.message);
             logger.debug(`Original error: ${error.originalError instanceof Error ? error.originalError.stack : 'No stack trace available'}`);
