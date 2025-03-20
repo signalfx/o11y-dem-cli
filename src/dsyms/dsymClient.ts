@@ -50,7 +50,7 @@ export async function uploadDSYM({ filePath, url, token, logger, spinner, TOKEN_
     const operationMessage = `Unable to upload ${filePath}`;
     const result = handleAxiosError(error, operationMessage, url, logger);
     if (result) {
-      const userFriendlyMessage = `Failed to upload ${filePath}. Please check your network connection and ensure the file size does not exceed the limit.`;
+      const userFriendlyMessage = `Failed to upload ${filePath}. Please check your network connection or your realm and token values, and ensure the file size does not exceed the limit.`;
       throw new UserFriendlyError(error, userFriendlyMessage);
     }
   }
