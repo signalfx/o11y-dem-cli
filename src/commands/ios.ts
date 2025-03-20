@@ -159,7 +159,6 @@ iOSCommand
           failedUploads++;
           if (error instanceof UserFriendlyError) {
             logger.error(error.message);
-            logger.debug(`Original error: ${error.originalError instanceof Error ? error.originalError.stack : 'No stack trace available'}`);
             cleanupTemporaryZips(uploadPath);
             iOSCommand.error(error.message);
           } else {
@@ -182,7 +181,6 @@ iOSCommand
     } catch (error) {
       if (error instanceof UserFriendlyError) {
         logger.error(error.message);
-        logger.debug(`Original error: ${error.originalError instanceof Error ? error.originalError.stack : 'No stack trace available'}`);
         iOSCommand.error(error.message);
       } else {
         logger.error('An unexpected error occurred:', error);
@@ -232,7 +230,6 @@ iOSCommand
     } catch (error) {
       if (error instanceof UserFriendlyError) {
         logger.error(error.message);
-        logger.debug(`Original error: ${error.originalError instanceof Error ? error.originalError.stack : 'No stack trace available'}`);
         iOSCommand.error(error.message);
       } else {
         logger.error('Failed to fetch the list of uploaded files: An unknown error occurred.');
