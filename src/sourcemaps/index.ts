@@ -26,10 +26,10 @@ import { computeSourceMapId } from './computeSourceMapId';
 import { injectFile } from './injectFile';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
-import { handleAxiosError, uploadFile } from '../utils/httpUtils';
+import { uploadFile } from '../utils/httpUtils';
+import { AxiosError } from 'axios';
 import { formatUploadProgress } from '../utils/stringUtils';
 import { wasInjectAlreadyRun } from './wasInjectAlreadyRun';
-import { UserFriendlyError } from '../utils/userFriendlyErrors';
 
 export type SourceMapInjectOptions = {
   directory: string;
@@ -219,16 +219,25 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
     } catch (e) {
       failed++;
       spinner.stop();
-    
-      const operationMessage = `Unable to upload ${path}`;
-      const result = handleAxiosError(e, operationMessage, url, logger);
-      if (result) {
-        // Log or handle based on error category
-        const userFriendlyMessage = `Failed to upload ${path}. Please check the error log for more details.`;
-        logger.error(`Error category: ${result.category}`);
-        throw new UserFriendlyError(e, userFriendlyMessage);
+
+      const ae = e as AxiosError;
+      const unableToUploadMessage = `Unable to upload ${path}`;
+
+      if (ae.response && ae.response.status === 413) {
+        logger.warn(ae.response.status, ae.response.statusText);
+        logger.warn(unableToUploadMessage);
+      } else if (ae.response) {
+        logger.error(ae.response.status, ae.response.statusText);
+        logger.error(ae.response.data);
+        logger.error(unableToUploadMessage);
+      } else if (ae.request) {
+        logger.error(`Response from ${url} was not received`);
+        logger.error(ae.cause);
+        logger.error(unableToUploadMessage);
       } else {
-        logger.error(operationMessage);
+        logger.error(`Request to ${url} could not be sent`);
+        logger.error(e);
+        logger.error(unableToUploadMessage);
       }
     }
   }
