@@ -232,9 +232,6 @@ iOSCommand
         logger.error(error.message);
         logger.debug(`Original error: ${error.originalError instanceof Error ? error.originalError.stack : 'No stack trace available'}`);
         iOSCommand.error(error.message);
-      } else if (error instanceof Error) {
-        logger.error(`Failed to fetch the list of uploaded files: ${error.message}`);
-        iOSCommand.error(`Error during list operation: ${error.message}`);
       } else {
         logger.error('Failed to fetch the list of uploaded files: An unknown error occurred.');
         iOSCommand.error('Error occurred during the list operation.');
