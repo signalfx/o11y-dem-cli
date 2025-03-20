@@ -229,7 +229,7 @@ iOSCommand
       });
     } catch (error) {
       if (error instanceof UserFriendlyError) {
-        logger.error(`User-friendly error: ${error.message}`);
+        logger.error(error.message);
         logger.debug(`Original error: ${error.originalError instanceof Error ? error.originalError.stack : 'No stack trace available'}`);
         iOSCommand.error(error.message);
       } else if (error instanceof Error) {
