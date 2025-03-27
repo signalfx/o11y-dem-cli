@@ -14,15 +14,14 @@
  * limitations under the License.
 */
 
-import fs from 'fs';
-import axios from 'axios';
-import { AxiosError } from 'axios';
 import { basename } from 'path';
 import { Command } from 'commander';
+import { uploadDSYM, listDSYMs } from '../dsyms/dsymClient';
 import { createSpinner } from '../utils/spinner';
 import { createLogger, LogLevel } from '../utils/logger';
 import { validateDSYMsPath, cleanupTemporaryZips, getZippedDSYMs } from '../dsyms/iOSdSYMUtils';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
+import { COMMON_ERROR_MESSAGES } from '../utils/inputValidations';
 
 interface UploadCommandOptions {
   path: string;
@@ -53,7 +52,7 @@ const listdSYMsDescription = `This subcommand retrieves and shows a list of the 
 By default, it returns the last 100 dSYMs uploaded, sorted in reverse chronological order based on the upload timestamp.
 `;
 
-const helpDescription = `Upload and list zipped iOS symbolication files (dSYMs)
+const helpDescription = `Upload and list iOS symbolication files (dSYMs)
 
 For each respective command listed below under 'Commands', please run 'o11y-dem-cli ios <command> --help' for an overview of its usage and options
 `;
@@ -73,13 +72,7 @@ const generateUrl = ({
 };
 
 iOSCommand
-  .description(helpDescription)
-  .addHelpText('after', `
-Examples:
-  $ o11y-dem-cli ios upload --path /path/to/dSYMs --realm us0
-  $ o11y-dem-cli ios list --realm us0
-  `);
-
+  .description(helpDescription);
 
 iOSCommand
   .command('upload')
@@ -103,7 +96,7 @@ iOSCommand
   .action(async (options: UploadCommandOptions) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      iOSCommand.error('Error: API access token is required.');
+      iOSCommand.error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
     }
     options.token = token;
 
@@ -141,61 +134,58 @@ iOSCommand
         realm: options.realm
       });
       logger.info(`url: ${url}`);
-      
+
       logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
 
+      const token = options.token || process.env.O11Y_TOKEN;
+      if (!token) {
+        iOSCommand.error('Error: API access token is required.');
+      }
+
+      let failedUploads = 0;
       const spinner = createSpinner();
-
+      
       for (const filePath of zipFiles) {
-        const fileSizeInBytes = fs.statSync(filePath).size;
-        const fileStream = fs.createReadStream(filePath);
-        const headers = {
-          'Content-Type': 'application/zip',
-          [TOKEN_HEADER]: options.token,
-          'Content-Length': fileSizeInBytes,
-        };
-
-        spinner.start(`Uploading file: ${basename(filePath)}`);
         try {
-          await axios.put(url, fileStream, {
-            headers
+          await uploadDSYM({
+            filePath,
+            url,
+            token: token as string,
+            logger,
+            spinner,
+            TOKEN_HEADER,
           });
-          spinner.stop();
-          logger.info(`Upload complete for ${basename(filePath)}`);
         } catch (error) {
-          spinner.stop();
-          const ae = error as AxiosError;
-          const unableToUploadMessage = `Unable to upload ${basename(filePath)}`;
-
-          if (ae.response && ae.response.status === 413) {
-            logger.warn(ae.response.status, ae.response.statusText);
-            logger.warn(unableToUploadMessage);
-          } else if (ae.response) {
-            logger.error(ae.response.status, ae.response.statusText);
-            logger.error(ae.response.data);
-            logger.error(unableToUploadMessage);
-          } else if (ae.request) {
-            logger.error(`Response from ${url} was not received`);
-            logger.error(ae.cause);
-            logger.error(unableToUploadMessage);
+          failedUploads++;
+          if (error instanceof UserFriendlyError) {
+            logger.error(error.message);
+            cleanupTemporaryZips(uploadPath);
+            iOSCommand.error(error.message);
           } else {
-            logger.error(`Request to ${url} could not be sent`);
-            logger.error(error);
-            logger.error(unableToUploadMessage);
+            logger.error('Unknown error during upload');
+            cleanupTemporaryZips(uploadPath);
+            iOSCommand.error('Unknown error during upload');
           }
-          iOSCommand.error('');
         }
       }
+
+      // Perform cleanup before final reporting
       cleanupTemporaryZips(uploadPath);
 
+      // Report failed uploads if there are any
+      if (failedUploads > 0) {
+        iOSCommand.error(`Upload failed for ${failedUploads} file${failedUploads !== 1 ? 's' : ''}`);
+      } else {
+        logger.info('All files uploaded successfully.');
+      }
     } catch (error) {
       if (error instanceof UserFriendlyError) {
         logger.error(error.message);
-        logger.debug(error.originalError);
+        iOSCommand.error(error.message);
       } else {
         logger.error('An unexpected error occurred:', error);
+        iOSCommand.error('An unexpected error occurred.');
       }
-      iOSCommand.error('');
     }
   });
 
@@ -220,36 +210,30 @@ iOSCommand
     if (!token) {
       iOSCommand.error('Error: API access token is required.');
     }
-    options.token = token;
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
-
     logger.info('Fetching dSYM file data');
 
-    // Get the URL for the list endpoint
     const url = generateUrl({
       urlPrefix: 'https://api',
       apiPath: API_PATH_FOR_LIST,
       realm: options.realm
     });
-    
+
     try {
-      const response = await axios.get(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          [TOKEN_HEADER]: options.token,
-        },
+      await listDSYMs({
+        url,
+        token: token as string,
+        logger,
+        TOKEN_HEADER,
       });
-      logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2));
     } catch (error) {
       if (error instanceof UserFriendlyError) {
         logger.error(error.message);
-        console.debug(error.originalError);
-      } else if (error instanceof Error) {
-        logger.error('Failed to fetch the list of uploaded files:', error.message);
+        iOSCommand.error(error.message);
       } else {
-        logger.error('Failed to fetch the list of uploaded files:', String(error));
+        logger.error('Failed to fetch the list of uploaded files: An unknown error occurred.');
+        iOSCommand.error('Error occurred during the list operation.');
       }
-      iOSCommand.error('');
     }
   });

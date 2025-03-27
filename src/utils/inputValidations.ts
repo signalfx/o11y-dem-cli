@@ -17,6 +17,11 @@
 import fs from 'fs';
 import path from 'path';
 
+export const COMMON_ERROR_MESSAGES = {
+  TOKEN_NOT_SPECIFIED: 'Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variable O11Y_TOKEN',
+  REALM_NOT_SPECIFIED: 'Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable O11Y_REALM'
+};
+
 // Check if a file exists
 export const isValidFile = (filePath: string): boolean => {
   return fs.existsSync(filePath);

@@ -16,12 +16,13 @@
 
 import { Command } from 'commander';
 import { extractManifestData } from '../utils/androidManifestUtils';
-import { 
-  isValidFile, 
+import {
+  isValidFile,
   hasValidExtension,
-  isValidAppId, 
-  isValidVersionCode, 
-  isValidUniqueId 
+  isValidAppId,
+  isValidVersionCode,
+  isValidUniqueId,
+  COMMON_ERROR_MESSAGES
 } from '../utils/inputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
@@ -44,7 +45,7 @@ const generateURL = (type: 'upload' | 'list', realm: string, appId: string, vers
   }
 
   if (type === 'list') {
-    return `${baseUrl}/app/${appId}/metadatas`;
+    return `${baseUrl}/${appId}/metadatas`;
   }
 
   throw new Error('Invalid URL type specified.');
@@ -230,13 +231,13 @@ androidCommand
   .action(async (options: UploadAndroidWithManifestOptions) => {
     const token = options.token || process.env.O11Y_TOKEN;
     if (!token) {
-      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variable O11Y_TOKEN');
+      androidCommand.error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
     } else {
       options.token = token;
     }
 
     if (!options.realm || options.realm.trim() === '') {
-      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable O11Y_REALM');
+      androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
     }
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);

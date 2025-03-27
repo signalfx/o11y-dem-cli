@@ -17,6 +17,7 @@
 import axios from 'axios';
 import fs from 'fs';
 import FormData from 'form-data';
+import { Logger } from '../utils/logger';
 
 interface FileUpload {
   filePath: string;
@@ -43,6 +44,53 @@ export interface ProgressInfo {
 }
 
 const TOKEN_HEADER = 'X-SF-Token';
+
+export type ErrorHandlingResult = {
+  category: ErrorCategory;
+};
+
+export enum ErrorCategory {
+  RequestEntityTooLarge = 'REQUEST_ENTITY_TOO_LARGE',
+  NetworkIssue = 'NETWORK_ISSUE',
+  NoResponse = 'NO_RESPONSE',
+  GeneralHttpError = 'GENERAL_HTTP_ERROR',
+  Unexpected = 'UNEXPECTED'
+}
+
+export const handleAxiosError = (
+  error: unknown,
+  operationMessage: string,
+  url: string,
+  logger: Logger
+): ErrorHandlingResult | undefined => {
+  if (axios.isAxiosError(error)) {
+    if (error.response) {
+      const { status, statusText } = error.response;
+      logger.error(`${status} ${statusText}`);
+      logger.error(error.response.data || 'No HTTP response body');
+      logger.error(operationMessage);
+      if (status === 413) {
+        return { category: ErrorCategory.RequestEntityTooLarge };
+      }
+      return { category: ErrorCategory.GeneralHttpError };
+    } else if (error.request) {
+      logger.error(`No response received from ${url}`);
+      if (error.cause instanceof Error) {
+        logger.error(error.cause.message);
+      }
+      logger.error(operationMessage);
+      return { category: ErrorCategory.NoResponse };
+    } else {
+      logger.error(`Network issue: ${error.message || 'Unknown network error'}`);
+      logger.error(operationMessage);
+      return { category: ErrorCategory.NetworkIssue };
+    }
+  } else {
+    logger.error(`Unexpected error: ${error}`);
+    logger.error(operationMessage);
+    return { category: ErrorCategory.Unexpected };
+  }
+};
 
 export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMetadataOptions): Promise<string[]> => {
   const headers = {
