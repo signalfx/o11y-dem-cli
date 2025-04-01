@@ -82,7 +82,6 @@ iOSCommand.configureHelp({
 
 iOSCommand
   .command('upload')
-  .helpOption(false)
   .showHelpAfterError(true)
   .usage('--path <dSYMs directory or zip file>')
   .description(iOSUploadDescription)
@@ -197,7 +196,6 @@ iOSCommand
 
 iOSCommand
   .command('list')
-  .helpOption(false)
   .summary('Retrieves list of metadata of all uploaded dSYM files')
   .showHelpAfterError(true)
   .description(listdSYMsDescription)
