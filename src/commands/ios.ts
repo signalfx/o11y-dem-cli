@@ -48,9 +48,7 @@ export const iOSCommand = program.command('ios');
 
 const shortDescription = 'Upload and list iOS symbolication files (dSYMs)';
 
-const detailedHelp = `${shortDescription}
-
-For each respective command listed below under 'Commands', please run 'o11y-dem-cli ios <command> --help' for an overview of its usage and options`;
+const detailedHelp = `For each respective command listed below under 'Commands', please run 'o11y-dem-cli ios <command> --help' for an overview of its usage and options`;
 
 const iOSUploadDescription = `This subcommand uploads dSYMs provided as either a zip file, or a dSYM or dSYMs directory.`;
 
@@ -76,7 +74,11 @@ iOSCommand
   .description(shortDescription)
   .usage('[command] [options]');
 
-iOSCommand.addHelpText('afterAll', detailedHelp);
+iOSCommand.configureHelp({
+  commandDescription: (cmd) => {
+    return `${cmd.description()}\n\n${detailedHelp}`;
+  }
+});
 
 iOSCommand
   .command('upload')

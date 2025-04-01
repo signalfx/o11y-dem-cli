@@ -94,15 +94,17 @@ interface UploadAndroidWithManifestOptions {
 
 const shortDescription = 'Upload and list zipped or unzipped Proguard/R8 mapping.txt files';
 
-const detailedHelp = `${shortDescription}
-
-For each respective command listed below under 'Commands', please run 'o11y-dem-cli android <command> --help' for an overview of its usage and options`;
+const detailedHelp = `For each respective command listed below under 'Commands', please run 'o11y-dem-cli android <command> --help' for an overview of its usage and options`;
 
 androidCommand
   .description(shortDescription)
   .usage('[command] [options]');
 
-androidCommand.addHelpText('afterAll', detailedHelp);
+androidCommand.configureHelp({
+  commandDescription: (cmd) => {
+    return `${cmd.description()}\n\n${detailedHelp}`;
+  }
+});
 
 androidCommand
   .command('upload')

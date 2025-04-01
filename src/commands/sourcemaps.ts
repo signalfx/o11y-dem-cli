@@ -25,9 +25,7 @@ export const sourcemapsCommand = new Command('sourcemaps');
 
 const shortDescription = 'Prepares JavaScript files to support error symbolication and uploads JavaScript source maps';
 
-const detailedHelp = `${shortDescription}
-
-For each respective command listed below under 'Commands', please run 'o11y-dem-cli sourcemaps <command> --help' for an overview of its usage and options`;
+const detailedHelp = `For each respective command listed below under 'Commands', please run 'o11y-dem-cli sourcemaps <command> --help' for an overview of its usage and options`;
 
 const injectDescription =
 `Inject a code snippet into your JavaScript bundles to enable automatic source mapping of your application's JavaScript errors.
@@ -68,7 +66,11 @@ sourcemapsCommand
   .description(shortDescription)
   .usage('[command] [options]');
 
-sourcemapsCommand.addHelpText('afterAll', detailedHelp);
+sourcemapsCommand.configureHelp({
+  commandDescription: (cmd) => {
+    return `${cmd.description()}\n\n${detailedHelp}`;
+  }
+});
 
 sourcemapsCommand
   .command('inject')
