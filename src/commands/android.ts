@@ -92,24 +92,27 @@ interface UploadAndroidWithManifestOptions {
   'dryRun'?: boolean
 }
 
-const helpDescription = `Upload and list zipped or unzipped Proguard/R8 mapping.txt files
+const shortDescription = 'Upload and list zipped or unzipped Proguard/R8 mapping.txt files';
 
-For each respective command listed below under 'Commands', please run 'o11y-dem-cli android <command> --help' for an overview of its usage and options
-`;
+const detailedHelp = `${shortDescription}
+
+For each respective command listed below under 'Commands', please run 'o11y-dem-cli android <command> --help' for an overview of its usage and options`;
 
 androidCommand
-  .description(helpDescription)
+  .description(shortDescription)
   .usage('[command] [options]');
+
+androidCommand.addHelpText('afterAll', detailedHelp);
 
 androidCommand
   .command('upload')
   .showHelpAfterError(true)
-  .usage('--app-id <value> --version-code <int> --file <path> [--uniqueId <value>]')
+  .usage('--app-id <value> --version-code <int> --path <path> [--uniqueId <value>]')
   .description(androidUploadDescription)
   .summary(`Uploads the Android mapping.txt file with the provided application ID, version code, and optional unique ID`)
   .requiredOption('--app-id <value>', 'Application ID')
   .requiredOption('--version-code <int>', 'Version code')
-  .requiredOption('--file <path>', 'Path to the mapping file')
+  .requiredOption('--path <path>', 'Path to the mapping file')
   .requiredOption('--realm <value>',
     'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
     process.env.O11Y_REALM
@@ -213,11 +216,11 @@ androidCommand
 androidCommand
   .command('upload-with-manifest')
   .showHelpAfterError(true)
-  .usage('--manifest <path> --file <path>')
+  .usage('--manifest <path> --path <path>')
   .summary(`Uploads the Android mapping.txt file with metadata extracted from the AndroidManifest.xml file`)
   .description(androidUploadWithManifestDescription)
   .requiredOption('--manifest <path>', 'Path to the packaged AndroidManifest.xml file')
-  .requiredOption('--file <path>', 'Path to the mapping.txt file')
+  .requiredOption('--path <path>', 'Path to the mapping.txt file')
   .requiredOption('--realm <value>',
     'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
     process.env.O11Y_REALM
@@ -344,6 +347,7 @@ androidCommand
 
 androidCommand
   .command('list')
+  .usage('--app-id <value>')
   .summary(`Retrieves list of metadata of all uploaded Proguard/R8 mapping files`)
   .requiredOption('--app-id <value>', 'Application ID')
   .requiredOption('--realm <value>',
