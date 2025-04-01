@@ -64,11 +64,6 @@ to your environment, any reported stack traces will be automatically symbolicate
 uploaded source maps.
 `;
 
-const helpDescription = `Prepares JavaScript files to support error symbolication and uploads JavaScript source maps
-
-For each respective command listed below under 'Commands', please run 'o11y-dem-cli sourcemaps <command> --help' for an overview of its usage and options
-`;
-
 sourcemapsCommand
   .description(shortDescription)
   .usage('[command] [options]');
