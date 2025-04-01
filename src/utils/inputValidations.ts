@@ -43,7 +43,7 @@ export const isValidVersionCode = (versionCode: unknown): boolean => {
   (typeof versionCode === 'string' && Number.isInteger(Number(versionCode)));
 };
 
-// Validate UniqueId (should be a string)
-export const isValidUniqueId = (uniqueId: unknown | undefined): boolean => {
-  return uniqueId !== undefined && typeof uniqueId === 'string' && uniqueId.length > 0;
+// Validate Splunk Build ID (should be a string)
+export const isValidSplunkBuildId = (splunkBuildId: unknown | undefined): boolean => {
+  return splunkBuildId !== undefined && typeof splunkBuildId === 'string' && splunkBuildId.length > 0;
 };

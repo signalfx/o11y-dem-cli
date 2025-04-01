@@ -101,24 +101,24 @@ describe('Utility functions', () => {
     });
   });
 
-  describe('isValidUniqueId', () => {
-    test('should return true if the UniqueId is a non-empty string', () => {
-      const result = utils.isValidUniqueId('mySampleUniqueId');
+  describe('isValidSplunkBuildId', () => {
+    test('should return true if the Splunk Build ID is a non-empty string', () => {
+      const result = utils.isValidSplunkBuildId('mySampleId');
       expect(result).toBe(true);
     });
 
-    test('should return false if the UniqueId is an empty string', () => {
-      const result = utils.isValidUniqueId('');
+    test('should return false if the Splunk Build ID is an empty string', () => {
+      const result = utils.isValidSplunkBuildId('');
       expect(result).toBe(false);
     });
 
-    test('should return false if the UniqueId is undefined', () => {
-      const result = utils.isValidUniqueId(undefined);
+    test('should return false if the Splunk Build ID is undefined', () => {
+      const result = utils.isValidSplunkBuildId(undefined);
       expect(result).toBe(false);
     });
 
-    test('should return false if the UniqueId is not a string', () => {
-      const result = utils.isValidUniqueId(123);
+    test('should return false if the Splunk Build ID is not a string', () => {
+      const result = utils.isValidSplunkBuildId(123);
       expect(result).toBe(false);
     });
   });

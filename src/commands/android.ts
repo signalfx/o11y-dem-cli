@@ -21,7 +21,7 @@ import {
   hasValidExtension,
   isValidAppId,
   isValidVersionCode,
-  isValidUniqueId,
+  isValidSplunkBuildId,
   COMMON_ERROR_MESSAGES
 } from '../utils/inputValidations';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
@@ -32,14 +32,14 @@ import { createSpinner } from '../utils/spinner';
 
 export const androidCommand = new Command('android');
 
-const generateURL = (type: 'upload' | 'list', realm: string, appId: string, versionCode?: string, uniqueId?: string): string => {
+const generateURL = (type: 'upload' | 'list', realm: string, appId: string, versionCode?: string, splunkBuildId?: string): string => {
   const baseUrl = `https://api.${realm}.signalfx.com/v2/rum-mfm/proguard`;
 
   if (type === 'upload') {
     if (!versionCode) throw new Error('Version code is required for uploading.');
     let uploadUrl = `${baseUrl}/${appId}/${versionCode}`;
-    if (uniqueId) {
-      uploadUrl += `/${uniqueId}`;
+    if (splunkBuildId) {
+      uploadUrl += `/${splunkBuildId}`;
     }
     return uploadUrl;
   }
@@ -56,14 +56,14 @@ const androidUploadDescription =
 `
 This command uploads the provided mapping.txt file. 
 You need to provide the Application ID and version code of the app, and the path to the mapping file. 
-Optionally, you can also include a unique ID to identify the different pre-production app builds.
+Optionally, you can also include a Splunk Build ID to identify the different pre-production app builds.
 `;
 
 const androidUploadWithManifestDescription =
 `
 This command uploads the provided file using the packaged AndroidManifest.xml provided. 
 You need to provide the path to the mapping file, and the path to the AndroidManifest.xml file.
-The application ID, version code, and optional unique ID will be extracted from the manifest file. 
+The application ID, version code, and optional Splunk Build ID will be extracted from the manifest file. 
 This command is recommended if you want to automate the upload process without manually specifying the application details.
 `;
 
@@ -76,7 +76,7 @@ interface UploadAndroidOptions {
   'file': string,
   'appId': string,
   'versionCode': string,
-  'uniqueId': string,
+  'splunkBuildId': string,
   'debug'?: boolean
   'token': string,
   'realm': string,
@@ -109,9 +109,9 @@ androidCommand.configureHelp({
 androidCommand
   .command('upload')
   .showHelpAfterError(true)
-  .usage('--app-id <value> --version-code <int> --path <path> [--uniqueId <value>]')
+  .usage('--app-id <value> --version-code <int> --path <path> [--splunk-build-id <value>]')
   .description(androidUploadDescription)
-  .summary(`Uploads the Android mapping.txt file with the provided application ID, version code, and optional unique ID`)
+  .summary(`Uploads the Android mapping.txt file with the provided application ID, version code, and optional Splunk Build ID`)
   .requiredOption('--app-id <value>', 'Application ID')
   .requiredOption('--version-code <int>', 'Version code')
   .requiredOption('--path <path>', 'Path to the mapping file')
@@ -123,7 +123,7 @@ androidCommand
     '--token <value>',
     'API access token. Can also be set using the environment variable O11Y_TOKEN'
   )
-  .option('--uniqueId <value>', 'Optional unique ID for the upload')
+  .option('--splunk-build-id <value>', 'Optional Splunk Build ID for the upload')
   .option( '--dry-run', 'Preview the file that will be uploaded')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidOptions) => {
@@ -160,23 +160,23 @@ androidCommand
       throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
     }
 
-    logger.debug(`Validating optional Unique ID: ${options.uniqueId}`);
-    if (options.uniqueId && !isValidUniqueId(options.uniqueId)) {
-      throw new UserFriendlyError(null, 'Error: Invalid uniqueId. It must be a non-empty string.');
+    logger.debug(`Validating optional Splunk Build ID: ${options.splunkBuildId}`);
+    if (options.splunkBuildId && !isValidSplunkBuildId(options.splunkBuildId)) {
+      throw new UserFriendlyError(null, 'Error: Invalid Splunk Build ID. It must be a non-empty string.');
     }
 
     logger.info(`Preparing to upload Android mapping file:
       File: ${options.file}
       App ID: ${options.appId}
       Version Code: ${options.versionCode}
-      Unique ID: ${options.uniqueId || 'Not provided'}`);
+      Splunk Build ID: ${options.splunkBuildId || 'Not provided'}`);
 
     if (options.dryRun) {
       logger.info('Dry Run complete - No file will be uploaded.');
       return;
     }
 
-    const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.uniqueId);
+    const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.splunkBuildId);
     logger.debug(`URL Endpoint: ${url}`);
 
     const spinner = createSpinner();
@@ -269,7 +269,7 @@ androidCommand
       }
 
       logger.info(`Preparing to extract parameters from ${options.manifest}`);
-      const { package: appId, versionCode, uniqueId } = await extractManifestData(options.manifest);
+      const { package: appId, versionCode, splunkBuildId } = await extractManifestData(options.manifest);
 
       logger.debug(`Validating App ID: ${appId}`);
       if (!isValidAppId(appId)) {
@@ -281,15 +281,15 @@ androidCommand
         throw new UserFriendlyError(null, 'Invalid Version Code extracted from the manifest.');
       }
 
-      logger.debug(`Validating optional Unique ID: ${uniqueId}`);
-      if (uniqueId && !isValidUniqueId(uniqueId)) {
-        throw new UserFriendlyError(null, `Invalid uniqueId extracted from the manifest: ${uniqueId}.`);
+      logger.debug(`Validating optional Splunk Build ID: ${splunkBuildId}`);
+      if (splunkBuildId && !isValidSplunkBuildId(splunkBuildId)) {
+        throw new UserFriendlyError(null, `Invalid Splunk Build ID extracted from the manifest: ${splunkBuildId}.`);
       }
 
       logger.info(`Preparing to upload Android mapping file:
         File: ${options.file}
         Extracted parameters from the AndroidManifest.xml:
-        - Unique ID: ${uniqueId || 'Not provided'}
+        - Splunk Build ID: ${splunkBuildId || 'Not provided'}
         - App ID: ${appId}
         - Version Code: ${versionCode}`);
 
@@ -298,7 +298,7 @@ androidCommand
         return;
       }
 
-      const url = generateURL('upload', options.realm, appId, versionCode as string, uniqueId as string);
+      const url = generateURL('upload', options.realm, appId, versionCode as string, splunkBuildId as string);
       logger.debug(`URL Endpoint: ${url}`);
 
       const spinner = createSpinner();

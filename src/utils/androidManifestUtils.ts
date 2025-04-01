@@ -21,7 +21,7 @@ import { throwAsUserFriendlyErrnoException, UserFriendlyError } from './userFrie
 interface ManifestData {
   package: unknown;
   versionCode: unknown;
-  uniqueId?: unknown;
+  splunkBuildId?: unknown;
 }
 
 export const extractManifestData = async (manifestPath: string): Promise<ManifestData> => {
@@ -31,12 +31,12 @@ export const extractManifestData = async (manifestPath: string): Promise<Manifes
 
     const packageId = extractPackageId(result);
     const versionCode = extractVersionCode(result);
-    const uniqueId = extractUniqueId(result);
+    const splunkBuildId = extractSplunkBuildId(result);
 
     return {
       package: packageId,
       versionCode,
-      uniqueId,
+      splunkBuildId,
     };
   } catch (error: unknown) {
     const fileMessages = {
@@ -68,13 +68,13 @@ const extractVersionCode = (manifest: any): unknown => {
 };
 
 /* eslint-disable */
-const extractUniqueId = (manifest: any): unknown => {
+const extractSplunkBuildId = (manifest: any): unknown => {
   const metaData = manifest.manifest.application[0]['meta-data'];
   if (!metaData) return undefined;
 
-  const uniqueIdMeta = metaData.find((meta: { $: { [key: string]: string } }) =>
-    meta.$['android:name'] === 'SPLUNK_O11Y_CUSTOM_UUID'
+  const splunkBuildIdMeta = metaData.find((meta: { $: { [key: string]: string } }) =>
+    meta.$['android:name'] === 'splunk.build_id'
   );
 
-  return uniqueIdMeta ? uniqueIdMeta.$['android:value'] : undefined;
+  return splunkBuildIdMeta ? splunkBuildIdMeta.$['android:value'] : undefined;
 };

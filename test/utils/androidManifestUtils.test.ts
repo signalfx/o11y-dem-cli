@@ -21,13 +21,13 @@ import fs from 'fs';
 
 describe('extractManifestData', () => {
 
-  test('should extract package, versionCode, and uniqueId from a valid manifest file', async () => {
+  test('should extract package, versionCode, and Splunk Build ID from a valid manifest file', async () => {
     
     jest.spyOn(fs, 'readFileSync').mockReturnValue(`
       <?xml version="1.0" encoding="utf-8"?>
       <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app" android:versionCode="1234">
         <application>
-          <meta-data android:name="SPLUNK_O11Y_CUSTOM_UUID" android:value="unique-uuid-1234"/>
+          <meta-data android:name="splunk.build_id" android:value="splunk-id-1234"/>
         </application>
       </manifest>
     `);
@@ -37,7 +37,7 @@ describe('extractManifestData', () => {
     expect(manifestData).toEqual({
       package: 'com.example.app',
       versionCode: '1234',
-      uniqueId: 'unique-uuid-1234'
+      splunkBuildId: 'splunk-id-1234'
     });
   });
   
