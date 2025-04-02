@@ -3,9 +3,9 @@
 
 * This tool is still under development, so the readme and source code are not yet complete
 
-# O11Y DEM CLI
+# Splunk RUM CLI
 
-The DEM CLI Tool helps developers upload Android mapping files, iOS dSYM files, and browser source map files to the Splunk O11y Cloud backend for deobfuscating stack traces. This tool is part of Splunk's Digital Experience Monitoring (DEM) suite.
+The Splunk RUM CLI helps developers upload Android mapping files, iOS dSYM files, and browser source map files to the Splunk Observability Cloud backend for deobfuscating stack traces. This tool is part of Splunk's Real User Monitoring (RUM) suite.
 
 ## Features
 
@@ -16,15 +16,33 @@ The DEM CLI Tool helps developers upload Android mapping files, iOS dSYM files, 
 
 ## Documentation
 
-For official documentation on the Splunk O11Y DEM CLI Tool, see _______
+For official documentation on the Splunk RUM CLI, see _______
 
 ## Getting Started
 
 ## Build and Development
 
+To build locally, run the following commands:
+
+```
+npm install
+npm build
+npm link
+```
+
+You can now run `splunk-rum` locally from the command line:
+```
+splunk-rum --version
+```
+
+To develop locally, you can use the `build:watch` script to automatically re-build your changes:
+```
+npm run build:watch
+```
+
 ## Troubleshooting
 
 # License
 
-The Splunk O11Y DEM CLI Tool is licensed under the terms of the Apache Software License
+The Splunk RUM CLI is licensed under the terms of the Apache Software License
 version 2.0. See [the license file](./LICENSE) for more details.
