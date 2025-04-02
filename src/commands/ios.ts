@@ -89,8 +89,8 @@ iOSCommand
   .requiredOption('--path <dSYMs dir or zip>', 'Path to the dSYM[s] directory or zip file.')
   .requiredOption(
     '--realm <value>',
-    'Realm for your organization (example: us0). Can also be set using the environment variable O11Y_REALM',
-    process.env.O11Y_REALM
+    'Realm for your organization (example: us0). Can also be set using the environment variable SPLUNK_REALM',
+    process.env.SPLUNK_REALM
   )
   .option(
     '--token <value>',
@@ -202,8 +202,8 @@ iOSCommand
   .option('--debug', 'Enable debug logs')
   .requiredOption(
     '--realm <value>',
-    'Realm for your organization (example: us0). Can also be set using the environment variable O11Y_REALM',
-    process.env.O11Y_REALM
+    'Realm for your organization (example: us0). Can also be set using the environment variable SPLUNK_REALM',
+    process.env.SPLUNK_REALM
   )
   .option(
     '--token <value>',

@@ -116,8 +116,8 @@ androidCommand
   .requiredOption('--version-code <int>', 'Version code')
   .requiredOption('--path <path>', 'Path to the mapping file')
   .requiredOption('--realm <value>',
-    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
-    process.env.O11Y_REALM
+    'Realm for your organization (example: us0).  Can also be set using the environment variable SPLUNK_REALM',
+    process.env.SPLUNK_REALM
   )
   .option(
     '--token <value>',
@@ -135,7 +135,7 @@ androidCommand
     }
 
     if (!options.realm || options.realm.trim() === '') {
-      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable O11Y_REALM');
+      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable SPLUNK_REALM');
     }
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
@@ -224,8 +224,8 @@ androidCommand
   .requiredOption('--manifest <path>', 'Path to the packaged AndroidManifest.xml file')
   .requiredOption('--path <path>', 'Path to the mapping.txt file')
   .requiredOption('--realm <value>',
-    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
-    process.env.O11Y_REALM
+    'Realm for your organization (example: us0).  Can also be set using the environment variable SPLUNK_REALM',
+    process.env.SPLUNK_REALM
   )
   .option(
     '--token <value>',
@@ -353,8 +353,8 @@ androidCommand
   .summary(`Retrieves list of metadata of all uploaded Proguard/R8 mapping files`)
   .requiredOption('--app-id <value>', 'Application ID')
   .requiredOption('--realm <value>',
-    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
-    process.env.O11Y_REALM
+    'Realm for your organization (example: us0).  Can also be set using the environment variable SPLUNK_REALM',
+    process.env.SPLUNK_REALM
   )
   .option(
     '--token <value>',
@@ -371,7 +371,7 @@ androidCommand
     }
 
     if (!options.realm || options.realm.trim() === '') {
-      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable O11Y_REALM');
+      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable SPLUNK_REALM');
     }
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);

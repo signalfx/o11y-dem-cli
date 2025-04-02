@@ -128,8 +128,8 @@ sourcemapsCommand
   )
   .requiredOption(
     '--realm <value>',
-    'Realm for your organization (example: us0).  Can also be set using the environment variable O11Y_REALM',
-    process.env.O11Y_REALM
+    'Realm for your organization (example: us0).  Can also be set using the environment variable SPLUNK_REALM',
+    process.env.SPLUNK_REALM
   )
   .option(
     '--token <value>',
