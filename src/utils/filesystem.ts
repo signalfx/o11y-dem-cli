@@ -89,7 +89,7 @@ export async function cleanupTemporaryFiles(dir: string) {
 /**
  * Return a tempFilePath based on the input filePath:
  *
- *  - path/to/file.js -> path/to/.file.js.splunk.tmp
+ *  - `path/to/file.js` -> `path/to/.file.js${TEMP_FILE_EXTENSION}`
  */
 function getTempFilePath(filePath: string) {
   const fileName = path.basename(filePath);
