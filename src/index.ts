@@ -27,7 +27,7 @@ import * as packageJson from '../package.json';
 const program = new Command();
 
 const helpDescription =
-`A CLI tool for uploading and displaying of Android, iOS, and Browser symbolication files to and from Splunk O11y Cloud.
+`The Splunk RUM CLI is a tool for uploading and displaying of Android, iOS, and Browser symbolication files to and from Splunk Observability Cloud.
 
 For each respective command listed below under 'Commands', please run 'splunk-rum <command>' for an overview of available subcommands and options.
 

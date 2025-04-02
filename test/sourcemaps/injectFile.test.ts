@@ -67,7 +67,7 @@ describe('injectFile', () => {
       expect.arrayContaining([
         'line 1',
         'line 2',
-        `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`
+        `;/* splunk-rum sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`
       ])
     );
   });
@@ -87,7 +87,7 @@ describe('injectFile', () => {
       expect.arrayContaining([
         'line 1',
         'line 2',
-        `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
+        `;/* splunk-rum sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
         '//# sourceMappingURL=file.js.map'
       ])
     );
@@ -97,7 +97,7 @@ describe('injectFile', () => {
     mockJsFileContentBeforeInjection([
       'line 1',
       'line 2',
-      `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '88888888-8888-8888-8888-888888888888';}};`,
+      `;/* splunk-rum sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '88888888-8888-8888-8888-888888888888';}};`,
       '//# sourceMappingURL=file.js.map',
     ]);
     const mockOverwriteFn = mockJsFileOverwrite();
@@ -109,7 +109,7 @@ describe('injectFile', () => {
       expect.arrayContaining([
         'line 1',
         'line 2',
-        `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
+        `;/* splunk-rum sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
         '//# sourceMappingURL=file.js.map'
       ])
     );
@@ -135,7 +135,7 @@ describe('injectFile', () => {
         '  line7  ',
         '',
         'line9  ',
-        `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
+        `;/* splunk-rum sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
         '//# sourceMappingURL=file.js.map'
       ])
     );
@@ -145,7 +145,7 @@ describe('injectFile', () => {
     mockJsFileContentBeforeInjection([
       'line 1',
       'line 2',
-      `;/* olly sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
+      `;/* splunk-rum sourcemaps inject */if (typeof window === 'object') { window.sourceMapIds = window.sourceMapIds || {}; let s = ''; try { throw new Error(); } catch (e) { s = (e.stack.match(/https?:\\/\\/[^\\s]+?(?::\\d+)?(?=:[\\d]+:[\\d]+)/) || [])[0]; } if (s) {window.sourceMapIds[s] = '647366e7-d3db-6cf4-8693-2c321c377d5a';}};`,
       '//# sourceMappingURL=file.js.map'
     ]);
     const mockOverwriteFn = mockJsFileOverwrite();

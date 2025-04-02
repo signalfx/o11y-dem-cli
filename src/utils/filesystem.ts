@@ -22,7 +22,7 @@ import os from 'node:os';
 import { finished } from 'node:stream/promises';
 import { glob } from 'glob';
 
-const TEMP_FILE_EXTENSION: string = '.olly.tmp';
+const TEMP_FILE_EXTENSION: string = '.splunk.tmp';
 
 /**
  * Returns a list of paths to all files within the given directory.
@@ -89,7 +89,7 @@ export async function cleanupTemporaryFiles(dir: string) {
 /**
  * Return a tempFilePath based on the input filePath:
  *
- *  - path/to/file.js -> path/to/.file.js.olly.tmp
+ *  - path/to/file.js -> path/to/.file.js.splunk.tmp
  */
 function getTempFilePath(filePath: string) {
   const fileName = path.basename(filePath);
