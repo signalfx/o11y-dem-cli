@@ -35,7 +35,7 @@ You can now run `splunk-rum` locally from the command line:
 splunk-rum --version
 ```
 
-To develop locally, you can use the `build:watch` script to automatically re-build your changes:
+To develop locally, you can use the `build:watch` script to automatically rebuild the project as you make changes:
 ```
 npm run build:watch
 ```
