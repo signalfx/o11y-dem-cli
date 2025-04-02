@@ -22,6 +22,7 @@ import { Command } from 'commander';
 import { iOSCommand } from './commands/ios';
 import { androidCommand } from './commands/android';
 import { sourcemapsCommand } from './commands/sourcemaps';
+import * as packageJson from '../package.json';
 
 const program = new Command();
 
@@ -34,7 +35,7 @@ For subcommands like "upload" and "list" that make an API call, please ensure th
 `;
 
 program
-  .version('1.0.0')
+  .version(packageJson.version)
   .description(helpDescription)
   .name('splunk-rum')
   .usage('[command] [subcommand] [options]');
