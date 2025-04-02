@@ -264,7 +264,7 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
 }
 
 function getSourceMapUploadUrl(realm: string, idPathParam: string): string {
-  const API_BASE_URL = process.env.O11Y_API_BASE_URL || `https://api.${realm}.signalfx.com`;
+  const API_BASE_URL = `https://api.${realm}.signalfx.com`;
   return `${API_BASE_URL}/v2/rum-mfm/source-maps/id/${idPathParam}`;
 }
 
