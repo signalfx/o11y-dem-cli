@@ -30,7 +30,7 @@ const helpDescription =
 
 For each respective command listed below under 'Commands', please run 'o11y-dem-cli <command>' for an overview of available subcommands and options.
 
-For subcommands like "upload" and "list" that make an API call, please ensure that the realm and token are either passed into the command as options, or set using the environment variables SPLUNK_REALM and O11Y_TOKEN.
+For subcommands like "upload" and "list" that make an API call, please ensure that the realm and token are either passed into the command as options, or set using the environment variables SPLUNK_REALM and SPLUNK_ACCESS_TOKEN.
 `;
 
 program

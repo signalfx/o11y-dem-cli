@@ -94,12 +94,12 @@ iOSCommand
   )
   .option(
     '--token <value>',
-    'API access token. Can also be set using the environment variable O11Y_TOKEN'
+    'API access token. Can also be set using the environment variable SPLUNK_ACCESS_TOKEN'
   )
   .option('--debug', 'Enable debug logs')
   .option('--dry-run', 'Perform a trial run with no changes made', false)
   .action(async (options: UploadCommandOptions) => {
-    const token = options.token || process.env.O11Y_TOKEN;
+    const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
     if (!token) {
       iOSCommand.error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
     }
@@ -142,7 +142,7 @@ iOSCommand
 
       logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
 
-      const token = options.token || process.env.O11Y_TOKEN;
+      const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
       if (!token) {
         iOSCommand.error('Error: API access token is required.');
       }
@@ -207,10 +207,10 @@ iOSCommand
   )
   .option(
     '--token <value>',
-    'API access token. Can also be set using the environment variable O11Y_TOKEN'
+    'API access token. Can also be set using the environment variable SPLUNK_ACCESS_TOKEN'
   )
   .action(async (options: ListCommandOptions) => {
-    const token = options.token || process.env.O11Y_TOKEN;
+    const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
     if (!token) {
       iOSCommand.error('Error: API access token is required.');
     }

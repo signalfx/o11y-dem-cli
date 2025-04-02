@@ -133,7 +133,7 @@ sourcemapsCommand
   )
   .option(
     '--token <value>',
-    'API access token.  Can also be set using the environment variable O11Y_TOKEN',
+    'API access token.  Can also be set using the environment variable SPLUNK_ACCESS_TOKEN',
   )
   .option(
     '--app-name <value>',
@@ -161,7 +161,7 @@ sourcemapsCommand
   )
   .action(
     async (options: SourcemapsUploadCliOptions) => {
-      const token = options.token || process.env.O11Y_TOKEN;
+      const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
       if (!token) {
         sourcemapsCommand.error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
       } else {

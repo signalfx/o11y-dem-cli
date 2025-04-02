@@ -121,21 +121,21 @@ androidCommand
   )
   .option(
     '--token <value>',
-    'API access token. Can also be set using the environment variable O11Y_TOKEN'
+    'API access token. Can also be set using the environment variable SPLUNK_ACCESS_TOKEN'
   )
   .option('--splunk-build-id <value>', 'Optional Splunk Build ID for the upload')
   .option( '--dry-run', 'Preview the file that will be uploaded')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidOptions) => {
-    const token = options.token || process.env.O11Y_TOKEN;
+    const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
     if (!token) {
-      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variable O11Y_TOKEN');
+      androidCommand.error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
     } else {
       options.token = token;
     }
 
     if (!options.realm || options.realm.trim() === '') {
-      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable SPLUNK_REALM');
+      androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
     }
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
@@ -229,12 +229,12 @@ androidCommand
   )
   .option(
     '--token <value>',
-    'API access token. Can also be set using the environment variable O11Y_TOKEN'
+    'API access token. Can also be set using the environment variable SPLUNK_ACCESS_TOKEN'
   )
   .option('--dry-run', 'Preview the file that will be uploaded and the parameters extracted from the AndroidManifest.xml file')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidWithManifestOptions) => {
-    const token = options.token || process.env.O11Y_TOKEN;
+    const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
     if (!token) {
       androidCommand.error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
     } else {
@@ -358,16 +358,16 @@ androidCommand
   )
   .option(
     '--token <value>',
-    'API access token. Can also be set using the environment variable O11Y_TOKEN'
+    'API access token. Can also be set using the environment variable SPLUNK_ACCESS_TOKEN'
   )
   .showHelpAfterError(true)
   .description(listProguardDescription)
   .option('--debug', 
     'Enable debug logs')
   .action(async (options) => {
-    const token = options.token || process.env.O11Y_TOKEN;
+    const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
     if (!token) {
-      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variable O11Y_TOKEN');
+      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variable SPLUNK_ACCESS_TOKEN');
     }
 
     if (!options.realm || options.realm.trim() === '') {
