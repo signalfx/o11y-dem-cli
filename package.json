@@ -15,9 +15,18 @@
     "lint:fix": "eslint ./src ./test --fix",
     "test:unit": "jest"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "splunk",
+    "signalfx",
+    "rum"
+  ],
+  "repository": "git@github.com:signalfx/splunk-rum-cli.git",
+  "homepage": "https://github.com/signalfx/splunk-rum-cli#readme",
+  "author": "Splunk <splunk-oss@splunk.com>",
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "axios": "^1.8.2",
     "chalk": "^4.1.2",

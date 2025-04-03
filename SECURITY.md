@@ -12,7 +12,7 @@ This project relies on a variety of external dependencies. These dependencies ar
 [Dependabot](https://docs.github.com/en/code-security/dependabot). Dependabot regularly checks for dependencies
 and automatically opens pull requests when newer versions are available.
 
-Upgrading to the [latest release](https://github.com/signalfx/o11y-dem-cli/releases)
+Upgrading to the [latest release](https://github.com/signalfx/splunk-rum-cli/releases)
 is recommended to ensure you have the latest security updates. If a security
 vulnerability is detected for a dependency of this project then either:
 
