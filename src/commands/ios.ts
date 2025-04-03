@@ -83,7 +83,7 @@ iOSCommand.configureHelp({
 
 iOSCommand
   .command('upload')
-  .showHelpAfterError(true)
+  .showHelpAfterError(COMMON_ERROR_MESSAGES.HELP_MESSAGE_AFTER_ERROR)
   .usage('--path <dSYMs directory or zip file>')
   .description(iOSUploadDescription)
   .summary('Upload dSYMs, either by directory path or zip path, to the symbolication service')
@@ -198,7 +198,7 @@ iOSCommand
 iOSCommand
   .command('list')
   .summary('Retrieves list of metadata of all uploaded dSYM files')
-  .showHelpAfterError(true)
+  .showHelpAfterError(COMMON_ERROR_MESSAGES.HELP_MESSAGE_AFTER_ERROR)
   .description(listdSYMsDescription)
   .option('--debug', 'Enable debug logs')
   .requiredOption(

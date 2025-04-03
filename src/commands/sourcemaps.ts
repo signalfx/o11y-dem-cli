@@ -74,7 +74,7 @@ sourcemapsCommand.configureHelp({
 
 sourcemapsCommand
   .command('inject')
-  .showHelpAfterError(true)
+  .showHelpAfterError(COMMON_ERROR_MESSAGES.HELP_MESSAGE_AFTER_ERROR)
   .usage('--path <path>')
   .summary(`Inject a code snippet into your JavaScript bundles to allow for automatic source mapping of errors`)
   .description(injectDescription)
@@ -118,7 +118,7 @@ sourcemapsCommand
 
 sourcemapsCommand
   .command('upload')
-  .showHelpAfterError(true)
+  .showHelpAfterError(COMMON_ERROR_MESSAGES.HELP_MESSAGE_AFTER_ERROR)
   .usage('--path <path> --realm <value> --token <value>')
   .summary(`Upload source maps to Splunk Observability Cloud`)
   .description(uploadDescription)

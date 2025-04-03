@@ -109,7 +109,7 @@ androidCommand.configureHelp({
 
 androidCommand
   .command('upload')
-  .showHelpAfterError(true)
+  .showHelpAfterError(COMMON_ERROR_MESSAGES.HELP_MESSAGE_AFTER_ERROR)
   .usage('--app-id <value> --version-code <int> --path <path> [--splunk-build-id <value>]')
   .description(androidUploadDescription)
   .summary(`Uploads the Android mapping.txt file with the provided application ID, version code, and optional Splunk Build ID`)
@@ -218,7 +218,7 @@ androidCommand
 
 androidCommand
   .command('upload-with-manifest')
-  .showHelpAfterError(true)
+  .showHelpAfterError(COMMON_ERROR_MESSAGES.HELP_MESSAGE_AFTER_ERROR)
   .usage('--manifest <path> --path <path>')
   .summary(`Uploads the Android mapping.txt file with metadata extracted from the AndroidManifest.xml file`)
   .description(androidUploadWithManifestDescription)
@@ -361,7 +361,7 @@ androidCommand
     '--token <value>',
     'API access token. Can also be set using the environment variable SPLUNK_ACCESS_TOKEN'
   )
-  .showHelpAfterError(true)
+  .showHelpAfterError(COMMON_ERROR_MESSAGES.HELP_MESSAGE_AFTER_ERROR)
   .description(listProguardDescription)
   .option('--debug', 
     'Enable debug logs')

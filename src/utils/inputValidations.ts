@@ -19,7 +19,8 @@ import path from 'path';
 
 export const COMMON_ERROR_MESSAGES = {
   TOKEN_NOT_SPECIFIED: 'Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variable SPLUNK_ACCESS_TOKEN',
-  REALM_NOT_SPECIFIED: 'Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable SPLUNK_REALM'
+  REALM_NOT_SPECIFIED: 'Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable SPLUNK_REALM',
+  HELP_MESSAGE_AFTER_ERROR: `\nRun the command with '--help' for more information`
 };
 
 // Check if a file exists
