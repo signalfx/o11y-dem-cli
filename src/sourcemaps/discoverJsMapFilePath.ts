@@ -104,7 +104,7 @@ function resolveSourceMappingUrlToFilePath(line: string, jsFilePath: string, all
     logger.debug(`  - ${jsFilePath}`);
     logger.debug(`  - ${url}`);
 
-    logger.warn(`skipping ${jsFilePath}, which is requesting a source map file outside of the provided --directory`);
+    logger.warn(`skipping ${jsFilePath}, which is requesting a source map file outside of the provided --path`);
 
     return null;
   } else {

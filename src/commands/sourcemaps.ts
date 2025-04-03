@@ -15,7 +15,7 @@
 */
 
 import { Command } from 'commander';
-import { runSourcemapInject, runSourcemapUpload, SourceMapInjectOptions } from '../sourcemaps';
+import { runSourcemapInject, runSourcemapUpload } from '../sourcemaps';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import { createSpinner } from '../utils/spinner';
@@ -35,7 +35,7 @@ Before running this command:
  - run the production build for your project
  - verify your production JavaScript bundles and source maps were emitted to the same output directory
 
-Pass the path of your build output folder as the --directory.  This command will recursively search the path
+Pass the path of your build output folder as the --path.  This command will recursively search the path
 to locate all JavaScript files (.js, .cjs, .mjs) and source map files (.js.map, .cjs.map, .mjs.map)
 from your production build.
 
@@ -75,20 +75,20 @@ sourcemapsCommand.configureHelp({
 sourcemapsCommand
   .command('inject')
   .showHelpAfterError(true)
-  .usage('--directory <path>')
+  .usage('--path <path>')
   .summary(`Inject a code snippet into your JavaScript bundles to allow for automatic source mapping of errors`)
   .description(injectDescription)
   .requiredOption(
-    '--directory <path>',
+    '--path <path>',
     'Path to the directory containing your production JavaScript bundles and their source maps'
   )
   .option(
     '--include <patterns...>',
-    `A space-separated list of glob file patterns for selecting specific source map files to upload.`
+    `A space-separated list of glob file patterns for selecting specific JavaScript files to inject`
   )
   .option(
     '--exclude <patterns...>',
-    'A space-separated list of glob file patterns for selecting specific source map files to not upload.'
+    'A space-separated list of glob file patterns for selecting specific JavaScript files to not inject'
   )
   .option(
     '--dry-run',
@@ -99,10 +99,10 @@ sourcemapsCommand
     'Enable debug logs'
   )
   .action(
-    async (options: SourceMapInjectOptions) => {
+    async (options: SourcemapsInjectCliOptions) => {
       const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
       try {
-        await runSourcemapInject(options, { logger });
+        await runSourcemapInject({ ...options, directory: options.path }, { logger });
       } catch (e) {
         if (e instanceof UserFriendlyError) {
           logger.debug(e.originalError);
@@ -119,11 +119,11 @@ sourcemapsCommand
 sourcemapsCommand
   .command('upload')
   .showHelpAfterError(true)
-  .usage('--directory <path> --realm <value> --token <value>')
+  .usage('--path <path> --realm <value> --token <value>')
   .summary(`Upload source maps to Splunk Observability Cloud`)
   .description(uploadDescription)
   .requiredOption(
-    '--directory <path>',
+    '--path <path>',
     'Path to the directory containing source maps for your production JavaScript bundles'
   )
   .requiredOption(
@@ -145,11 +145,11 @@ sourcemapsCommand
   )
   .option(
     '--include <patterns...>',
-    `A space-separated list of glob file patterns for selecting specific source map files to upload.`
+    `A space-separated list of glob file patterns for selecting specific source map files to upload`
   )
   .option(
     '--exclude <patterns...>',
-    'A space-separated list of glob file patterns for selecting specific source map files to not upload.'
+    'A space-separated list of glob file patterns for selecting specific source map files to not upload'
   )
   .option(
     '--dry-run',
@@ -174,7 +174,7 @@ sourcemapsCommand
       const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
       const spinner = createSpinner();
       try {
-        await runSourcemapUpload(options, { logger, spinner });
+        await runSourcemapUpload({ ...options, directory: options.path }, { logger, spinner });
       } catch (e) {
         if (e instanceof UserFriendlyError) {
           logger.debug(e.originalError);
@@ -189,11 +189,19 @@ sourcemapsCommand
   );
 
 interface SourcemapsUploadCliOptions {
-  directory: string;
+  path: string;
   realm: string;
   token: string;
   appName?: string;
   appVersion?: string;
+  dryRun?: boolean;
+  debug?: boolean;
+  include?: string[];
+  exclude?: string[];
+}
+
+interface SourcemapsInjectCliOptions {
+  path: string;
   dryRun?: boolean;
   debug?: boolean;
   include?: string[];

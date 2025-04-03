@@ -273,8 +273,8 @@ function throwDirectoryReadErrorDuringInject(err: unknown, directory: string): n
     err,
     {
       EACCES: `Failed to inject JavaScript files in "${directory} because of missing permissions.\nMake sure that the CLI tool will have "read" and "write" access to the directory and all files inside it, then rerun the inject command.`,
-      ENOENT: `Unable to start the inject command because the directory "${directory}" does not exist.\nMake sure the correct path is being passed to --directory, then rerun the inject command.`,
-      ENOTDIR: `Unable to start the inject command because the path "${directory}" is not a directory.\nMake sure a valid directory path is being passed to --directory, then rerun the inject command.`,
+      ENOENT: `Unable to start the inject command because the directory "${directory}" does not exist.\nMake sure the correct path is being passed to --path, then rerun the inject command.`,
+      ENOTDIR: `Unable to start the inject command because the path "${directory}" is not a directory.\nMake sure a valid directory path is being passed to --path, then rerun the inject command.`,
     }
   );
 }
@@ -284,8 +284,8 @@ function throwDirectoryReadErrorDuringUpload(err: unknown, directory: string): n
     err,
     {
       EACCES: `Failed to upload the source map files in "${directory} because of missing permissions.\nMake sure that the CLI tool will have "read" and "write" access to the directory and all files inside it, then rerun the upload command.`,
-      ENOENT: `Unable to start the upload command because the directory "${directory}" does not exist.\nMake sure the correct path is being passed to --directory, then rerun the upload command.`,
-      ENOTDIR: `Unable to start the upload command because the path "${directory}" is not a directory.\nMake sure a valid directory path is being passed to --directory, then rerun the upload command.`,
+      ENOENT: `Unable to start the upload command because the directory "${directory}" does not exist.\nMake sure the correct path is being passed to --path, then rerun the upload command.`,
+      ENOTDIR: `Unable to start the upload command because the path "${directory}" is not a directory.\nMake sure a valid directory path is being passed to --path, then rerun the upload command.`,
     }
   );
 }
