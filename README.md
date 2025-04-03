@@ -28,7 +28,7 @@ To build locally, run the following commands:
 
 ```
 npm install
-npm build
+npm run build
 npm link
 ```
 
