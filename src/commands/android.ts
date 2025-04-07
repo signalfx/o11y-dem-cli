@@ -73,7 +73,7 @@ By default, it will return the last 100 ProGuard mapping files uploaded, sorted 
 `;
 
 interface UploadAndroidOptions {
-  'file': string,
+  'path': string,
   'appId': string,
   'versionCode': string,
   'splunkBuildId': string,
@@ -84,7 +84,7 @@ interface UploadAndroidOptions {
 }
 
 interface UploadAndroidWithManifestOptions {
-  'file': string,
+  'path': string,
   'manifest': string,
   'debug'?: boolean,
   'token': string,
@@ -150,14 +150,14 @@ androidCommand
       throw new UserFriendlyError(null, 'Invalid Version Code. It must be an integer.');
     }
 
-    logger.debug(`Validating Mapping File Path: ${options.file}`);
-    if (!isValidFile(options.file)) {
-      throw new UserFriendlyError(null, `Invalid mapping file path: ${options.file}.`);
+    logger.debug(`Validating Mapping File Path: ${options.path}`);
+    if (!isValidFile(options.path)) {
+      throw new UserFriendlyError(null, `Invalid mapping file path: ${options.path}.`);
     }
 
     logger.debug(`Validating Mapping File Extension`);
-    if (!hasValidExtension(options.file, '.txt', '.gz')) {
-      throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
+    if (!hasValidExtension(options.path, '.txt', '.gz')) {
+      throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.path}.`);
     }
 
     logger.debug(`Validating optional Splunk Build ID: ${options.splunkBuildId}`);
@@ -166,7 +166,7 @@ androidCommand
     }
 
     logger.info(`Preparing to upload Android mapping file:
-      File: ${options.file}
+      File: ${options.path}
       App ID: ${options.appId}
       Version Code: ${options.versionCode}
       Splunk Build ID: ${options.splunkBuildId || 'Not provided'}`);
@@ -180,12 +180,12 @@ androidCommand
     logger.debug(`URL Endpoint: ${url}`);
 
     const spinner = createSpinner();
-    spinner.start(`Uploading Android mapping file: ${options.file}`);
+    spinner.start(`Uploading Android mapping file: ${options.path}`);
 
     try {
       await uploadFileAndroid({
         url: url,
-        file: { filePath: options.file, fieldName: 'file' },
+        file: { filePath: options.path, fieldName: 'file' },
         token: options.token,
         parameters: {}
       });
@@ -194,7 +194,7 @@ androidCommand
     } catch (error) {
       spinner.stop();
       const ae = error as AxiosError;
-      const unableToUploadMessage = `Unable to upload ${options.file}`;
+      const unableToUploadMessage = `Unable to upload ${options.path}`;
 
       if (ae.response && ae.response.status === 413) {
         logger.warn(ae.response.status, ae.response.statusText);
@@ -248,14 +248,14 @@ androidCommand
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
     try {
-      logger.debug(`Validating Mapping File Path: ${options.file}`);
-      if (!isValidFile(options.file)) {
-        throw new UserFriendlyError(null, `Invalid mapping file path: ${options.file}.`);
+      logger.debug(`Validating Mapping File Path: ${options.path}`);
+      if (!isValidFile(options.path)) {
+        throw new UserFriendlyError(null, `Invalid mapping file path: ${options.path}.`);
       }
 
       logger.debug(`Validating Mapping File Extension`);
-      if (!hasValidExtension(options.file, '.txt', '.gz')) {
-        throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.file}.`);
+      if (!hasValidExtension(options.path, '.txt', '.gz')) {
+        throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.path}.`);
       }
 
       logger.debug(`Validating Manifest File Path: ${options.manifest}`);
@@ -287,7 +287,7 @@ androidCommand
       }
 
       logger.info(`Preparing to upload Android mapping file:
-        File: ${options.file}
+        File: ${options.path}
         Extracted parameters from the AndroidManifest.xml:
         - Splunk Build ID: ${splunkBuildId || 'Not provided'}
         - App ID: ${appId}
@@ -302,12 +302,12 @@ androidCommand
       logger.debug(`URL Endpoint: ${url}`);
 
       const spinner = createSpinner();
-      spinner.start(`Uploading Android mapping file: ${options.file}`);
+      spinner.start(`Uploading Android mapping file: ${options.path}`);
       
       try {
         await uploadFileAndroid({
           url: url,
-          file: { filePath: options.file, fieldName: 'file' },
+          file: { filePath: options.path, fieldName: 'file' },
           token: options.token,
           parameters: {}
         });
@@ -316,7 +316,7 @@ androidCommand
       } catch (error) {
         spinner.stop();
         const ae = error as AxiosError;
-        const unableToUploadMessage = `Unable to upload ${options.file}`;
+        const unableToUploadMessage = `Unable to upload ${options.path}`;
   
         if (ae.response && ae.response.status === 413) {
           logger.warn(ae.response.status, ae.response.statusText);
