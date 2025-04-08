@@ -29,6 +29,7 @@ import { createLogger, LogLevel } from '../utils/logger';
 import { fetchAndroidMappingMetadata, uploadFileAndroid } from '../utils/httpUtils';
 import { AxiosError } from 'axios';
 import { createSpinner } from '../utils/spinner';
+import { formatAndroidMappingMetadata } from '../utils/metadataFormatUtils';
 
 export const androidCommand = new Command('android');
 
@@ -379,7 +380,7 @@ androidCommand
     try {
       logger.debug(`URL Endpoint: ${url}`);
       const responseData = await fetchAndroidMappingMetadata({ url, token });
-      logger.info('Uploaded mapping file metadata:', JSON.stringify(responseData, null, 2));
+      logger.info(formatAndroidMappingMetadata(responseData));
     } catch (error) {
       logger.error('Failed to fetch metadata:', error);
       throw error;

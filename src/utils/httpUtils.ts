@@ -18,6 +18,7 @@ import axios from 'axios';
 import fs from 'fs';
 import FormData from 'form-data';
 import { Logger } from '../utils/logger';
+import { AndroidMappingMetadata } from './metadataFormatUtils';
 
 interface FileUpload {
   filePath: string;
@@ -92,14 +93,14 @@ export const handleAxiosError = (
   }
 };
 
-export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMetadataOptions): Promise<string[]> => {
+export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMetadataOptions): Promise<AndroidMappingMetadata[]> => {
   const headers = {
     'X-SF-Token': token,
     'Accept': 'application/json',
   };
 
   try {
-    const response = await axios.get(url, { headers });
+    const response = await axios.get<AndroidMappingMetadata[]>(url, { headers });
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
