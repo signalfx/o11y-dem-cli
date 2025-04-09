@@ -47,7 +47,6 @@ export function formatAndroidMappingMetadata(metadataList: AndroidMappingMetadat
         Uploaded: ${uploadDate}
         File Size: ${formatFileSize(item.fileSize)}
         Format Version: ${item.r8MappingFileFormatVersion || 'N/A'}
-        File URI: ${item.fileUri}
         `;
   }).join('\n' + '-'.repeat(50) + '\n');
   
