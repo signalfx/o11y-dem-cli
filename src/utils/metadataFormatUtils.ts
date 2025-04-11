@@ -28,6 +28,19 @@ export interface AndroidMappingMetadata {
   r8MappingFileFormatVersion?: string;
   fileSize?: number;
 }
+
+export interface IOSdSYMMetadata {
+  machoId: string;
+  orgId: number;
+  libraryName: string;
+  createdOnMs: number;
+  updatedOnMs: number;
+  fileUri: string;
+  fileSize: number;
+  uploadUserAgent: string;
+  createdBy: number;
+  updatedBy: number;
+}
   
 export function formatAndroidMappingMetadata(metadataList: AndroidMappingMetadata[]): string {
   if (!metadataList || metadataList.length === 0) {
@@ -51,6 +64,30 @@ export function formatAndroidMappingMetadata(metadataList: AndroidMappingMetadat
   }).join('\n' + '-'.repeat(50) + '\n');
   
   const summary = `Found ${metadataList.length} mapping file(s):\n` + '='.repeat(50);
+    
+  return summary + '\n' + formattedOutput;
+}
+
+export function formatIOSdSYMMetadata(metadataList: IOSdSYMMetadata[]): string {
+  if (!metadataList || metadataList.length === 0) {
+    return 'No dSYM files found.';
+  }
+  
+  // Create formatted table-like output
+  const formattedOutput = metadataList.map(item => {
+    // Make timestamps readable
+    const uploadDate = new Date(item.createdOnMs).toLocaleString();
+      
+    // Format each item
+    return `
+        Library Name: ${item.libraryName}
+        MachO ID: ${item.machoId}
+        Uploaded: ${uploadDate}
+        File Size: ${formatFileSize(item.fileSize)}
+        `;
+  }).join('\n' + '-'.repeat(50) + '\n');
+  
+  const summary = `Found ${metadataList.length} dSYM file(s):\n` + '='.repeat(50);
     
   return summary + '\n' + formattedOutput;
 }
