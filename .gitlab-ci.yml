@@ -59,7 +59,7 @@ sast-scanner:
 release_dry_run:
   stage: release
   script:
-    - echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
+    - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
     - npm publish --dry-run
     - rm -f ~/.npmrc
   dependencies:
@@ -71,7 +71,7 @@ release_dry_run:
 pre_release:
   stage: release
   script:
-    - echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
+    - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
     - npm publish --tag prerelease
     - rm -f ~/.npmrc
   rules:
@@ -86,7 +86,7 @@ pre_release:
 release:
   stage: release
   script:
-    - echo "//registry.npmjs.org/:_authToken=$TOKEN" > ~/.npmrc
+    - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
     - npm publish
     - rm -f ~/.npmrc
   rules:
