@@ -21,6 +21,7 @@ import { createSpinner } from '../utils/spinner';
 import { createLogger, LogLevel } from '../utils/logger';
 import { validateDSYMsPath, cleanupTemporaryZips, getZippedDSYMs } from '../dsyms/iOSdSYMUtils';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
+import { IOSdSYMMetadata, formatIOSdSYMMetadata } from '../utils/metadataFormatUtils';
 import { COMMON_ERROR_MESSAGES } from '../utils/inputValidations';
 
 interface UploadCommandOptions {
@@ -225,12 +226,13 @@ iOSCommand
     });
 
     try {
-      await listDSYMs({
+      const responseData: IOSdSYMMetadata[] = await listDSYMs({
         url,
         token: token as string,
         logger,
         TOKEN_HEADER,
       });
+      logger.info(formatIOSdSYMMetadata(responseData));
     } catch (error) {
       if (error instanceof UserFriendlyError) {
         logger.error(error.message);

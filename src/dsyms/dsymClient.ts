@@ -19,6 +19,7 @@ import { handleAxiosError } from '../utils/httpUtils';
 import fs from 'fs';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
+import { IOSdSYMMetadata } from '../utils/metadataFormatUtils';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 
 interface UploadParams {
@@ -63,15 +64,15 @@ interface ListParams {
   TOKEN_HEADER: string;
 }
 
-export async function listDSYMs({ url, token, logger, TOKEN_HEADER }: ListParams): Promise<void> {
+export async function listDSYMs({ url, token, logger, TOKEN_HEADER }: ListParams): Promise<IOSdSYMMetadata[]> {
   try {
-    const response = await axios.get(url, {
+    const response = await axios.get<IOSdSYMMetadata[]>(url, {
       headers: {
         'Content-Type': 'application/json',
         [TOKEN_HEADER]: token,
       },
     });
-    logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2));
+    return response.data; // Return the data if successful
   } catch (error) {
     const operationMessage = 'Unable to fetch the list of uploaded files.';
     const result = handleAxiosError(error, operationMessage, url, logger);
@@ -80,5 +81,7 @@ export async function listDSYMs({ url, token, logger, TOKEN_HEADER }: ListParams
       Please check your network connection or try again later.`;
       throw new UserFriendlyError(error, userFriendlyMessage);
     }
+    logger.error('Unhandled error occurred while fetching dSYMs.');
+    return [];
   }
 }
