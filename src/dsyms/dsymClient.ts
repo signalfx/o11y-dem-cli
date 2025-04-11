@@ -72,7 +72,6 @@ export async function listDSYMs({ url, token, logger, TOKEN_HEADER }: ListParams
         [TOKEN_HEADER]: token,
       },
     });
-    logger.info('Raw Response Data:', JSON.stringify(response.data, null, 2));
     return response.data; // Return the data if successful
   } catch (error) {
     const operationMessage = 'Unable to fetch the list of uploaded files.';
