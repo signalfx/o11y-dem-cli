@@ -1,6 +1,6 @@
 {
   "name": "@splunk/rum-cli",
-  "version": "0.0.1-alpha.2",
+  "version": "0.0.1-alpha.3",
   "description": "Tools for handling symbol and mapping files for symbolication",
   "main": "./dist/index.js",
   "files": [
@@ -22,6 +22,9 @@
   ],
   "repository": "git@github.com:signalfx/splunk-rum-cli.git",
   "homepage": "https://github.com/signalfx/splunk-rum-cli#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "author": "Splunk <splunk-oss@splunk.com>",
   "license": "Apache-2.0",
   "engines": {

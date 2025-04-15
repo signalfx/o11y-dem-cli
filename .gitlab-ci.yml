@@ -60,6 +60,7 @@ release_dry_run:
   stage: release
   script:
     - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+    - echo ${#NPM_TOKEN}
     - npm publish --dry-run
     - rm -f ~/.npmrc
   dependencies:
@@ -72,6 +73,7 @@ pre_release:
   stage: release
   script:
     - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
+    - echo ${#NPM_TOKEN}
     - npm publish --tag prerelease
     - rm -f ~/.npmrc
   rules:
