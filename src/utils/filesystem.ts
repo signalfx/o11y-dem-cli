@@ -44,7 +44,7 @@ export async function readdirRecursive(dir: string, include: string | string[] =
   const partialPaths = await glob(include, {
     cwd: dir,
     nodir: true,
-    ignore: exclude
+    ignore: ['**/node_modules/**', ...exclude]
   });
   return partialPaths.map(partialPath => path.join(dir, partialPath));
 }
