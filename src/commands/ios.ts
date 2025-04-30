@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+*/
 
 import { basename } from 'path';
 import { Command } from 'commander';
@@ -154,7 +154,6 @@ iOSCommand
             token: token as string,
             logger,
             spinner,
-            TOKEN_HEADER,
           });
         } catch (error) {
           failedUploads++;

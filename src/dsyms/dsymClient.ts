@@ -12,8 +12,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+*/
 
+import axios from 'axios';
 import { uploadFile } from '../utils/httpUtils';
 import { basename } from 'path';
 import { handleAxiosError } from '../utils/httpUtils';
@@ -28,10 +29,9 @@ interface UploadParams {
   token: string;
   logger: Logger;
   spinner: Spinner;
-  TOKEN_HEADER: string;
 }
 
-export async function uploadDSYM({ filePath, url, token, logger, spinner, TOKEN_HEADER }: UploadParams): Promise<void> {
+export async function uploadDSYM({ filePath, url, token, logger, spinner }: UploadParams): Promise<void> {
   const fileName = basename(filePath);
 
   spinner.start(`Uploading file: ${filePath}`);
