@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 import axios from 'axios';
 import { uploadFile } from '../utils/httpUtils';
@@ -21,11 +21,8 @@ import { generateUrl } from './iOSdSYMUtils';
 import { handleAxiosError } from '../utils/httpUtils';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
-import { IOSdSYMMetadata } from '../utils/metadataFormatUtils';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { cleanupTemporaryZips } from './iOSdSYMUtils';
-
-
 
 // for the group of all file uploads
 interface UploadDSYMZipFilesOptions {
@@ -120,7 +117,7 @@ export async function uploadDSYM({ filePath, url, token, logger, spinner }: Uplo
     const result = handleAxiosError(error, operationMessage, url, logger);
 
     if (result) {
-      const userFriendlyMessage = `Failed to upload ${filePath}. Please check your network connection or your realm and token values, and ensure the file size does not exceed the limit.`;
+      const userFriendlyMessage = `Failed to upload ${filePath}. Please check your network connection, realm, and token values, and ensure the file size does not exceed the limit.`;
       throw new UserFriendlyError(error, userFriendlyMessage);
     }
   }
