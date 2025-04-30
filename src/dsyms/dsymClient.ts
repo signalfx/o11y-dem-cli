@@ -12,15 +12,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
-import axios from 'axios';
+import { uploadFile } from '../utils/httpUtils';
+import { basename } from 'path';
 import { handleAxiosError } from '../utils/httpUtils';
-import fs from 'fs';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
-import { IOSdSYMMetadata } from '../utils/metadataFormatUtils';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
+import { IOSdSYMMetadata } from '../utils/metadataFormatUtils';
 
 interface UploadParams {
   filePath: string;
@@ -32,26 +32,35 @@ interface UploadParams {
 }
 
 export async function uploadDSYM({ filePath, url, token, logger, spinner, TOKEN_HEADER }: UploadParams): Promise<void> {
-  const fileSizeInBytes = fs.statSync(filePath).size;
-  const fileStream = fs.createReadStream(filePath);
-  const headers = {
-    'Content-Type': 'application/zip',
-    [TOKEN_HEADER]: token,
-    'Content-Length': fileSizeInBytes,
-  };
+  const fileName = basename(filePath);
 
   spinner.start(`Uploading file: ${filePath}`);
 
   try {
-    await axios.put(url, fileStream, { headers });
+    await uploadFile({
+      url,
+      token,
+      file: {
+        filePath,
+        fieldName: 'file',
+      },
+      parameters: {
+        filename: fileName,
+      },
+      onProgress: ({ progress, loaded, total }) => {
+        spinner.updateText(`Uploading ${filePath}: ${progress.toFixed(2)}% (${loaded}/${total} bytes)`);
+      },
+    });
+
     spinner.stop();
     logger.info(`Upload complete for ${filePath}`);
   } catch (error) {
     spinner.stop();
     const operationMessage = `Unable to upload ${filePath}`;
     const result = handleAxiosError(error, operationMessage, url, logger);
+
     if (result) {
-      const userFriendlyMessage = `Failed to upload ${filePath}. Please check your network connection or your realm and token values, and ensure the file size does not exceed the limit.`;
+      const userFriendlyMessage = `Failed to upload ${filePath}. Please check your network connection, realm, and token values, and ensure the file size does not exceed the limit.`;
       throw new UserFriendlyError(error, userFriendlyMessage);
     }
   }
@@ -72,7 +81,7 @@ export async function listDSYMs({ url, token, logger, TOKEN_HEADER }: ListParams
         [TOKEN_HEADER]: token,
       },
     });
-    return response.data; // Return the data if successful
+    return response.data;
   } catch (error) {
     const operationMessage = 'Unable to fetch the list of uploaded files.';
     const result = handleAxiosError(error, operationMessage, url, logger);

@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 import { basename } from 'path';
 import { Command } from 'commander';
@@ -143,14 +143,9 @@ iOSCommand
 
       logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
 
-      const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
-      if (!token) {
-        iOSCommand.error('Error: API access token is required.');
-      }
-
-      let failedUploads = 0;
       const spinner = createSpinner();
-      
+      let failedUploads = 0;
+
       for (const filePath of zipFiles) {
         try {
           await uploadDSYM({
@@ -165,12 +160,8 @@ iOSCommand
           failedUploads++;
           if (error instanceof UserFriendlyError) {
             logger.error(error.message);
-            cleanupTemporaryZips(uploadPath);
-            iOSCommand.error(error.message);
           } else {
             logger.error('Unknown error during upload');
-            cleanupTemporaryZips(uploadPath);
-            iOSCommand.error('Unknown error during upload');
           }
         }
       }
