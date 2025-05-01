@@ -24,6 +24,11 @@ import {
   isValidSplunkBuildId,
   COMMON_ERROR_MESSAGES
 } from '../utils/inputValidations';
+import {
+  BASE_URL_PREFIX,
+  API_VERSION_STRING,
+  ANDROID_CONSTANTS
+} from '../utils/constants';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import { fetchAndroidMappingMetadata, uploadFileAndroid } from '../utils/httpUtils';
@@ -34,7 +39,7 @@ import { formatAndroidMappingMetadata } from '../utils/metadataFormatUtils';
 export const androidCommand = new Command('android');
 
 const generateURL = (type: 'upload' | 'list', realm: string, appId: string, versionCode?: string, splunkBuildId?: string): string => {
-  const baseUrl = `https://api.${realm}.signalfx.com/v2/rum-mfm/proguard`;
+  const baseUrl = `${BASE_URL_PREFIX}.${realm}.signalfx.com/${API_VERSION_STRING}/${ANDROID_CONSTANTS.PATH_FOR_UPLOAD}`;
 
   if (type === 'upload') {
     if (!versionCode) throw new Error('Version code is required for uploading.');

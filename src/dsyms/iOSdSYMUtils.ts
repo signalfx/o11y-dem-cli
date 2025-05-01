@@ -16,29 +16,25 @@
 
 import { tmpdir } from 'os';
 import { execSync } from 'child_process';
+import { BASE_URL_PREFIX, API_VERSION_STRING } from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { join, resolve, basename, dirname } from 'path';
 import { copyFileSync, mkdtempSync, readdirSync, rmSync, statSync } from 'fs';
 import { UserFriendlyError, throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
 
-// Constants
-export const API_VERSION_STRING = 'v2';
-
 /**
  * Helper function to generate API URLs.
  */
 export const generateUrl = ({
-  urlPrefix,
   apiPath,
   realm,
   domain = 'signalfx.com',
 }: {
-  urlPrefix: string;
   apiPath: string;
   realm: string;
   domain?: string;
 }): string => {
-  return `${urlPrefix}.${realm}.${domain}/${API_VERSION_STRING}/${apiPath}`;
+  return `${BASE_URL_PREFIX}.${realm}.${domain}/${API_VERSION_STRING}/${apiPath}`;
 };
 
 /**

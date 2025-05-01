@@ -16,6 +16,7 @@
 
 import { Command } from 'commander';
 import { createSpinner } from '../utils/spinner';
+import { IOS_CONSTANTS } from '../utils/constants';
 import { uploadDSYMZipFiles, listDSYMs } from '../dsyms/dsymClient';
 import { createLogger, LogLevel } from '../utils/logger';
 import { generateUrl, prepareUploadFiles } from '../dsyms/iOSdSYMUtils';
@@ -37,10 +38,6 @@ interface ListCommandOptions {
   token?: string;
   debug?: boolean;
 }
-
-// Constants
-const API_PATH_FOR_LIST = 'rum-mfm/macho/metadatas';
-const TOKEN_HEADER = 'X-SF-Token';
 
 const program = new Command();
 export const iOSCommand = program.command('ios');
@@ -136,8 +133,7 @@ iOSCommand
     logger.info('Fetching dSYM file data');
 
     const url = generateUrl({
-      urlPrefix: 'https://api',
-      apiPath: API_PATH_FOR_LIST,
+      apiPath: IOS_CONSTANTS.PATH_FOR_METADATA,
       realm: options.realm
     });
 
@@ -146,7 +142,6 @@ iOSCommand
         url,
         token: token as string,
         logger,
-        TOKEN_HEADER,
       });
       logger.info(formatIOSdSYMMetadata(responseData));
     } catch (error) {

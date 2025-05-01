@@ -20,6 +20,11 @@ import {
   isJsFilePath,
   isJsMapFilePath
 } from './utils';
+import {
+  BASE_URL_PREFIX,
+  API_VERSION_STRING,
+  SOURCEMAPS_CONSTANTS
+} from '../utils/constants';
 import { throwAsUserFriendlyErrnoException } from '../utils/userFriendlyErrors';
 import { discoverJsMapFilePath } from './discoverJsMapFilePath';
 import { computeSourceMapId } from './computeSourceMapId';
@@ -264,8 +269,9 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
 }
 
 function getSourceMapUploadUrl(realm: string, idPathParam: string): string {
-  const API_BASE_URL = `https://api.${realm}.signalfx.com`;
-  return `${API_BASE_URL}/v2/rum-mfm/source-maps/id/${idPathParam}`;
+  const API_BASE_URL = `${BASE_URL_PREFIX}.${realm}.signalfx.com`;
+  const PATH_FOR_SOURCEMAPS = SOURCEMAPS_CONSTANTS.PATH_FOR_UPLOAD;
+  return `${API_BASE_URL}/${API_VERSION_STRING}/${PATH_FOR_SOURCEMAPS}/id/${idPathParam}`;
 }
 
 function throwDirectoryReadErrorDuringInject(err: unknown, directory: string): never {

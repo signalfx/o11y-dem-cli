@@ -16,6 +16,7 @@
 
 import axios from 'axios';
 import { uploadFile } from '../utils/httpUtils';
+import { TOKEN_HEADER, IOS_CONSTANTS } from '../utils/constants';
 import { generateUrl } from './iOSdSYMUtils';
 import { basename } from 'path';
 import { handleAxiosError } from '../utils/httpUtils';
@@ -26,7 +27,6 @@ import { IOSdSYMMetadata } from '../utils/metadataFormatUtils';
 import { cleanupTemporaryZips } from './iOSdSYMUtils';
 
 
-const API_PATH_FOR_UPLOAD = 'rum-mfm/dsym';
 
 // for the group of all file uploads
 interface UploadDSYMZipFilesOptions {
@@ -60,8 +60,7 @@ export async function uploadDSYMZipFiles({
   spinner,
 }: UploadDSYMZipFilesOptions): Promise<void> {
   const url = generateUrl({
-    urlPrefix: 'https://api',
-    apiPath: API_PATH_FOR_UPLOAD,
+    apiPath: IOS_CONSTANTS.PATH_FOR_UPLOAD,
     realm,
   });
   logger.info(`url: ${url}`);
@@ -141,10 +140,9 @@ interface ListParams {
   url: string;
   token: string;
   logger: Logger;
-  TOKEN_HEADER: string;
 }
 
-export async function listDSYMs({ url, token, logger, TOKEN_HEADER }: ListParams): Promise<IOSdSYMMetadata[]> {
+export async function listDSYMs({ url, token, logger }: ListParams): Promise<IOSdSYMMetadata[]> {
   try {
     const response = await axios.get<IOSdSYMMetadata[]>(url, {
       headers: {
