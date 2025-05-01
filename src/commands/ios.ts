@@ -147,9 +147,11 @@ iOSCommand
       let failedUploads = 0;
 
       for (const filePath of zipFiles) {
+        const fileName = basename(filePath);
         try {
           await uploadDSYM({
             filePath,
+	    fileName,
             url,
             token: token as string,
             logger,

@@ -119,8 +119,6 @@ export const uploadFileAndroid = async ({ url, file, token, onProgress }: Upload
   
   if (ext === 'gz') {
     contentType = 'application/gzip'; 
-  } else if (ext === 'zip') {
-    contentType = 'application/zip';
   }
 
   const fileStream = fs.createReadStream(file.filePath);
@@ -151,19 +149,25 @@ export const uploadFileAndroid = async ({ url, file, token, onProgress }: Upload
 
 export const uploadFile = async ({ url, file, token, parameters, onProgress }: UploadOptions): Promise<void> => {
   const formData = new FormData();
-
+  const ext = file.filePath.split('.').pop()?.toLowerCase();
+  const fileSizeInBytes = fs.statSync(file.filePath).size;
+  
   formData.append(file.fieldName, fs.createReadStream(file.filePath));
 
+  let contentType = 'application/json';
+  if (ext === 'zip') {
+    formData.append('Content-Type', 'application/zip');
+  }
+  
   for (const [ key, value ] of Object.entries(parameters)) {
     formData.append(key, value);
   }
-
-  const fileSizeInBytes = fs.statSync(file.filePath).size;
 
   await axios.put(url, formData, {
     headers: {
       ...formData.getHeaders(),
       [TOKEN_HEADER]: token,
+      'Content-Length': fileSizeInBytes,
     },
     onUploadProgress: (progressEvent) => {
       const loaded = progressEvent.loaded;

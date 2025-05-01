@@ -25,27 +25,29 @@ import { IOSdSYMMetadata } from '../utils/metadataFormatUtils';
 
 interface UploadParams {
   filePath: string;
+  fileName: string;
   url: string;
   token: string;
   logger: Logger;
   spinner: Spinner;
 }
 
-export async function uploadDSYM({ filePath, url, token, logger, spinner }: UploadParams): Promise<void> {
-  const fileName = basename(filePath);
+export async function uploadDSYM({ filePath, fileName, url, token, logger, spinner }: UploadParams): Promise<void> {
 
+  console.log(`debug: fileName is ${fileName}`);
+  
   spinner.start(`Uploading file: ${filePath}`);
 
   try {
     await uploadFile({
       url,
-      token,
       file: {
         filePath,
         fieldName: 'file',
       },
+      token,
       parameters: {
-        filename: fileName,
+        'filename': fileName,
       },
       onProgress: ({ progress, loaded, total }) => {
         spinner.updateText(`Uploading ${filePath}: ${progress.toFixed(2)}% (${loaded}/${total} bytes)`);
