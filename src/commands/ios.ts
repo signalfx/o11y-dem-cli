@@ -99,6 +99,43 @@ iOSCommand
       });
 
       logger.info('All files uploaded successfully.');
+
+      logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
+
+      const spinner = createSpinner();
+      let failedUploads = 0;
+
+      for (const filePath of zipFiles) {
+        const fileName = basename(filePath);
+        try {
+          await uploadDSYM({
+            filePath,
+	    fileName,
+            url,
+            token: token as string,
+            logger,
+            spinner,
+          });
+        } catch (error) {
+          failedUploads++;
+          if (error instanceof UserFriendlyError) {
+            logger.error(error.message);
+          } else {
+            logger.error('Unknown error during upload');
+          }
+        }
+      }
+
+      // Perform cleanup before final reporting
+      cleanupTemporaryZips(uploadPath);
+
+      // Report failed uploads if there are any
+      if (failedUploads > 0) {
+        iOSCommand.error(`Upload failed for ${failedUploads} file${failedUploads !== 1 ? 's' : ''}`);
+      } else {
+        logger.info('All files uploaded successfully.');
+      }
+>>>>>>> fe43677 (DEMRUM-2027: wip for a multipart/form-data solution that adds filename)
     } catch (error) {
       if (error instanceof UserFriendlyError) {
         logger.error(error.message);

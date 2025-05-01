@@ -37,11 +37,13 @@ interface UploadDSYMZipFilesOptions {
 // for a single upload
 interface UploadParams {
   filePath: string;
+  fileName: string;
   url: string;
   token: string;
   logger: Logger;
   spinner: Spinner;
 }
+
 
 /**
  * Iterate over zipped files and upload them.
@@ -93,6 +95,8 @@ export async function uploadDSYMZipFiles({
 
 export async function uploadDSYM({ filePath, url, token, logger, spinner }: UploadParams): Promise<void> {
 
+  console.log(`debug: fileName is ${fileName}`);
+  
   spinner.start(`Uploading file: ${filePath}`);
 
   try {
