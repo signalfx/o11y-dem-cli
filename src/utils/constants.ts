@@ -41,7 +41,3 @@ export const SOURCEMAPS_CONSTANTS = {
   PATH_FOR_METADATA: 'rum-mfm/source-maps/metadatas',
 };
 
-// Debugging/Development Flags (if needed)
-export const DEBUG_CONSTANTS = {
-  ENABLE_LOGGING: true,
-};
