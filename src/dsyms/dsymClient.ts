@@ -44,7 +44,6 @@ interface UploadParams {
   spinner: Spinner;
 }
 
-
 /**
  * Iterate over zipped files and upload them.
  */

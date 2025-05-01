@@ -135,7 +135,6 @@ iOSCommand
       } else {
         logger.info('All files uploaded successfully.');
       }
->>>>>>> fe43677 (DEMRUM-2027: wip for a multipart/form-data solution that adds filename)
     } catch (error) {
       if (error instanceof UserFriendlyError) {
         logger.error(error.message);
