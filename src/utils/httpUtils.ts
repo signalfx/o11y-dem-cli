@@ -119,6 +119,8 @@ export const uploadFileAndroid = async ({ url, file, token, onProgress }: Upload
   
   if (ext === 'gz') {
     contentType = 'application/gzip'; 
+  } else if (ext === 'zip') {
+    contentType = 'application/zip';
   }
 
   const fileStream = fs.createReadStream(file.filePath);
