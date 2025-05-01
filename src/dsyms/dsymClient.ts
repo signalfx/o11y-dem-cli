@@ -22,8 +22,8 @@ import { basename } from 'path';
 import { handleAxiosError } from '../utils/httpUtils';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
-import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { IOSdSYMMetadata } from '../utils/metadataFormatUtils';
+import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { cleanupTemporaryZips } from './iOSdSYMUtils';
 
 
