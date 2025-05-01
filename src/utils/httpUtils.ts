@@ -155,8 +155,10 @@ export const uploadFile = async ({ url, file, token, parameters, onProgress }: U
   formData.append(file.fieldName, fs.createReadStream(file.filePath));
 
   let contentType = 'application/json';
-  if (ext === 'zip') {
-    formData.append('Content-Type', 'application/zip');
+  if (ext === 'gz') {
+    contentType = 'application/gzip'; 
+  } else if (ext === 'zip') {
+    contentType = 'application/zip';
   }
   
   for (const [ key, value ] of Object.entries(parameters)) {
@@ -167,6 +169,7 @@ export const uploadFile = async ({ url, file, token, parameters, onProgress }: U
     headers: {
       ...formData.getHeaders(),
       [TOKEN_HEADER]: token,
+      'Content-Type': contentType,
       'Content-Length': fileSizeInBytes,
     },
     onUploadProgress: (progressEvent) => {
