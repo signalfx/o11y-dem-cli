@@ -16,13 +16,29 @@
 
 import axios from 'axios';
 import { uploadFile } from '../utils/httpUtils';
+import { generateUrl } from './iOSdSYMUtils';
 import { basename } from 'path';
 import { handleAxiosError } from '../utils/httpUtils';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { IOSdSYMMetadata } from '../utils/metadataFormatUtils';
+import { cleanupTemporaryZips } from './iOSdSYMUtils';
 
+
+const API_PATH_FOR_UPLOAD = 'rum-mfm/dsym';
+
+// for the group of all file uploads
+interface UploadDSYMZipFilesOptions {
+  zipFiles: string[];
+  uploadPath: string;
+  realm: string;
+  token: string;
+  logger: Logger;
+  spinner: Spinner;
+}
+
+// for a single upload
 interface UploadParams {
   filePath: string;
   fileName: string;
@@ -30,6 +46,59 @@ interface UploadParams {
   token: string;
   logger: Logger;
   spinner: Spinner;
+}
+
+/**
+ * Iterate over zipped files and upload them.
+ */
+export async function uploadDSYMZipFiles({
+  zipFiles,
+  uploadPath,
+  realm,
+  token,
+  logger,
+  spinner,
+}: UploadDSYMZipFilesOptions): Promise<void> {
+  const url = generateUrl({
+    urlPrefix: 'https://api',
+    apiPath: API_PATH_FOR_UPLOAD,
+    realm,
+  });
+  logger.info(`url: ${url}`);
+  logger.info(`Preparing to upload dSYMs files from directory: ${uploadPath}`);
+
+  let failedUploads = 0;
+
+  try {
+    for (const filePath of zipFiles) {
+      const fileName = basename(filePath);
+      try {
+        await uploadDSYM({
+          filePath,
+          fileName,
+          url,
+          token,
+          logger,
+          spinner,
+        });
+      } catch (error) {
+        failedUploads++;
+        if (error instanceof UserFriendlyError) {
+          logger.error(error.message);
+        } else {
+          logger.error('Unknown error during upload');
+        }
+      }
+    }
+
+    // Handle failed uploads
+    if (failedUploads > 0) {
+      throw new Error(`Upload failed for ${failedUploads} file${failedUploads !== 1 ? 's' : ''}`);
+    }
+  } finally {
+    // Always cleanup temporary files
+    cleanupTemporaryZips(uploadPath);
+  }
 }
 
 export async function uploadDSYM({ filePath, fileName, url, token, logger, spinner }: UploadParams): Promise<void> {

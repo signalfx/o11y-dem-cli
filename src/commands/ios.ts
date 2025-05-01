@@ -14,15 +14,14 @@
  * limitations under the License.
 */
 
-import { basename } from 'path';
 import { Command } from 'commander';
-import { uploadDSYM, listDSYMs } from '../dsyms/dsymClient';
 import { createSpinner } from '../utils/spinner';
+import { uploadDSYMZipFiles, listDSYMs } from '../dsyms/dsymClient';
 import { createLogger, LogLevel } from '../utils/logger';
-import { validateDSYMsPath, cleanupTemporaryZips, getZippedDSYMs } from '../dsyms/iOSdSYMUtils';
+import { generateUrl, prepareUploadFiles } from '../dsyms/iOSdSYMUtils';
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { IOSdSYMMetadata, formatIOSdSYMMetadata } from '../utils/metadataFormatUtils';
-import { COMMON_ERROR_MESSAGES } from '../utils/inputValidations';
+import { COMMON_ERROR_MESSAGES, validateAndPrepareToken } from '../utils/inputValidations';
 
 interface UploadCommandOptions {
   path: string;
@@ -32,6 +31,7 @@ interface UploadCommandOptions {
   dryRun?: boolean;
 }
 
+
 interface ListCommandOptions {
   realm: string;
   token?: string;
@@ -39,37 +39,18 @@ interface ListCommandOptions {
 }
 
 // Constants
-const API_VERSION_STRING = 'v2';
 const API_PATH_FOR_LIST = 'rum-mfm/macho/metadatas';
-const API_PATH_FOR_UPLOAD = 'rum-mfm/dsym';
 const TOKEN_HEADER = 'X-SF-Token';
 
 const program = new Command();
 export const iOSCommand = program.command('ios');
 
 const shortDescription = 'Upload and list iOS symbolication files (dSYMs)';
-
 const detailedHelp = `For each respective command listed below under 'Commands', please run 'splunk-rum ios <command> --help' for an overview of its usage and options`;
-
 const iOSUploadDescription = `This subcommand uploads dSYMs provided as either a zip file, or a dSYM or dSYMs directory.`;
-
 const listdSYMsDescription = `This subcommand retrieves and shows a list of the uploaded dSYMs.
 By default, it returns the last 100 dSYMs uploaded, sorted in reverse chronological order based on the upload timestamp.
 `;
-
-const generateUrl = ({
-  urlPrefix,
-  apiPath,
-  realm,
-  domain = 'signalfx.com',
-}: {
-  urlPrefix: string;
-  apiPath: string;
-  realm: string;
-  domain?: string;
-}): string => {
-  return `${urlPrefix}.${realm}.${domain}/${API_VERSION_STRING}/${apiPath}`;
-};
 
 iOSCommand
   .description(shortDescription)
@@ -86,7 +67,6 @@ iOSCommand
   .showHelpAfterError(COMMON_ERROR_MESSAGES.HELP_MESSAGE_AFTER_ERROR)
   .usage('--path <dSYMs directory or zip file>')
   .description(iOSUploadDescription)
-  .summary('Upload dSYMs, either by directory path or zip path, to the symbolication service')
   .requiredOption('--path <dSYMs dir or zip>', 'Path to the dSYM[s] directory or zip file.')
   .requiredOption(
     '--realm <value>',
@@ -100,82 +80,26 @@ iOSCommand
   .option('--debug', 'Enable debug logs')
   .option('--dry-run', 'Perform a trial run with no changes made', false)
   .action(async (options: UploadCommandOptions) => {
-    const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
-    if (!token) {
-      iOSCommand.error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
-    }
-    options.token = token;
-
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
     try {
-      const dsymsPath = options.path;
+      // Step 1: Validate and prepare the token
+      const token = validateAndPrepareToken(options);
 
-      // Validate that the provided path fits one of our expected patterns for dSYMs
-      const absPath = validateDSYMsPath(dsymsPath);
+      // Step 2: Validate the input path and prepare the zipped files
+      const { zipFiles, uploadPath } = prepareUploadFiles(options.path, logger);
 
-      // Get the list of zipped dSYM files
-      const { zipFiles, uploadPath } = getZippedDSYMs(absPath, logger);
-
-      // If dry-run mode is enabled, log the actions and exit early
-      if (options.dryRun) {
-        if (zipFiles.length === 0) {
-          logger.info(`Dry run mode: No files found to upload for directory: ${dsymsPath}.`);
-        } else {
-          const descriptor = zipFiles.length === 1 ? 'file' : 'files';
-          logger.info(`Dry run mode: Would upload the following ${descriptor}:`);
-          zipFiles.forEach((filePath) => {
-            const fileName = basename(filePath);
-            logger.info(`\t${fileName}`);
-          });
-        }
-        cleanupTemporaryZips(uploadPath);
-        return;
-      }
-
-      // Get the URL for the upload endpoint
-      const url = generateUrl({
-        urlPrefix: 'https://api',
-        apiPath: API_PATH_FOR_UPLOAD,
-        realm: options.realm
+      // Step 3: Upload the files
+      await uploadDSYMZipFiles({
+        zipFiles,
+        uploadPath,
+        realm: options.realm,
+        token,
+        logger,
+        spinner: createSpinner(),
       });
-      logger.info(`url: ${url}`);
 
-      logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
-
-      const spinner = createSpinner();
-      let failedUploads = 0;
-
-      for (const filePath of zipFiles) {
-        const fileName = basename(filePath);
-        try {
-          await uploadDSYM({
-            filePath,
-	    fileName,
-            url,
-            token: token as string,
-            logger,
-            spinner,
-          });
-        } catch (error) {
-          failedUploads++;
-          if (error instanceof UserFriendlyError) {
-            logger.error(error.message);
-          } else {
-            logger.error('Unknown error during upload');
-          }
-        }
-      }
-
-      // Perform cleanup before final reporting
-      cleanupTemporaryZips(uploadPath);
-
-      // Report failed uploads if there are any
-      if (failedUploads > 0) {
-        iOSCommand.error(`Upload failed for ${failedUploads} file${failedUploads !== 1 ? 's' : ''}`);
-      } else {
-        logger.info('All files uploaded successfully.');
-      }
+      logger.info('All files uploaded successfully.');
     } catch (error) {
       if (error instanceof UserFriendlyError) {
         logger.error(error.message);

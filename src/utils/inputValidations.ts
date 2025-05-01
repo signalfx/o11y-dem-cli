@@ -48,3 +48,12 @@ export const isValidVersionCode = (versionCode: unknown): boolean => {
 export const isValidSplunkBuildId = (splunkBuildId: unknown | undefined): boolean => {
   return splunkBuildId !== undefined && typeof splunkBuildId === 'string' && splunkBuildId.length > 0;
 };
+
+// Validate token
+export function validateAndPrepareToken(options: { token?: string }): string {
+  const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
+  if (!token) {
+    throw new Error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
+  }
+  return token;
+}
