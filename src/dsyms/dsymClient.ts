@@ -86,12 +86,10 @@ export async function uploadDSYMZipFiles({
       }
     }
 
-    // Handle failed uploads
     if (failedUploads > 0) {
       throw new Error(`Upload failed for ${failedUploads} file${failedUploads !== 1 ? 's' : ''}`);
     }
   } finally {
-    // Always cleanup temporary files
     cleanupTemporaryZips(uploadPath);
   }
 }
