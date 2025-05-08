@@ -10,8 +10,6 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
 */
 
 import { Command } from 'commander';
@@ -20,7 +18,6 @@ import { IOS_CONSTANTS } from '../utils/constants';
 import { uploadDSYMZipFiles, listDSYMs } from '../dsyms/dsymClient';
 import { createLogger, LogLevel } from '../utils/logger';
 import { generateUrl, prepareUploadFiles } from '../dsyms/iOSdSYMUtils';
-import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { IOSdSYMMetadata, formatIOSdSYMMetadata } from '../utils/metadataFormatUtils';
 import { COMMON_ERROR_MESSAGES, validateAndPrepareToken } from '../utils/inputValidations';
 
@@ -31,7 +28,6 @@ interface UploadCommandOptions {
   debug?: boolean;
   dryRun?: boolean;
 }
-
 
 interface ListCommandOptions {
   realm: string;
@@ -98,8 +94,6 @@ iOSCommand
         spinner: createSpinner(),
       });
 
-      logger.info('All files uploaded successfully.');
-
       logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
 
       const spinner = createSpinner();
@@ -143,6 +137,11 @@ iOSCommand
         logger.error('An unexpected error occurred:', error);
         iOSCommand.error('An unexpected error occurred.');
       }
+=======
+    } catch (error: any) { // Specify the type of the error object
+      logger.error(error.message);
+      iOSCommand.error(error.message);
+>>>>>>> 0270054 (DEMRUM-2045: wip some refactoring to get iOS upload code to use the apiInterceptor)
     }
   });
 
@@ -162,13 +161,11 @@ iOSCommand
     'API access token. Can also be set using the environment variable SPLUNK_ACCESS_TOKEN'
   )
   .action(async (options: ListCommandOptions) => {
-    const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
-    if (!token) {
-      iOSCommand.error('Error: API access token is required.');
-    }
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
     logger.info('Fetching dSYM file data');
+
+    const token = validateAndPrepareToken(options);
 
     const url = generateUrl({
       apiPath: IOS_CONSTANTS.PATH_FOR_METADATA,
@@ -182,13 +179,8 @@ iOSCommand
         logger,
       });
       logger.info(formatIOSdSYMMetadata(responseData));
-    } catch (error) {
-      if (error instanceof UserFriendlyError) {
-        logger.error(error.message);
-        iOSCommand.error(error.message);
-      } else {
-        logger.error('Failed to fetch the list of uploaded files: An unknown error occurred.');
-        iOSCommand.error('Error occurred during the list operation.');
-      }
+    } catch (error: any) { // Specify the type of the error object
+      logger.error(error.message);
+      iOSCommand.error(error.message);
     }
   });

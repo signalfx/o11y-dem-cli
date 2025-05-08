@@ -10,11 +10,9 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
 */
 
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { uploadFile } from '../utils/httpUtils';
 import { TOKEN_HEADER, IOS_CONSTANTS } from '../utils/constants';
 import { generateUrl } from './iOSdSYMUtils';
@@ -63,6 +61,8 @@ export async function uploadDSYMZipFiles({
   logger.info(`Preparing to upload dSYMs files from directory: ${uploadPath}`);
 
   let failedUploads = 0;
+  const axiosInstance = axios.create();
+  attachApiInterceptor(axiosInstance, logger);
 
   try {
     for (const filePath of zipFiles) {
@@ -73,14 +73,11 @@ export async function uploadDSYMZipFiles({
           token,
           logger,
           spinner,
+          axiosInstance,
         });
-      } catch (error) {
+      } catch (error: any) {
         failedUploads++;
-        if (error instanceof UserFriendlyError) {
-          logger.error(error.message);
-        } else {
-          logger.error('Unknown error during upload');
-        }
+        logger.error(error.message);
       }
     }
 
@@ -93,7 +90,6 @@ export async function uploadDSYMZipFiles({
 }
 
 export async function uploadDSYM({ filePath, url, token, logger, spinner }: UploadParams): Promise<void> {
-
   console.log(`debug: fileName is ${fileName}`);
   
   spinner.start(`Uploading file: ${filePath}`);
@@ -111,19 +107,8 @@ export async function uploadDSYM({ filePath, url, token, logger, spinner }: Uplo
         spinner.updateText(`Uploading ${filePath}: ${progress.toFixed(2)}% (${loaded}/${total} bytes)`);
       },
     });
-
-    spinner.stop();
-    logger.info(`Upload complete for ${filePath}`);
-  } catch (error) {
-    spinner.stop();
-    const operationMessage = `Unable to upload ${filePath}`;
-    const result = handleAxiosError(error, operationMessage, url, logger);
-
-    if (result) {
-      const userFriendlyMessage = `Failed to upload ${filePath}. Please check your network connection, realm, and token values, and ensure the file size does not exceed the limit.`;
-      throw new UserFriendlyError(error, userFriendlyMessage);
-    }
-  }
+  spinner.stop();
+  logger.info(`Upload complete for ${filePath}`);
 }
 
 interface ListParams {
@@ -133,23 +118,19 @@ interface ListParams {
 }
 
 export async function listDSYMs({ url, token, logger }: ListParams): Promise<IOSdSYMMetadata[]> {
+  const axiosInstance = axios.create();
+  attachApiInterceptor(axiosInstance, logger);
   try {
-    const response = await axios.get<IOSdSYMMetadata[]>(url, {
+    const response = await axiosInstance.get<IOSdSYMMetadata[]>(url, {
       headers: {
         'Content-Type': 'application/json',
         [TOKEN_HEADER]: token,
       },
     });
     return response.data;
-  } catch (error) {
-    const operationMessage = 'Unable to fetch the list of uploaded files.';
-    const result = handleAxiosError(error, operationMessage, url, logger);
-    if (result) {
-      const userFriendlyMessage = `There was a problem accessing the list of uploaded files. 
-      Please check your network connection or try again later.`;
-      throw new UserFriendlyError(error, userFriendlyMessage);
-    }
-    logger.error('Unhandled error occurred while fetching dSYMs.');
-    return [];
+  } catch (error: any) {
+    // The error is already a UserFriendlyError thrown by the interceptor
+    logger.error(error.message);
+    throw error;
   }
 }
