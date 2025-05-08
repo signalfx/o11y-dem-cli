@@ -18,7 +18,6 @@ import axios from 'axios';
 import { uploadFile } from '../utils/httpUtils';
 import { TOKEN_HEADER, IOS_CONSTANTS } from '../utils/constants';
 import { generateUrl } from './iOSdSYMUtils';
-import { basename } from 'path';
 import { handleAxiosError } from '../utils/httpUtils';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
