@@ -36,6 +36,7 @@ export interface IOSdSYMMetadata {
   createdOnMs: number;
   updatedOnMs: number;
   fileUri: string;
+  dsymFileName: string;
   fileSize: number;
   uploadUserAgent: string;
   createdBy: number;
@@ -81,6 +82,7 @@ export function formatIOSdSYMMetadata(metadataList: IOSdSYMMetadata[]): string {
     // Format each item
     return `
         Library Name: ${item.libraryName}
+        File Name: ${item.dsymFileName}
         MachO ID: ${item.machoId}
         Uploaded: ${uploadDate}
         File Size: ${formatFileSize(item.fileSize)}
