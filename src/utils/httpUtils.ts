@@ -150,10 +150,9 @@ export const uploadFileAndroid = async ({ url, file, token, onProgress }: Upload
 export const uploadFile = async ({ url, file, token, parameters, onProgress }: UploadOptions): Promise<void> => {
   const formData = new FormData();
 
-  // Append the file to formData with the key 'file'
   formData.append(file.fieldName, fs.createReadStream(file.filePath));
 
-  for (const [key, value] of Object.entries(parameters)) {
+  for (const [ key, value ] of Object.entries(parameters)) {
     formData.append(key, value);
   }
 
