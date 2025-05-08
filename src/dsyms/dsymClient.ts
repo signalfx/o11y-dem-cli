@@ -41,7 +41,6 @@ interface UploadDSYMZipFilesOptions {
 // for a single upload
 interface UploadParams {
   filePath: string;
-  fileName: string;
   url: string;
   token: string;
   logger: Logger;
@@ -70,11 +69,9 @@ export async function uploadDSYMZipFiles({
 
   try {
     for (const filePath of zipFiles) {
-      const fileName = basename(filePath);
       try {
         await uploadDSYM({
           filePath,
-          fileName,
           url,
           token,
           logger,
@@ -100,10 +97,8 @@ export async function uploadDSYMZipFiles({
   }
 }
 
-export async function uploadDSYM({ filePath, fileName, url, token, logger, spinner }: UploadParams): Promise<void> {
+export async function uploadDSYM({ filePath, url, token, logger, spinner }: UploadParams): Promise<void> {
 
-  console.log(`debug: fileName is ${fileName}`);
-  
   spinner.start(`Uploading file: ${filePath}`);
 
   try {
@@ -114,9 +109,7 @@ export async function uploadDSYM({ filePath, fileName, url, token, logger, spinn
         fieldName: 'file',
       },
       token,
-      parameters: {
-        'filename': fileName,
-      },
+      parameters: {},
       onProgress: ({ progress, loaded, total }) => {
         spinner.updateText(`Uploading ${filePath}: ${progress.toFixed(2)}% (${loaded}/${total} bytes)`);
       },
