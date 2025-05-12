@@ -79,14 +79,14 @@ iOSCommand
   .option('--dry-run', 'Perform a trial run with no changes made', false)
   .action(async (options: UploadCommandOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
-      
+
     try {
       // Step 1: Validate and prepare the token
       const token = validateAndPrepareToken(options);
-	
+
       // Step 2: Validate the input path and prepare the zipped files
       const { zipFiles, uploadPath } = prepareUploadFiles(options.path, logger);
-    
+
       // Step 3: Upload the files
       await uploadDSYMZipFiles({
         zipFiles,
@@ -96,7 +96,7 @@ iOSCommand
         logger,
         spinner: createSpinner(),
       });
-    
+
       logger.info('All dSYM files uploaded successfully.');
     } catch (error) {
       if (error instanceof UserFriendlyError) {
