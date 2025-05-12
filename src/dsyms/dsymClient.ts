@@ -83,7 +83,7 @@ export async function uploadDSYMZipFiles({
 }
 
 export async function uploadDSYM({ filePath, fileName, url, token, logger, spinner, axiosInstance }: UploadParams): Promise<void> {
-  logger.debug(`Uploading dSYM: ${fileName}`); // Changed from console.log
+  logger.debug(`Uploading dSYM: ${fileName}`);
   
   spinner.start(`Uploading file: ${filePath}`);
 
