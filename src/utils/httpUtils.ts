@@ -57,7 +57,7 @@ export enum ErrorCategory {
   Unexpected = 'UNEXPECTED'
 }
 
-export function formatCliErrorMessage(error: StandardError): string {
+export function formatCLIErrorMessage(error: StandardError): string {
   return `Error: ${error.userFriendlyMessage}\nDetails: ${error.message}`;
 }
 

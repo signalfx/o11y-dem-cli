@@ -100,7 +100,7 @@ iOSCommand
       logger.info('All dSYM files uploaded successfully.');
     } catch (error) {
       if (error instanceof UserFriendlyError) {
-        // UserFriendlyError.message already contains the formatted string from formatCliErrorMessage
+        // UserFriendlyError.message already contains the formatted string from formatCLIErrorMessage
         logger.error(error.message);
         if (options.debug && error.originalError) {
           logger.debug('Original error details:', error.originalError);
@@ -148,7 +148,7 @@ iOSCommand
 
     } catch (error) {
       if (error instanceof UserFriendlyError) {
-        // The UserFriendlyError.message is already formatted by formatCliErrorMessage
+        // The UserFriendlyError.message is already formatted by formatCLIErrorMessage
         // and includes both user-friendly text and technical details.
         // logger.error will prefix this with "ERROR " and handle colors.
         logger.error(error.message);

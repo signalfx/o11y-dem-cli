@@ -17,7 +17,7 @@
 import { AxiosError, AxiosInstance } from 'axios';
 import { Logger } from './logger';
 import { UserFriendlyError } from './userFriendlyErrors';
-import { ErrorCategory, StandardError, formatCliErrorMessage } from './httpUtils';
+import { ErrorCategory, StandardError, formatCLIErrorMessage } from './httpUtils';
 
 interface InterceptorOptions {
   userFriendlyMessage?: string;
@@ -77,7 +77,7 @@ export function attachApiInterceptor(axiosInstance: AxiosInstance, logger: Logge
         logger.debug('Error details:', standardError.details);
       }
 
-      throw new UserFriendlyError(error, formatCliErrorMessage(standardError));
+      throw new UserFriendlyError(error, formatCLIErrorMessage(standardError));
     }
   );
 }
