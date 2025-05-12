@@ -120,28 +120,16 @@ iOSCommand
         }
       }
 
-      // Perform cleanup before final reporting
       cleanupTemporaryZips(uploadPath);
 
-      // Report failed uploads if there are any
       if (failedUploads > 0) {
         iOSCommand.error(`Upload failed for ${failedUploads} file${failedUploads !== 1 ? 's' : ''}`);
       } else {
         logger.info('All files uploaded successfully.');
       }
-    } catch (error) {
-      if (error instanceof UserFriendlyError) {
-        logger.error(error.message);
-        iOSCommand.error(error.message);
-      } else {
-        logger.error('An unexpected error occurred:', error);
-        iOSCommand.error('An unexpected error occurred.');
-      }
-=======
-    } catch (error: any) { // Specify the type of the error object
+    } catch (error: any) {
       logger.error(error.message);
       iOSCommand.error(error.message);
->>>>>>> 0270054 (DEMRUM-2045: wip some refactoring to get iOS upload code to use the apiInterceptor)
     }
   });
 
@@ -179,7 +167,7 @@ iOSCommand
         logger,
       });
       logger.info(formatIOSdSYMMetadata(responseData));
-    } catch (error: any) { // Specify the type of the error object
+    } catch (error: any) {
       logger.error(error.message);
       iOSCommand.error(error.message);
     }
