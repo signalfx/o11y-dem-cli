@@ -129,8 +129,13 @@ export async function listDSYMs({ url, token, logger }: ListParams): Promise<IOS
     });
     return response.data;
   } catch (error) {
-    // The error is already a UserFriendlyError thrown by the interceptor
-    logger.error(`Error during list dSYMs: ${error.message}`);
-    throw error;
+    // apiInterceptor should always throw an error that has a .message property (UserFriendlyError).
+    if (error instanceof Error) {
+      logger.debug(`Error during list dSYMs: ${error.message}`); // already logged in non-debug at command level
+    } else {
+      // Fallback for truly unknown, non-Error types
+      logger.error(`An unknown error occurred during list dSYMs: ${String(error)}`);
+    }
+    throw error; // Re-throw to be caught by command-level handler
   }
 }

@@ -19,6 +19,7 @@ import { createSpinner } from '../utils/spinner';
 import { IOS_CONSTANTS } from '../utils/constants';
 import { uploadDSYMZipFiles, listDSYMs } from '../dsyms/dsymClient';
 import { createLogger, LogLevel } from '../utils/logger';
+import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { generateUrl, prepareUploadFiles } from '../dsyms/iOSdSYMUtils';
 import { IOSdSYMMetadata, formatIOSdSYMMetadata } from '../utils/metadataFormatUtils';
 import { COMMON_ERROR_MESSAGES, validateAndPrepareToken } from '../utils/inputValidations';
