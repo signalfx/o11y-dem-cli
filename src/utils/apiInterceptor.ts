@@ -31,19 +31,13 @@ export function attachApiInterceptor(axiosInstance: AxiosInstance, logger: Logge
       const { response: axiosResponse, request, code } = error;
 
       if (axiosResponse) {
-        // HTTP Errors
         const { status, data } = axiosResponse;
-
         standardError = {
           type: ErrorCategory.GeneralHttpError,
           message: `HTTP ${status}: ${error.message}`,
-          details: {
-            status: status,
-            data: data,
-          },
+          details: { status: status, data: data },
           userFriendlyMessage: options.userFriendlyMessage || `The server returned an error (${status}). Please check your input and try again.`,
         };
-
         if (status === 401) {
           standardError.userFriendlyMessage = 'Error: API access token is required.';
         } else if (status === 404) {
@@ -53,10 +47,8 @@ export function attachApiInterceptor(axiosInstance: AxiosInstance, logger: Logge
           standardError.userFriendlyMessage = 'The uploaded file is too large. Please reduce the file size and try again.';
         }
       } else if (request) {
-        // Transport Errors
         let userFriendlyMessage = 'Please check your network connection or try again later.';
         let errorType = ErrorCategory.NoResponse;
-
         if (code === 'ECONNREFUSED') {
           userFriendlyMessage = 'The server is not listening for connections. Please check the server status and try again.';
           errorType = ErrorCategory.NetworkIssue;
@@ -64,14 +56,12 @@ export function attachApiInterceptor(axiosInstance: AxiosInstance, logger: Logge
           userFriendlyMessage = 'The server could not be found. Please check the URL and try again.';
           errorType = ErrorCategory.NetworkIssue;
         }
-
         standardError = {
           type: errorType,
           message: `No response received: ${error.message}`,
           userFriendlyMessage: userFriendlyMessage,
         };
       } else {
-        // Unexpected Errors
         standardError = {
           type: ErrorCategory.Unexpected,
           message: `An unexpected error occurred: ${error.message}`,
@@ -79,12 +69,14 @@ export function attachApiInterceptor(axiosInstance: AxiosInstance, logger: Logge
         };
       }
 
-      logger.error(standardError.message);
+      // standardError.message is included in the UserFriendlyError, so no need to log it here.
+      // logger.error(standardError.message); // Removed to avoid redundant logging
+
+      // 'details' can contain more verbose info (like response body) useful for debugging.
       if (standardError.details) {
         logger.debug('Error details:', standardError.details);
       }
 
-      // Wrap the error in a UserFriendlyError for CLI display
       throw new UserFriendlyError(error, formatCliErrorMessage(standardError));
     }
   );

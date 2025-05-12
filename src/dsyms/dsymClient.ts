@@ -25,7 +25,6 @@ import { IOSdSYMMetadata } from '../utils/metadataFormatUtils';
 import { cleanupTemporaryZips } from './iOSdSYMUtils';
 import { attachApiInterceptor } from '../utils/apiInterceptor';
 
-// for the group of all file uploads
 interface UploadDSYMZipFilesOptions {
   zipFiles: string[];
   uploadPath: string;
@@ -35,7 +34,6 @@ interface UploadDSYMZipFilesOptions {
   spinner: Spinner;
 }
 
-// for a single upload
 interface UploadParams {
   filePath: string;
   fileName: string;
@@ -46,9 +44,6 @@ interface UploadParams {
   axiosInstance: AxiosInstance;
 }
 
-/**
- * Iterate over zipped files and upload them.
- */
 export async function uploadDSYMZipFiles({
   zipFiles,
   uploadPath,
@@ -81,14 +76,14 @@ export async function uploadDSYMZipFiles({
       });
     }
 
-    logger.info('All files uploaded successfully.');
   } finally {
+    logger.debug('Cleaning up temporary zip files...');
     cleanupTemporaryZips(uploadPath);
   }
 }
 
 export async function uploadDSYM({ filePath, fileName, url, token, logger, spinner, axiosInstance }: UploadParams): Promise<void> {
-  logger.debug(`Uploading dSYM: ${fileName}`);
+  logger.debug(`Uploading dSYM: ${fileName}`); // Changed from console.log
   
   spinner.start(`Uploading file: ${filePath}`);
 
@@ -111,6 +106,7 @@ export async function uploadDSYM({ filePath, fileName, url, token, logger, spinn
   logger.info(`Upload complete for ${filePath}`);
 }
 
+
 interface ListParams {
   url: string;
   token: string;
@@ -119,7 +115,7 @@ interface ListParams {
 
 export async function listDSYMs({ url, token, logger }: ListParams): Promise<IOSdSYMMetadata[]> {
   const axiosInstance = axios.create();
-  attachApiInterceptor(axiosInstance, logger);
+  attachApiInterceptor(axiosInstance, logger); // Interceptor will throw UserFriendlyError on API failure
   try {
     const response = await axiosInstance.get<IOSdSYMMetadata[]>(url, {
       headers: {
@@ -129,13 +125,12 @@ export async function listDSYMs({ url, token, logger }: ListParams): Promise<IOS
     });
     return response.data;
   } catch (error) {
-    // apiInterceptor should always throw an error that has a .message property (UserFriendlyError).
+    // Log at debug level here, as the command-level handler will log the user-facing error.
     if (error instanceof Error) {
-      logger.debug(`Error during list dSYMs: ${error.message}`); // already logged in non-debug at command level
+      logger.debug(`[dsymClient:listDSYMs] API call failed: ${error.message}`);
     } else {
-      // Fallback for truly unknown, non-Error types
-      logger.error(`An unknown error occurred during list dSYMs: ${String(error)}`);
+      logger.debug(`[dsymClient:listDSYMs] API call failed with unknown error: ${String(error)}`);
     }
-    throw error; // Re-throw to be caught by command-level handler
+    throw error; // Re-throw for the command handler to catch and present to user
   }
 }
