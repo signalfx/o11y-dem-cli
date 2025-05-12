@@ -144,7 +144,7 @@ iOSCommand
         logger,
       });
 
-      logger.info(formatIOSdSYMMetadata(responseData)); // log formatted data on success
+      logger.info(formatIOSdSYMMetadata(responseData));
 
     } catch (error) {
       if (error instanceof UserFriendlyError) {
