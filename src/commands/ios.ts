@@ -78,24 +78,37 @@ iOSCommand
   .option('--dry-run', 'Perform a trial run with no changes made', false)
   .action(async (options: UploadCommandOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
-
-    // Step 1: Validate and prepare the token
-    const token = validateAndPrepareToken(options);
-
-    // Step 2: Validate the input path and prepare the zipped files
-    const { zipFiles, uploadPath } = prepareUploadFiles(options.path, logger);
-
-    // Step 3: Upload the files
-    await uploadDSYMZipFiles({
-      zipFiles,
-      uploadPath,
-      realm: options.realm,
-      token,
-      logger,
-      spinner: createSpinner(),
-    });
-
-    logger.info('All files uploaded successfully.');
+      
+    try {
+      // Step 1: Validate and prepare the token
+      const token = validateAndPrepareToken(options);
+	
+      // Step 2: Validate the input path and prepare the zipped files
+      const { zipFiles, uploadPath } = prepareUploadFiles(options.path, logger);
+    
+      // Step 3: Upload the files
+      await uploadDSYMZipFiles({
+        zipFiles,
+        uploadPath,
+        realm: options.realm,
+        token,
+        logger,
+        spinner: createSpinner(),
+      });
+    
+      logger.info('All dSYM files uploaded successfully.');
+    } catch (error) {
+      if (error instanceof UserFriendlyError) {
+        // UserFriendlyError.message already contains the formatted string from formatCliErrorMessage
+        logger.error(error.message);
+        if (options.debug && error.originalError) {
+          logger.debug('Original error details:', error.originalError);
+        }
+      } else {
+        logger.error('An unexpected error occurred during the iOS command:', error);
+      }
+      iOSCommand.error(''); // ensure error exit code. process.exit(1) would also work.
+    }
   });
 
 iOSCommand
@@ -114,23 +127,45 @@ iOSCommand
     'API access token. Can also be set using the environment variable SPLUNK_ACCESS_TOKEN'
   )
   .action(async (options: ListCommandOptions) => {
-
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
-    logger.info('Fetching dSYM file data');
+    logger.info('Fetching dSYM file data...');
 
-    const token = validateAndPrepareToken(options);
+    try {
+      const token = validateAndPrepareToken(options);
+      const url = generateUrl({
+        apiPath: IOS_CONSTANTS.PATH_FOR_METADATA,
+        realm: options.realm
+      });
 
-    const url = generateUrl({
-      apiPath: IOS_CONSTANTS.PATH_FOR_METADATA,
-      realm: options.realm
-    });
+      const responseData: IOSdSYMMetadata[] = await listDSYMs({
+        url,
+        token: token as string,
+        logger,
+      });
 
-    const responseData: IOSdSYMMetadata[] = await listDSYMs({
-      url,
-      token: token as string,
-      logger,
-    });
-    logger.info(formatIOSdSYMMetadata(responseData));
+      logger.info(formatIOSdSYMMetadata(responseData)); // log formatted data on success
+
+    } catch (error) {
+      if (error instanceof UserFriendlyError) {
+        // The UserFriendlyError.message is already formatted by formatCliErrorMessage
+        // and includes both user-friendly text and technical details.
+        // logger.error will prefix this with "ERROR " and handle colors.
+        logger.error(error.message);
+        if (options.debug && error.originalError) {
+          logger.debug('Original error details:', error.originalError);
+        }
+      } else {
+        // For any other unexpected errors (e.g. non-Axios, such as in token validation)
+        logger.error('An unexpected error occurred during the iOS list command:');
+        if (error instanceof Error) {
+          logger.error(error.message);
+          if (options.debug && error.stack) {
+            logger.debug(error.stack);
+          }
+        } else {
+          logger.error(String(error)); // catchall for other error types
+        }
+      }
+      iOSCommand.error(''); // Error exit. Blank message because one was already logged.
+    }
   });
-
-
