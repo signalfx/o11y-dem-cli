@@ -10,6 +10,8 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
 */
 
 import { Command } from 'commander';
@@ -77,60 +79,23 @@ iOSCommand
   .action(async (options: UploadCommandOptions) => {
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
 
-    try {
-      // Step 1: Validate and prepare the token
-      const token = validateAndPrepareToken(options);
+    // Step 1: Validate and prepare the token
+    const token = validateAndPrepareToken(options);
 
-      // Step 2: Validate the input path and prepare the zipped files
-      const { zipFiles, uploadPath } = prepareUploadFiles(options.path, logger);
+    // Step 2: Validate the input path and prepare the zipped files
+    const { zipFiles, uploadPath } = prepareUploadFiles(options.path, logger);
 
-      // Step 3: Upload the files
-      await uploadDSYMZipFiles({
-        zipFiles,
-        uploadPath,
-        realm: options.realm,
-        token,
-        logger,
-        spinner: createSpinner(),
-      });
+    // Step 3: Upload the files
+    await uploadDSYMZipFiles({
+      zipFiles,
+      uploadPath,
+      realm: options.realm,
+      token,
+      logger,
+      spinner: createSpinner(),
+    });
 
-      logger.info(`Preparing to upload dSYMs files from directory: ${dsymsPath}`);
-
-      const spinner = createSpinner();
-      let failedUploads = 0;
-
-      for (const filePath of zipFiles) {
-        const fileName = basename(filePath);
-        try {
-          await uploadDSYM({
-            filePath,
-	    fileName,
-            url,
-            token: token as string,
-            logger,
-            spinner,
-          });
-        } catch (error) {
-          failedUploads++;
-          if (error instanceof UserFriendlyError) {
-            logger.error(error.message);
-          } else {
-            logger.error('Unknown error during upload');
-          }
-        }
-      }
-
-      cleanupTemporaryZips(uploadPath);
-
-      if (failedUploads > 0) {
-        iOSCommand.error(`Upload failed for ${failedUploads} file${failedUploads !== 1 ? 's' : ''}`);
-      } else {
-        logger.info('All files uploaded successfully.');
-      }
-    } catch (error: any) {
-      logger.error(error.message);
-      iOSCommand.error(error.message);
-    }
+    logger.info('All files uploaded successfully.');
   });
 
 iOSCommand
@@ -160,15 +125,12 @@ iOSCommand
       realm: options.realm
     });
 
-    try {
-      const responseData: IOSdSYMMetadata[] = await listDSYMs({
-        url,
-        token: token as string,
-        logger,
-      });
-      logger.info(formatIOSdSYMMetadata(responseData));
-    } catch (error: any) {
-      logger.error(error.message);
-      iOSCommand.error(error.message);
-    }
+    const responseData: IOSdSYMMetadata[] = await listDSYMs({
+      url,
+      token: token as string,
+      logger,
+    });
+    logger.info(formatIOSdSYMMetadata(responseData));
   });
+
+

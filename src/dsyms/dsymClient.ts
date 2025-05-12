@@ -10,17 +10,20 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
 */
 
 import axios, { AxiosInstance } from 'axios';
+import { basename } from 'path';
 import { uploadFile } from '../utils/httpUtils';
 import { TOKEN_HEADER, IOS_CONSTANTS } from '../utils/constants';
 import { generateUrl } from './iOSdSYMUtils';
-import { handleAxiosError } from '../utils/httpUtils';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
-import { UserFriendlyError } from '../utils/userFriendlyErrors';
+import { IOSdSYMMetadata } from '../utils/metadataFormatUtils';
 import { cleanupTemporaryZips } from './iOSdSYMUtils';
+import { attachApiInterceptor } from '../utils/apiInterceptor';
 
 // for the group of all file uploads
 interface UploadDSYMZipFilesOptions {
@@ -40,6 +43,7 @@ interface UploadParams {
   token: string;
   logger: Logger;
   spinner: Spinner;
+  axiosInstance: AxiosInstance;
 }
 
 /**
@@ -60,53 +64,49 @@ export async function uploadDSYMZipFiles({
   logger.info(`url: ${url}`);
   logger.info(`Preparing to upload dSYMs files from directory: ${uploadPath}`);
 
-  let failedUploads = 0;
   const axiosInstance = axios.create();
-  attachApiInterceptor(axiosInstance, logger);
+  attachApiInterceptor(axiosInstance, logger, { userFriendlyMessage: 'An error occurred during dSYM upload.' });
 
   try {
     for (const filePath of zipFiles) {
-      try {
-        await uploadDSYM({
-          filePath,
-          url,
-          token,
-          logger,
-          spinner,
-          axiosInstance,
-        });
-      } catch (error: any) {
-        failedUploads++;
-        logger.error(error.message);
-      }
+      const fileName = basename(filePath);
+      await uploadDSYM({
+        filePath,
+        fileName,
+        url,
+        token,
+        logger,
+        spinner,
+        axiosInstance,
+      });
     }
 
-    if (failedUploads > 0) {
-      throw new Error(`Upload failed for ${failedUploads} file${failedUploads !== 1 ? 's' : ''}`);
-    }
+    logger.info('All files uploaded successfully.');
   } finally {
     cleanupTemporaryZips(uploadPath);
   }
 }
 
-export async function uploadDSYM({ filePath, url, token, logger, spinner }: UploadParams): Promise<void> {
-  console.log(`debug: fileName is ${fileName}`);
+export async function uploadDSYM({ filePath, fileName, url, token, logger, spinner, axiosInstance }: UploadParams): Promise<void> {
+  logger.debug(`Uploading dSYM: ${fileName}`);
   
   spinner.start(`Uploading file: ${filePath}`);
 
-  try {
-    await uploadFile({
-      url,
-      file: {
-        filePath,
-        fieldName: 'file',
-      },
-      token,
-      parameters: {},
-      onProgress: ({ progress, loaded, total }) => {
-        spinner.updateText(`Uploading ${filePath}: ${progress.toFixed(2)}% (${loaded}/${total} bytes)`);
-      },
-    });
+  await uploadFile({
+    url,
+    file: {
+      filePath,
+      fieldName: 'file',
+    },
+    token,
+    parameters: {
+      'filename': fileName,
+    },
+    onProgress: ({ progress, loaded, total }) => {
+      spinner.updateText(`Uploading ${filePath}: ${progress.toFixed(2)}% (${loaded}/${total} bytes)`);
+    },
+  }, axiosInstance);
+
   spinner.stop();
   logger.info(`Upload complete for ${filePath}`);
 }
@@ -128,9 +128,9 @@ export async function listDSYMs({ url, token, logger }: ListParams): Promise<IOS
       },
     });
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     // The error is already a UserFriendlyError thrown by the interceptor
-    logger.error(error.message);
+    logger.error(`Error during list dSYMs: ${error.message}`);
     throw error;
   }
 }

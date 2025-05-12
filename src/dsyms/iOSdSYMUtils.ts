@@ -38,21 +38,6 @@ export const generateUrl = ({
 };
 
 /**
- * Helper function to generate API URLs.
- */
-export const generateUrl = ({
-  apiPath,
-  realm,
-  domain = 'signalfx.com',
-}: {
-  apiPath: string;
-  realm: string;
-  domain?: string;
-}): string => {
-  return `${BASE_URL_PREFIX}.${realm}.${domain}/${API_VERSION_STRING}/${apiPath}`;
-};
-
-/**
  * Helper functions for locating and zipping dSYMs
  **/
 export function validateDSYMsPath(dsymsPath: string): string {
