@@ -106,7 +106,9 @@ iOSCommand
           logger.debug('Original error details:', error.originalError);
         }
       } else {
-        logger.error('An unexpected error occurred while running the ios subcommand:', error);
+        logger.error(
+          error instanceof Error ? error.message : `An unexpected error occurred: ${String(error)}`
+        );
       }
       iOSCommand.error(''); // ensure error exit code. process.exit(1) would also work.
     }

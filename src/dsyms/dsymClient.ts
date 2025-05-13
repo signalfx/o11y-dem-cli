@@ -98,7 +98,8 @@ export async function uploadDSYM({ filePath, fileName, url, token, logger, spinn
       'filename': fileName,
     },
     onProgress: ({ progress, loaded, total }) => {
-      spinner.updateText(`Uploading ${filePath}: ${progress.toFixed(2)}% (${loaded}/${total} bytes)`);
+      const progressText = `Uploading ${filePath}: ${progress.toFixed(2)}% (${loaded}/${total} bytes)`;
+      spinner.updateText(progress === 100 ? `${progressText}\n` : progressText);
     },
   }, axiosInstance);
 

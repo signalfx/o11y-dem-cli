@@ -39,7 +39,7 @@ export function attachApiInterceptor(axiosInstance: AxiosInstance, logger: Logge
           userFriendlyMessage: options.userFriendlyMessage || `The server returned an error (${status}). Please check your input and try again.`,
         };
         if (status === 401) {
-          standardError.userFriendlyMessage = 'Error: API access token is required.';
+          standardError.userFriendlyMessage = 'API access token is required.';
         } else if (status === 404) {
           standardError.userFriendlyMessage = 'Resource not found. Please check the URL or resource ID.';
         } else if (status === 413) {
