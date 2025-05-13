@@ -27,6 +27,8 @@ export interface AndroidMappingMetadata {
   updatedBy?: number;
   r8MappingFileFormatVersion?: string;
   fileSize?: number;
+  fileName?: string;
+  buildId?: string;
 }
 
 export interface IOSdSYMMetadata {
@@ -56,8 +58,9 @@ export function formatAndroidMappingMetadata(metadataList: AndroidMappingMetadat
       
     // Format each item
     return `
-        ID: ${item.id}
-        App: ${item.appId} (Version: ${item.appVersion})
+        App: ${item.appId} (Version Code: ${item.appVersion})
+        File Name: ${item.fileName}
+        Splunk Build ID: ${item.buildId}
         Uploaded: ${uploadDate}
         File Size: ${formatFileSize(item.fileSize)}
         Format Version: ${item.r8MappingFileFormatVersion || 'N/A'}
