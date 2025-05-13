@@ -54,7 +54,7 @@ export enum ErrorCategory {
   NetworkIssue = 'NETWORK_ISSUE',
   NoResponse = 'NO_RESPONSE',
   GeneralHttpError = 'GENERAL_HTTP_ERROR',
-  Unexpected = 'UNEXPECTED'
+  Unexpected = 'UNEXPECTED',
 }
 
 export function formatCLIErrorMessage(error: StandardError): string {
@@ -143,6 +143,10 @@ export const mockUploadFile = async ({ file, onProgress }: UploadOptions): Promi
 export interface StandardError {
   type: ErrorCategory;
   message: string;
-  details?: { status: number; data: unknown; };
+  details?: {
+    status?: number; // HTTP status code
+    data?: unknown; // Response data
+    url?: string; // URL that was attempted
+  };
   userFriendlyMessage: string;
 }

@@ -27,57 +27,66 @@ export function attachApiInterceptor(axiosInstance: AxiosInstance, logger: Logge
   axiosInstance.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
+      // Construct StandardError from the Axios error
+      const { response: axiosResponse, request, code, config } = error;
+      const url = config?.url; // Extract the URL
       let standardError: StandardError;
-      const { response: axiosResponse, request, code } = error;
 
+      // Handle errors with responses (HTTP status codes)
       if (axiosResponse) {
         const { status, data } = axiosResponse;
         standardError = {
           type: ErrorCategory.GeneralHttpError,
           message: `HTTP ${status}: ${error.message}`,
-          details: { status: status, data: data },
+          details: { status, data, url },
           userFriendlyMessage: options.userFriendlyMessage || `The server returned an error (${status}). Please check your input and try again.`,
         };
+
         if (status === 401) {
-          standardError.userFriendlyMessage = 'API access token is required.';
+          standardError.userFriendlyMessage = `Could not authenticate. Please check that your token is valid and has the correct permissions.`;
         } else if (status === 404) {
-          standardError.userFriendlyMessage = 'Resource not found. Please check the URL or resource ID.';
+          standardError.userFriendlyMessage = `Resource not found. Please check the URL (${url}) or resource ID.`;
         } else if (status === 413) {
           standardError.type = ErrorCategory.RequestEntityTooLarge;
-          standardError.userFriendlyMessage = 'The uploaded file is too large. Please reduce the file size and try again.';
+          standardError.userFriendlyMessage = `The uploaded file is too large. Please reduce the file size and try again.`;
         }
-      } else if (request) {
+      }
+      // Handle network-related errors (no response received)
+      else if (request) {
         let userFriendlyMessage = 'Please check your network connection or try again later.';
         let errorType = ErrorCategory.NoResponse;
+
         if (code === 'ECONNREFUSED') {
-          userFriendlyMessage = 'The server is not listening for connections. Please check the server status and try again.';
+          userFriendlyMessage = `The connection was refused by the server. Please check the realm as well as the server status and URL (${url}), then try again.`;
           errorType = ErrorCategory.NetworkIssue;
         } else if (code === 'ENOTFOUND') {
-          userFriendlyMessage = 'The server could not be found. Please check the URL and try again.';
+          userFriendlyMessage = `The server could not be found. Please check the realm and the URL (${url}) in your configuration, then try again.`;
           errorType = ErrorCategory.NetworkIssue;
         }
+
         standardError = {
           type: errorType,
           message: `No response received: ${error.message}`,
+          details: { url },
           userFriendlyMessage: userFriendlyMessage,
         };
-      } else {
+      }
+      // Handle unexpected errors
+      else {
         standardError = {
           type: ErrorCategory.Unexpected,
           message: `An unexpected error occurred: ${error.message}`,
+          details: { url },
           userFriendlyMessage: options.userFriendlyMessage || 'An unexpected error occurred.',
         };
       }
 
-      // standardError.message is included in the UserFriendlyError, so no need to log it here.
-      // logger.error(standardError.message); // Removed to avoid redundant logging
-
-      // 'details' can contain more verbose info (like response body) useful for debugging.
+      // Log debug details if available
       if (standardError.details) {
         logger.debug('Error details:', standardError.details);
       }
 
-      throw new UserFriendlyError(error, formatCLIErrorMessage(standardError));
+      throw new UserFriendlyError(standardError, formatCLIErrorMessage(standardError));
     }
   );
 }
