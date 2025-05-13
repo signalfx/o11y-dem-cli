@@ -111,37 +111,6 @@ export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMe
   }
 };
 
-export const uploadFileAndroid = async ({ url, file, token, onProgress }: UploadOptions): Promise<void> => {
-  const fileSizeInBytes = fs.statSync(file.filePath).size;
-
-  const ext = file.filePath.split('.').pop()?.toLowerCase();
-  let contentType = 'text/plain'; 
-  
-  if (ext === 'gz') {
-    contentType = 'application/gzip'; 
-  }
-
-  const fileStream = fs.createReadStream(file.filePath);
-
-  const headers = {
-    'Content-Type': contentType, 
-    [TOKEN_HEADER]: token, 
-    'Content-Length': fileSizeInBytes,
-  };
-
-  await axios.put(url, fileStream, {
-    headers,
-    onUploadProgress: (progressEvent) => {
-      const loaded = progressEvent.loaded;
-      const total = progressEvent.total || fileSizeInBytes;
-      const progress = (loaded / total) * 100;
-      if (onProgress) {
-        onProgress({ progress, loaded, total });
-      }
-    },
-  });
-};
-
 // This uploadFile method will be used by all the different commands that want to upload various types of
 // symbolication files to o11y cloud. The url, file, and additional parameters are to be prepared by the
 // calling method. Various errors, Error, axiosErrors and all should be handled by the caller of this method.
@@ -169,7 +138,7 @@ export const uploadFile = async ({ url, file, token, parameters, onProgress }: U
       const progress = (loaded / total) * 100;
       if (onProgress) {
         onProgress({ progress, loaded, total });
-      }
+      }    
     },
   });
 };
