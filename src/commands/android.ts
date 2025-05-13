@@ -201,7 +201,6 @@ androidCommand
           spinner.updateText(`Uploading: ${Math.round(progressData.progress)}%`);
         } : undefined
       });
-
       spinner.stop();
       logger.info(`Upload complete`);
     } catch (error) {
@@ -329,7 +328,6 @@ androidCommand
             spinner.updateText(`Uploading: ${Math.round(progressData.progress)}%`);
           } : undefined
         });
-   
         spinner.stop();
         logger.info(`Upload complete`);
       } catch (error) {
@@ -398,7 +396,6 @@ androidCommand
     try {
       logger.debug(`URL Endpoint: ${url}`);
       const responseData = await fetchAndroidMappingMetadata({ url, token });
-
       logger.info(formatAndroidMappingMetadata(responseData));
     } catch (error) {
       logger.error('Failed to fetch metadata:', error);
