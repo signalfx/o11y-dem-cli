@@ -35,7 +35,6 @@ export function attachApiInterceptor(
   axiosInstance.interceptors.response.use(
     (response) => response, // Pass through successful responses
     (error: AxiosError) => { // AxiosError's 'data' in response can be 'any' or 'unknown'
-      const isDebug = process.env.DEBUG === 'true';
       const { response: axiosResponse, request, code } = error;
 
       // Use the 'url' parameter passed to this function, as it's confirmed to be the full URL.
@@ -127,12 +126,10 @@ export function attachApiInterceptor(
       }
 
       // Log detailed error info in debug mode
-      if (isDebug) {
-        logger.debug('Error details:', {
-          message: standardError.message,
-          details: standardError.details,
-        });
-      }
+      logger.debug('Error details:', {
+        message: standardError.message,
+        details: standardError.details,
+      });
 
       // Throw the UserFriendlyError
       throw new UserFriendlyError(standardError, formatCLIErrorMessage(standardError));
