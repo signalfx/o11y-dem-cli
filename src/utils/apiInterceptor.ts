@@ -17,76 +17,126 @@
 import { AxiosError, AxiosInstance } from 'axios';
 import { Logger } from './logger';
 import { UserFriendlyError } from './userFriendlyErrors';
-import { ErrorCategory, StandardError, formatCLIErrorMessage } from './httpUtils';
+import { ErrorCategory, StandardError, formatCLIErrorMessage, DetailDataObject } from './httpUtils';
 
 interface InterceptorOptions {
   userFriendlyMessage?: string;
 }
 
-export function attachApiInterceptor(axiosInstance: AxiosInstance, logger: Logger, options: InterceptorOptions = {}) {
+export function attachApiInterceptor(
+  axiosInstance: AxiosInstance,
+  logger: Logger,
+  url: string, // This is the fullURL for the request being intercepted, passed from the caller
+  options: InterceptorOptions = {}
+) {
+
+  logger.debug(`attachApiInterceptor called with full URL: ${url}`);
+
   axiosInstance.interceptors.response.use(
-    (response) => response,
-    (error: AxiosError) => {
-      // Construct StandardError from the Axios error
-      const { response: axiosResponse, request, code, config } = error;
-      const url = config?.url; // Extract the URL
+    (response) => response, // Pass through successful responses
+    (error: AxiosError) => { // AxiosError's 'data' in response can be 'any' or 'unknown'
+      const isDebug = process.env.DEBUG === 'true';
+      const { response: axiosResponse, request, code } = error;
+
+      // Use the 'url' parameter passed to this function, as it's confirmed to be the full URL.
+      const fullRequestURL = url;
+
       let standardError: StandardError;
 
-      // Handle errors with responses (HTTP status codes)
+      // Handle HTTP errors with responses
       if (axiosResponse) {
-        const { status, data } = axiosResponse;
+        const { status, data: axiosDataFromResponse } = axiosResponse; // axiosDataFromResponse is 'unknown' or 'any'
+
+        let processedDetailsData: DetailDataObject | string | undefined;
+
+        if (typeof axiosDataFromResponse === 'object' && axiosDataFromResponse !== null) {
+          processedDetailsData = axiosDataFromResponse as DetailDataObject;
+        } else if (typeof axiosDataFromResponse === 'string') {
+          processedDetailsData = axiosDataFromResponse;
+        } else if (axiosDataFromResponse === null || axiosDataFromResponse === undefined) {
+          processedDetailsData = undefined;
+        } else {
+          processedDetailsData = String(axiosDataFromResponse);
+        }
+
         standardError = {
           type: ErrorCategory.GeneralHttpError,
-          message: `HTTP ${status}: ${error.message}`,
-          details: { status, data, url },
-          userFriendlyMessage: options.userFriendlyMessage || `The server returned an error (${status}). Please check your input and try again.`,
+          message: `The server returned an error (${status}).`,
+          details: {
+            status,
+            data: processedDetailsData,
+            url: fullRequestURL, // Use the reliable full URL
+          },
+          userFriendlyMessage:
+            options.userFriendlyMessage ||
+            `The server returned an error. Please check your input and try again.`,
         };
 
         if (status === 401) {
-          standardError.userFriendlyMessage = `Could not authenticate. Please check that your token is valid and has the correct permissions.`;
+          standardError.userFriendlyMessage =
+            'Authentication failed. Please check your token and permissions.';
         } else if (status === 404) {
-          standardError.userFriendlyMessage = `Resource not found. Please check the URL (${url}) or resource ID.`;
+          standardError.userFriendlyMessage =
+            'Resource not found. Please check the URL and your realm configuration.';
         } else if (status === 413) {
           standardError.type = ErrorCategory.RequestEntityTooLarge;
-          standardError.userFriendlyMessage = `The uploaded file is too large. Please reduce the file size and try again.`;
+          standardError.userFriendlyMessage =
+            'The uploaded file is too large. Please reduce the file size and try again.';
         }
       }
-      // Handle network-related errors (no response received)
+      // Handle network-related errors (e.g., no response received)
       else if (request) {
-        let userFriendlyMessage = 'Please check your network connection or try again later.';
+        let userFriendlyMessage =
+          'The server could not be found. Please check the URL and your realm configuration.';
         let errorType = ErrorCategory.NoResponse;
 
+        const detailedMessage = error.message || 'No response received.';
+
         if (code === 'ECONNREFUSED') {
-          userFriendlyMessage = `The connection was refused by the server. Please check the realm as well as the server status and URL (${url}), then try again.`;
+          userFriendlyMessage =
+            'Connection refused. Please verify the server and realm, and try again.';
           errorType = ErrorCategory.NetworkIssue;
         } else if (code === 'ENOTFOUND') {
-          userFriendlyMessage = `The server could not be found. Please check the realm and the URL (${url}) in your configuration, then try again.`;
+          userFriendlyMessage =
+            'The server could not be found. Please check the URL and your realm configuration.';
           errorType = ErrorCategory.NetworkIssue;
         }
 
         standardError = {
           type: errorType,
-          message: `No response received: ${error.message}`,
-          details: { url },
-          userFriendlyMessage: userFriendlyMessage,
+          message: `No response received: ${detailedMessage}`,
+          details: {
+            url: fullRequestURL, // Use the reliable full URL
+            data: { code },
+          },
+          userFriendlyMessage,
         };
       }
       // Handle unexpected errors
       else {
         standardError = {
           type: ErrorCategory.Unexpected,
-          message: `An unexpected error occurred: ${error.message}`,
-          details: { url },
-          userFriendlyMessage: options.userFriendlyMessage || 'An unexpected error occurred.',
+          message: `An unexpected error occurred.`,
+          details: {
+            url: fullRequestURL, // Use the reliable full URL
+            data: { error: error.message || '(unknown error)' },
+          },
+          userFriendlyMessage:
+            options.userFriendlyMessage || 'An unexpected error occurred. Please try again.',
         };
       }
 
-      // Log debug details if available
-      if (standardError.details) {
-        logger.debug('Error details:', standardError.details);
+      // Log detailed error info in debug mode
+      if (isDebug) {
+        logger.debug('Error details:', {
+          message: standardError.message,
+          details: standardError.details,
+        });
       }
 
+      // Throw the UserFriendlyError
       throw new UserFriendlyError(standardError, formatCLIErrorMessage(standardError));
     }
   );
 }
+

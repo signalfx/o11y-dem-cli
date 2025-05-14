@@ -57,8 +57,65 @@ export enum ErrorCategory {
   Unexpected = 'UNEXPECTED',
 }
 
+// Helper interface for the 'data' object within error.details
+export interface DetailDataObject {
+  code?: string;
+  // Can add other known optional properties here, e.g., error?: string;
+  [key: string]: unknown;
+}
+
+export interface StandardError {
+  type: ErrorCategory;
+  message: string;
+  details?: {
+    status?: number; // http status code
+    data?: DetailDataObject | string;
+    url?: string; // url that was attempted
+  };
+  userFriendlyMessage: string;
+}
+
 export function formatCLIErrorMessage(error: StandardError): string {
-  return `Error: ${error.userFriendlyMessage}\nDetails: ${error.message}`;
+  const entryIndent = '   ';
+  const detailEntries: string[] = [];
+
+  // core technical message
+  detailEntries.push(`${entryIndent}"message": "${error.message}"`);
+
+  // attempted url if available
+  if (error.details?.url) {
+    detailEntries.push(`${entryIndent}"url": "${error.details.url}"`);
+  }
+
+  // http status code if available
+  if (error.details?.status !== undefined) {
+    detailEntries.push(`${entryIndent}"status": ${error.details.status}`);
+  }
+
+  // codes from error.details.data (e.g., 'ENOTFOUND') if available
+  if (error.details?.data) {
+    const data = error.details.data; // data is now DetailDataObject | string | undefined
+
+    // Check if data is an object (and not null) before trying to access properties
+    if (typeof data === 'object' && data !== null) {
+      // Safely check if 'code' property exists and is a string
+      if ('code' in data && typeof data.code === 'string') {
+        detailEntries.push(`${entryIndent}"code": "${data.code}"`);
+      }
+      // can add other fields from data if needed, e.g.:
+      // if ('someOtherField' in data && typeof data.someOtherField === 'expectedType') {
+      //   detailEntries.push(`${entryIndent}"someOtherField": "${data.someOtherField}"`);
+      // }
+    }
+    else if (typeof data === 'string') {
+      detailEntries.push(`${entryIndent}"responseData": "${data}"`);
+    }
+  }
+
+  const detailsBlockContent = detailEntries.length > 0 ? `\n${detailEntries.join(',\n')}\n` : '';
+  const detailsBlock = `details: [${detailsBlockContent}]`;
+
+  return `Error: ${error.userFriendlyMessage}\n${detailsBlock}`;
 }
 
 export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMetadataOptions): Promise<AndroidMappingMetadata[]> => {
@@ -139,14 +196,3 @@ export const mockUploadFile = async ({ file, onProgress }: UploadOptions): Promi
     }, bytes_to_megabits(fileSizeInBytes) / mbps * 1000);
   });
 };
-
-export interface StandardError {
-  type: ErrorCategory;
-  message: string;
-  details?: {
-    status?: number; // HTTP status code
-    data?: unknown; // Response data
-    url?: string; // URL that was attempted
-  };
-  userFriendlyMessage: string;
-}

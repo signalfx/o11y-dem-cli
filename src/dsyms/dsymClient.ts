@@ -60,7 +60,9 @@ export async function uploadDSYMZipFiles({
   logger.info(`Preparing to upload dSYMs files from directory: ${uploadPath}`);
 
   const axiosInstance = axios.create();
-  attachApiInterceptor(axiosInstance, logger, { userFriendlyMessage: 'An error occurred during dSYM upload.' });
+  attachApiInterceptor(axiosInstance, logger, url, { userFriendlyMessage: 'An error occurred during dSYM upload.' });
+
+  logger.debug(`uploadDSYMZipFiles has url: ${url}`);
 
   try {
     for (const filePath of zipFiles) {
@@ -120,7 +122,7 @@ interface ListParams {
 
 export async function listDSYMs({ url, token, logger }: ListParams): Promise<IOSdSYMMetadata[]> {
   const axiosInstance = axios.create();
-  attachApiInterceptor(axiosInstance, logger); // Interceptor will throw UserFriendlyError on API failure
+  attachApiInterceptor(axiosInstance, logger, url); // Interceptor will throw UserFriendlyError on API failure
   try {
     const response = await axiosInstance.get<IOSdSYMMetadata[]>(url, {
       headers: {
