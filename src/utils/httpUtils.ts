@@ -32,9 +32,10 @@ interface UploadOptions {
   onProgress?: (progressInfo: { progress: number; loaded: number; total: number }) => void;
 }
 
-interface FetchAndroidMetadataOptions {
+export interface FetchAndroidMetadataOptions {
   url: string;
   token: string;
+  axiosInstance?: AxiosInstance;
 }
 
 export interface ProgressInfo {
@@ -118,22 +119,26 @@ export function formatCLIErrorMessage(error: StandardError): string {
   return `Error: ${error.userFriendlyMessage}\n${detailsBlock}`;
 }
 
-export const fetchAndroidMappingMetadata = async ({ url, token }: FetchAndroidMetadataOptions): Promise<AndroidMappingMetadata[]> => {
-  const headers = {
-    'X-SF-Token': token,
-    'Accept': 'application/json',
-  };
+export const fetchAndroidMappingMetadata = async ({ 
+  url, 
+  token, 
+  axiosInstance 
+}: FetchAndroidMetadataOptions): Promise<AndroidMappingMetadata[]> => {  const headers = {
+  'X-SF-Token': token,
+  'Accept': 'application/json',
+};
 
-  try {
-    const response = await axios.get<AndroidMappingMetadata[]>(url, { headers });
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw new Error(`HTTP ${error.response?.status}: ${error.response?.statusText}\nResponse Data: ${JSON.stringify(error.response?.data, null, 2)}`);
-    } else {
-      throw error;
-    }
+try {
+  const client = axiosInstance || axios;
+  const response = await client.get<AndroidMappingMetadata[]>(url, { headers });
+  return response.data;
+} catch (error) {
+  if (axios.isAxiosError(error)) {
+    throw new Error(`HTTP ${error.response?.status}: ${error.response?.statusText}\nResponse Data: ${JSON.stringify(error.response?.data, null, 2)}`);
+  } else {
+    throw error;
   }
+}
 };
 
 // This uploadFile method will be used by all the different commands that want to upload various types of

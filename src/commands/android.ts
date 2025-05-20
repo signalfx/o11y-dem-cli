@@ -362,7 +362,7 @@ androidCommand
     const token = validateAndPrepareToken(options);
 
     if (!options.realm || options.realm.trim() === '') {
-      androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable SPLUNK_REALM');
+      androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
     }
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
@@ -376,7 +376,7 @@ androidCommand
         userFriendlyMessage: 'An error occurred while retrieving mapping file metadata.' 
       });
     
-      const responseData = await fetchAndroidMappingMetadata({ url, token });
+      const responseData = await fetchAndroidMappingMetadata({ url, token, axiosInstance });
       logger.info(formatAndroidMappingMetadata(responseData));
     } catch (err) {
       if (err instanceof UserFriendlyError) {
