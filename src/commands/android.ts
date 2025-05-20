@@ -22,7 +22,8 @@ import {
   isValidAppId,
   isValidVersionCode,
   isValidSplunkBuildId,
-  COMMON_ERROR_MESSAGES
+  COMMON_ERROR_MESSAGES,
+  validateAndPrepareToken
 } from '../utils/inputValidations';
 import {
   BASE_URL_PREFIX,
@@ -32,10 +33,11 @@ import {
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import { fetchAndroidMappingMetadata, uploadFile } from '../utils/httpUtils';
-import { AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 import { createSpinner } from '../utils/spinner';
 import { formatAndroidMappingMetadata } from '../utils/metadataFormatUtils';
 import path from 'path';
+import { attachApiInterceptor } from '../utils/apiInterceptor';
 
 export const androidCommand = new Command('android');
 
@@ -134,18 +136,14 @@ androidCommand
   .option( '--dry-run', 'Preview the file that will be uploaded')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidOptions) => {
-    const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
-    if (!token) {
-      androidCommand.error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
-    } else {
-      options.token = token;
-    }
+    const token = validateAndPrepareToken(options);
 
     if (!options.realm || options.realm.trim() === '') {
       androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
     }
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+    const spinner = createSpinner();
 
     logger.debug(`Validating App ID: ${options.appId}`);
     if (!isValidAppId(options.appId)) {
@@ -186,10 +184,14 @@ androidCommand
     const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.splunkBuildId);
     logger.debug(`URL Endpoint: ${url}`);
 
-    const spinner = createSpinner();
     spinner.start(`Uploading Android mapping file: ${options.path}`);
 
     try {
+      const axiosInstance = axios.create();
+      attachApiInterceptor(axiosInstance, logger, url, { 
+        userFriendlyMessage: 'An error occurred during mapping file upload.' 
+      });
+
       await uploadFile({
         url: url,
         file: { filePath: options.path, fieldName: 'file' },
@@ -199,31 +201,25 @@ androidCommand
         },
         onProgress: options.debug ? (progressData) => {
           spinner.updateText(`Uploading: ${Math.round(progressData.progress)}%`);
-        } : undefined
-      });
+        } : undefined,
+      },
+      axiosInstance
+      );
+      
       spinner.stop();
       logger.info(`Upload complete`);
-    } catch (error) {
+    } catch (err) {
       spinner.stop();
-      const ae = error as AxiosError;
-      const unableToUploadMessage = `Unable to upload ${options.path}`;
-
-      if (ae.response && ae.response.status === 413) {
-        logger.warn(ae.response.status, ae.response.statusText);
-        logger.warn(unableToUploadMessage);
-      } else if (ae.response) {
-        logger.error(ae.response.status, ae.response.statusText);
-        logger.error(ae.response.data);
-        logger.error(unableToUploadMessage);
-      } else if (ae.request) {
-        logger.error(`Response from ${url} was not received`);
-        logger.error(ae.cause);
-        logger.error(unableToUploadMessage);
+      if (err instanceof UserFriendlyError) {
+        logger.error(err.message);
+        if (options.debug && err.originalError) {
+          logger.debug('Error details:', err.originalError);
+        }
       } else {
-        logger.error(`Request to ${url} could not be sent`);
-        logger.error(error);
-        logger.error(unableToUploadMessage);
+        logger.error('An unexpected error occurred:');
+        logger.error(err);
       }
+      process.exit(1);
     }
   });
 
@@ -246,18 +242,14 @@ androidCommand
   .option('--dry-run', 'Preview the file that will be uploaded and the parameters extracted from the AndroidManifest.xml file')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidWithManifestOptions) => {
-    const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
-    if (!token) {
-      androidCommand.error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
-    } else {
-      options.token = token;
-    }
+    const token = validateAndPrepareToken(options);
 
     if (!options.realm || options.realm.trim() === '') {
       androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
     }
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+    const spinner = createSpinner();
 
     try {
       logger.debug(`Validating Mapping File Path: ${options.path}`);
@@ -313,54 +305,39 @@ androidCommand
       const url = generateURL('upload', options.realm, appId, versionCode as string, splunkBuildId as string);
       logger.debug(`URL Endpoint: ${url}`);
 
-      const spinner = createSpinner();
       spinner.start(`Uploading Android mapping file: ${options.path}`);
-      
-      try {
-        await uploadFile({
-          url: url,
-          file: { filePath: options.path, fieldName: 'file' },
-          token: options.token,
-          parameters: { 
-            filename: path.basename(options.path)
-          },
-          onProgress: options.debug ? (progressData) => {
-            spinner.updateText(`Uploading: ${Math.round(progressData.progress)}%`);
-          } : undefined
-        });
-        spinner.stop();
-        logger.info(`Upload complete`);
-      } catch (error) {
-        spinner.stop();
-        const ae = error as AxiosError;
-        const unableToUploadMessage = `Unable to upload ${options.path}`;
-  
-        if (ae.response && ae.response.status === 413) {
-          logger.warn(ae.response.status, ae.response.statusText);
-          logger.warn(unableToUploadMessage);
-        } else if (ae.response) {
-          logger.error(ae.response.status, ae.response.statusText);
-          logger.error(ae.response.data);
-          logger.error(unableToUploadMessage);
-        } else if (ae.request) {
-          logger.error(`Response from ${url} was not received`);
-          logger.error(ae.cause);
-          logger.error(unableToUploadMessage);
-        } else {
-          logger.error(`Request to ${url} could not be sent`);
-          logger.error(error);
-          logger.error(unableToUploadMessage);
-        }
-      }
-    } catch (err) {
+
+      const axiosInstance = axios.create();
+      attachApiInterceptor(axiosInstance, logger, url, { 
+        userFriendlyMessage: 'An error occurred during mapping file upload.' 
+      });
+
+      await uploadFile({
+        url: url,
+        file: { filePath: options.path, fieldName: 'file' },
+        token: options.token,
+        parameters: { 
+          filename: path.basename(options.path)
+        },
+        onProgress: options.debug ? (progressData) => {
+          spinner.updateText(`Uploading: ${Math.round(progressData.progress)}%`);
+        } : undefined
+      }, axiosInstance);
+
+      spinner.stop();
+      logger.info(`Upload complete`);
+    } catch (err) {      
+      spinner.stop();
       if (err instanceof UserFriendlyError) {
-        logger.debug(err.originalError);
         logger.error(err.message);
+        if (options.debug && err.originalError) {
+          logger.debug('Error details:', err.originalError);
+        }
       } else {
-        logger.error('Exiting due to an unexpected error:');
+        logger.error('An unexpected error occurred:');
         logger.error(err);
       }
-      throw err; 
+      process.exit(1);
     }
   });
 
@@ -382,10 +359,7 @@ androidCommand
   .option('--debug', 
     'Enable debug logs')
   .action(async (options) => {
-    const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
-    if (!token) {
-      androidCommand.error('Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variable SPLUNK_ACCESS_TOKEN');
-    }
+    const token = validateAndPrepareToken(options);
 
     if (!options.realm || options.realm.trim() === '') {
       androidCommand.error('Error: Realm is required and cannot be empty. Please pass it into the command as the --realm option, or set using the environment variable SPLUNK_REALM');
@@ -393,12 +367,29 @@ androidCommand
 
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
     const url = generateURL('list', options.realm, options.appId);
+    
     try {
       logger.debug(`URL Endpoint: ${url}`);
+
+      const axiosInstance = axios.create();
+      attachApiInterceptor(axiosInstance, logger, url, { 
+        userFriendlyMessage: 'An error occurred while retrieving mapping file metadata.' 
+      });
+    
       const responseData = await fetchAndroidMappingMetadata({ url, token });
       logger.info(formatAndroidMappingMetadata(responseData));
-    } catch (error) {
-      logger.error('Failed to fetch metadata:', error);
-      throw error;
+    } catch (err) {
+      if (err instanceof UserFriendlyError) {
+        logger.error(err.message);
+        if (options.debug && err.originalError) {
+          logger.debug('Error details:', err.originalError);
+        }
+      } else {
+        logger.error('Failed to fetch metadata:');
+        logger.error(err);
+      }
+      process.exit(1);
     }
   });
+
+  
