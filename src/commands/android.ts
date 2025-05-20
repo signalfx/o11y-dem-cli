@@ -33,7 +33,7 @@ import {
 import { UserFriendlyError } from '../utils/userFriendlyErrors';
 import { createLogger, LogLevel } from '../utils/logger';
 import { fetchAndroidMappingMetadata, uploadFile } from '../utils/httpUtils';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { createSpinner } from '../utils/spinner';
 import { formatAndroidMappingMetadata } from '../utils/metadataFormatUtils';
 import path from 'path';
@@ -195,7 +195,7 @@ androidCommand
       await uploadFile({
         url: url,
         file: { filePath: options.path, fieldName: 'file' },
-        token: options.token,
+        token: token,
         parameters: { 
           filename: path.basename(options.path)
         },
@@ -315,7 +315,7 @@ androidCommand
       await uploadFile({
         url: url,
         file: { filePath: options.path, fieldName: 'file' },
-        token: options.token,
+        token: token,
         parameters: { 
           filename: path.basename(options.path)
         },
