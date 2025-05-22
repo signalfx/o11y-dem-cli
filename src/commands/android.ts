@@ -359,16 +359,17 @@ androidCommand
   .option('--debug', 
     'Enable debug logs')
   .action(async (options) => {
-    const token = validateAndPrepareToken(options);
-
-    if (!options.realm || options.realm.trim() === '') {
-      androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
-    }
-
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
-    const url = generateURL('list', options.realm, options.appId);
     
     try {
+      const token = validateAndPrepareToken(options);
+
+      if (!options.realm || options.realm.trim() === '') {
+        androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
+      }
+
+      const url = generateURL('list', options.realm, options.appId);
+
       logger.debug(`URL Endpoint: ${url}`);
 
       const axiosInstance = axios.create();
