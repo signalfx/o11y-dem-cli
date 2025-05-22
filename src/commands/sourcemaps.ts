@@ -171,8 +171,8 @@ sourcemapsCommand
         sourcemapsCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
       }
 
-      const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
       const spinner = createSpinner();
+      const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO, spinner);
       try {
         await runSourcemapUpload({ ...options, directory: options.path }, { logger, spinner });
       } catch (e) {

@@ -187,24 +187,18 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ].filter(([_, value]) => typeof value !== 'undefined'));
 
-    spinner.interrupt(() => {
-      logger.debug('Uploading %s', path);
-      logger.debug('PUT', url);
-    });
+    logger.debug('Uploading %s', path);
+    logger.debug('PUT', url);
 
     const dryRunUploadFile: typeof uploadFile = async () => {
-      spinner.interrupt( () => {
-        logger.info('sourceMapId %s would be used to upload %s', sourceMapId, path);
-      });
+      logger.info('sourceMapId %s would be used to upload %s', sourceMapId, path);
     };
     const uploadFileFn = options.dryRun ? dryRunUploadFile : uploadFile;
 
     // notify user if we cannot be certain the "sourcemaps inject" command was already run
     const alreadyInjected = await wasInjectAlreadyRun(path, logger);
     if (!alreadyInjected.result) {
-      spinner.interrupt(() => {
-        logger.warn(alreadyInjected.message);
-      });
+      logger.warn(alreadyInjected.message);
     }
 
     // upload a single file

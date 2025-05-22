@@ -15,6 +15,7 @@
 */
 
 import chalk from 'chalk';
+import { Spinner } from './spinner';
 
 /** Logger methods can be called just like console.log */
 export interface Logger {
@@ -31,14 +32,27 @@ export const enum LogLevel {
   DEBUG = 1
 }
 
-export function createLogger(logLevel: LogLevel): Logger {
+export function createLogger(logLevel: LogLevel, spinner?: Spinner): Logger {
   // Send info to stdout, and all other logs to stderr
-  return {
+  const basicLogger = {
     error: (msg, ...params) => LogLevel.ERROR >= logLevel && prefixedConsoleError(chalk.stderr.red('ERROR '), msg, ...params),
     warn: (msg, ...params) => LogLevel.WARN >= logLevel && prefixedConsoleError(chalk.stderr.yellow('WARN '), msg, ...params),
     info: (msg, ...params) => LogLevel.INFO >= logLevel && console.log(msg, ...params),
     debug: (msg, ...params) => LogLevel.DEBUG >= logLevel && prefixedConsoleError(chalk.stderr.gray('DEBUG '), msg, ...params),
   } as Logger;
+
+  if (spinner) {
+    // wrap logging functions with spinner.interrupt() to avoid jumbled logs when the spinner is active
+    const spinnerAwareLogger = {
+      error: (...args) => { spinner.interrupt(() => basicLogger.error(...args)); },
+      warn: (...args) => { spinner.interrupt(() => basicLogger.warn(...args)); },
+      info: (...args) => { spinner.interrupt(() => basicLogger.info(...args)); },
+      debug: (...args) => { spinner.interrupt(() => basicLogger.debug(...args)); },
+    } as Logger;
+    return spinnerAwareLogger;
+  } else {
+    return basicLogger;
+  }
 }
 
 /** Carefully wrap console.error so the logger can properly support format strings */
