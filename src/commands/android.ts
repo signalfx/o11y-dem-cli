@@ -136,57 +136,57 @@ androidCommand
   .option( '--dry-run', 'Preview the file that will be uploaded')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidOptions) => {
-    const token = validateAndPrepareToken(options);
-
-    if (!options.realm || options.realm.trim() === '') {
-      androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
-    }
-
     const spinner = createSpinner();
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO, spinner);
 
-    logger.debug(`Validating App ID: ${options.appId}`);
-    if (!isValidAppId(options.appId)) {
-      throw new UserFriendlyError(null, 'Invalid Application ID. It must be a non-empty string.');
-    }
+    try {
+      const token = validateAndPrepareToken(options);
 
-    logger.debug(`Validating Version Code: ${options.versionCode}`);
-    if (!isValidVersionCode(options.versionCode)) {
-      throw new UserFriendlyError(null, 'Invalid Version Code. It must be an integer.');
-    }
+      if (!options.realm || options.realm.trim() === '') {
+        androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
+      }
 
-    logger.debug(`Validating Mapping File Path: ${options.path}`);
-    if (!isValidFile(options.path)) {
-      throw new UserFriendlyError(null, `Invalid mapping file path: ${options.path}.`);
-    }
+      logger.debug(`Validating App ID: ${options.appId}`);
+      if (!isValidAppId(options.appId)) {
+        throw new UserFriendlyError(null, 'Invalid Application ID. It must be a non-empty string.');
+      }
 
-    logger.debug(`Validating Mapping File Extension`);
-    if (!hasValidExtension(options.path, '.txt', '.gz')) {
-      throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.path}.`);
-    }
+      logger.debug(`Validating Version Code: ${options.versionCode}`);
+      if (!isValidVersionCode(options.versionCode)) {
+        throw new UserFriendlyError(null, 'Invalid Version Code. It must be an integer.');
+      }
 
-    logger.debug(`Validating optional Splunk Build ID: ${options.splunkBuildId}`);
-    if (options.splunkBuildId && !isValidSplunkBuildId(options.splunkBuildId)) {
-      throw new UserFriendlyError(null, 'Error: Invalid Splunk Build ID. It must be a non-empty string.');
-    }
+      logger.debug(`Validating Mapping File Path: ${options.path}`);
+      if (!isValidFile(options.path)) {
+        throw new UserFriendlyError(null, `Invalid mapping file path: ${options.path}.`);
+      }
 
-    logger.info(`Preparing to upload Android mapping file:
+      logger.debug(`Validating Mapping File Extension`);
+      if (!hasValidExtension(options.path, '.txt', '.gz')) {
+        throw new UserFriendlyError(null, `Mapping file does not have correct extension: ${options.path}.`);
+      }
+
+      logger.debug(`Validating optional Splunk Build ID: ${options.splunkBuildId}`);
+      if (options.splunkBuildId && !isValidSplunkBuildId(options.splunkBuildId)) {
+        throw new UserFriendlyError(null, 'Error: Invalid Splunk Build ID. It must be a non-empty string.');
+      }
+
+      logger.info(`Preparing to upload Android mapping file:
       File: ${options.path}
       App ID: ${options.appId}
       Version Code: ${options.versionCode}
       Splunk Build ID: ${options.splunkBuildId || 'Not provided'}`);
 
-    if (options.dryRun) {
-      logger.info('Dry Run complete - No file will be uploaded.');
-      return;
-    }
+      if (options.dryRun) {
+        logger.info('Dry Run complete - No file will be uploaded.');
+        return;
+      }
 
-    const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.splunkBuildId);
-    logger.debug(`URL Endpoint: ${url}`);
+      const url = generateURL('upload', options.realm, options.appId, options.versionCode, options.splunkBuildId);
+      logger.debug(`URL Endpoint: ${url}`);
 
-    spinner.start(`Uploading Android mapping file: ${options.path}`);
+      spinner.start(`Uploading Android mapping file: ${options.path}`);
 
-    try {
       const axiosInstance = axios.create();
       attachApiInterceptor(axiosInstance, logger, url, { 
         userFriendlyMessage: 'An error occurred during mapping file upload.' 
@@ -242,16 +242,16 @@ androidCommand
   .option('--dry-run', 'Preview the file that will be uploaded and the parameters extracted from the AndroidManifest.xml file')
   .option('--debug', 'Enable debug logs')
   .action(async (options: UploadAndroidWithManifestOptions) => {
-    const token = validateAndPrepareToken(options);
-
-    if (!options.realm || options.realm.trim() === '') {
-      androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
-    }
-
     const spinner = createSpinner();
     const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO, spinner);
 
     try {
+      const token = validateAndPrepareToken(options);
+
+      if (!options.realm || options.realm.trim() === '') {
+        androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
+      }
+    
       logger.debug(`Validating Mapping File Path: ${options.path}`);
       if (!isValidFile(options.path)) {
         throw new UserFriendlyError(null, `Invalid mapping file path: ${options.path}.`);

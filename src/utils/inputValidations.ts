@@ -16,6 +16,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { UserFriendlyError } from './userFriendlyErrors';
 
 export const COMMON_ERROR_MESSAGES = {
   TOKEN_NOT_SPECIFIED: 'Error: API access token is required. Please pass it into the command as the --token option, or set using the environment variable SPLUNK_ACCESS_TOKEN',
@@ -53,7 +54,7 @@ export const isValidSplunkBuildId = (splunkBuildId: unknown | undefined): boolea
 export function validateAndPrepareToken(options: { token?: string }): string {
   const token = options.token || process.env.SPLUNK_ACCESS_TOKEN;
   if (!token) {
-    throw new Error(COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
+    throw new UserFriendlyError(null, COMMON_ERROR_MESSAGES.TOKEN_NOT_SPECIFIED);
   }
   return token;
 }
