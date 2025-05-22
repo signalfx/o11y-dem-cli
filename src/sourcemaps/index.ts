@@ -32,9 +32,10 @@ import { injectFile } from './injectFile';
 import { Logger } from '../utils/logger';
 import { Spinner } from '../utils/spinner';
 import { uploadFile } from '../utils/httpUtils';
-import { AxiosError } from 'axios';
+import axios from 'axios';
 import { formatUploadProgress } from '../utils/stringUtils';
 import { wasInjectAlreadyRun } from './wasInjectAlreadyRun';
+import { attachApiInterceptor } from '../utils/apiInterceptor';
 
 export type SourceMapInjectOptions = {
   directory: string;
@@ -162,7 +163,6 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
    * Upload files to the server
    */
   let success = 0;
-  let failed = 0;
 
   logger.info('Upload URL: %s', getSourceMapUploadUrl(realm, '{id}'));
   logger.info('Found %s source map(s) to upload', jsMapFilePaths.length);
@@ -197,7 +197,6 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
         logger.info('sourceMapId %s would be used to upload %s', sourceMapId, path);
       });
     };
-
     const uploadFileFn = options.dryRun ? dryRunUploadFile : uploadFile;
 
     // notify user if we cannot be certain the "sourcemaps inject" command was already run
@@ -210,6 +209,10 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
 
     // upload a single file
     try {
+      const axiosInstance = axios.create();
+      attachApiInterceptor(axiosInstance, logger, url, {
+        userFriendlyMessage: 'An error occurred during source map upload.'
+      });
       await uploadFileFn({
         url,
         file,
@@ -218,32 +221,12 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
           const { totalFormatted } = formatUploadProgress(loaded, total);
           spinner.updateText(`Uploading ${path} | ${totalFormatted} | ${filesRemaining} file(s) remaining`);
         },
-        parameters
-      });
+        parameters,
+      }, axiosInstance);
       success++;
     } catch (e) {
-      failed++;
       spinner.stop();
-
-      const ae = e as AxiosError;
-      const unableToUploadMessage = `Unable to upload ${path}`;
-
-      if (ae.response && ae.response.status === 413) {
-        logger.warn(ae.response.status, ae.response.statusText);
-        logger.warn(unableToUploadMessage);
-      } else if (ae.response) {
-        logger.error(ae.response.status, ae.response.statusText);
-        logger.error(ae.response.data);
-        logger.error(unableToUploadMessage);
-      } else if (ae.request) {
-        logger.error(`Response from ${url} was not received`);
-        logger.error(ae.cause);
-        logger.error(unableToUploadMessage);
-      } else {
-        logger.error(`Request to ${url} could not be sent`);
-        logger.error(e);
-        logger.error(unableToUploadMessage);
-      }
+      throw e;
     }
   }
   spinner.stop();
@@ -253,9 +236,6 @@ export async function runSourcemapUpload(options: SourceMapUploadOptions, ctx: S
    */
   if (!options.dryRun) {
     logger.info(`${success} source map(s) were uploaded successfully`);
-    if (failed > 0) {
-      logger.info(`${failed} source map(s) could not be uploaded`);
-    }
   }
 
   if (jsMapFilePaths.length === 0) {
