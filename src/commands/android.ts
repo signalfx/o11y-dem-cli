@@ -142,8 +142,8 @@ androidCommand
       androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
     }
 
-    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
     const spinner = createSpinner();
+    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO, spinner);
 
     logger.debug(`Validating App ID: ${options.appId}`);
     if (!isValidAppId(options.appId)) {
@@ -248,8 +248,8 @@ androidCommand
       androidCommand.error(COMMON_ERROR_MESSAGES.REALM_NOT_SPECIFIED);
     }
 
-    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
     const spinner = createSpinner();
+    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO, spinner);
 
     try {
       logger.debug(`Validating Mapping File Path: ${options.path}`);
@@ -392,4 +392,3 @@ androidCommand
     }
   });
 
-  

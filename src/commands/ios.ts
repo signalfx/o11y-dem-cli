@@ -78,7 +78,8 @@ iOSCommand
   .option('--debug', 'Enable debug logs')
   .option('--dry-run', 'Perform a trial run with no changes made', false)
   .action(async (options: UploadCommandOptions) => {
-    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO);
+    const spinner = createSpinner();
+    const logger = createLogger(options.debug ? LogLevel.DEBUG : LogLevel.INFO, spinner);
 
     try {
       // Step 1: Validate and prepare the token
@@ -94,11 +95,12 @@ iOSCommand
         realm: options.realm,
         token,
         logger,
-        spinner: createSpinner(),
+        spinner,
       });
 
       logger.info('All dSYM files uploaded successfully.');
     } catch (error) {
+      spinner.stop();
       if (error instanceof UserFriendlyError) {
         // UserFriendlyError.message already contains the formatted string from formatCLIErrorMessage
         logger.error(error.message);
