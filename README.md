@@ -21,7 +21,7 @@ https://quickdraw.splunk.com/redirect/?product=Observability&location=rum.buildi
 
 ## Getting Started
 
-To install the CLI from npm, please run
+To install the CLI from npm, please run 
 ```
 npm install -g @splunk/rum-cli
 ```
