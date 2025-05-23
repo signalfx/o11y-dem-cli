@@ -3,11 +3,9 @@
 ![GDI Specification](https://img.shields.io/badge/GDI-1.7.0-blueviolet?style=for-the-badge)
 ![Node](https://img.shields.io/node/v/@splunk/rum-cli?style=for-the-badge)
 
-* This tool is still under development, so the readme and source code are not yet complete
-
 # Splunk RUM CLI
 
-The Splunk RUM CLI helps developers upload Android mapping files, iOS dSYM files, and browser source map files to the Splunk Observability Cloud backend for deobfuscating stack traces. This tool is part of Splunk's Real User Monitoring (RUM) suite.
+The Splunk RUM CLI is a tool for uploading Android mapping files, iOS dSYM files, and browser source map files to the Splunk Observability Cloud backend for deobfuscating stack traces. This tool is part of Splunk's Real User Monitoring (RUM) suite.
 
 ## Features
 
