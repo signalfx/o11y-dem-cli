@@ -14,10 +14,6 @@ The Splunk RUM CLI is a tool for uploading Android mapping files, iOS dSYM files
 * Performing JavaScript bundle modifications to enable automatic source mapping
 * Uploading JavaScript source map files
 
-## Documentation
-
-For official documentation on the Splunk RUM CLI, see _______
-
 ## Getting Started
 
 ## Build and Development
