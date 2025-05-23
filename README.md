@@ -1,6 +1,7 @@
 ![Status](https://img.shields.io/badge/status-under%20development-informational?style=for-the-badge)
 ![Build Status](https://img.shields.io/github/actions/workflow/status/signalfx/splunk-rum-cli/.github/workflows/ci.yml?branch=main&style=for-the-badge)
 ![GDI Specification](https://img.shields.io/badge/GDI-1.7.0-blueviolet?style=for-the-badge)
+![NPM](https://img.shields.io/npm/v/@splunk/rum-cli?style=for-the-badge)
 ![Node](https://img.shields.io/node/v/@splunk/rum-cli?style=for-the-badge)
 
 # Splunk RUM CLI
