@@ -51,8 +51,6 @@ To develop locally, you can use the `build:watch` script to automatically rebuil
 npm run build:watch
 ```
 
-## Troubleshooting
-
 # License
 
 The Splunk RUM CLI is licensed under the terms of the Apache Software License
