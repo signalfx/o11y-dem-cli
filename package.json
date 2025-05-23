@@ -1,6 +1,6 @@
 {
   "name": "@splunk/rum-cli",
-  "version": "0.0.1-alpha.4",
+  "version": "v1.0.0",
   "description": "Tools for handling symbol and mapping files for symbolication",
   "main": "./dist/index.js",
   "files": [
