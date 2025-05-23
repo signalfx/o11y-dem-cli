@@ -21,19 +21,19 @@ For official documentation on the Splunk RUM CLI, see
 
 ## Getting Started
 
-To install the CLI from npm, run the following command:
+To install the CLI from npm, run:
 ```
 npm install -g @splunk/rum-cli
 ```
 
-After installing, for an overview of the splunk-rum CLI and available commands, run the following command:
+After installing, for an overview of the splunk-rum CLI and available commands, run:
 ```
 splunk-rum
 ```
 
 ## Build and Development
 
-To build locally, run the following commands:
+To build locally, run:
 
 ```
 npm install
